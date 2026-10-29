@@ -12,6 +12,8 @@ const nav = $('#moduleNav');
 const grid = $('#moduleGrid');
 const state = { user: null, keyItems: [] };
 const esc = (value) => String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+const isLocalHost = ['localhost', '127.0.0.1', '::1'].includes(location.hostname);
+$('#environmentLabel').textContent = isLocalHost ? 'LOCAL & PRIVATE' : 'Production';
 
 nav.innerHTML = MODULES.map((m) => `<button class="module-nav" data-module="${m.id}"><span class="mini-no">${m.short}</span><span class="mini-name">${esc(m.title)}</span></button>`).join('');
 grid.innerHTML = MODULES.map((m) => `<article class="module-card" role="button" tabindex="0" data-module="${m.id}" aria-label="Open ${esc(m.title)}"><div class="card-top"><span class="card-symbol" aria-hidden="true"><i class="fas ${m.icon}"></i></span><span class="card-arrow">↗</span></div><div class="card-code">${m.code} · ${m.group}</div><h3>${esc(m.title)}</h3><p>${esc(m.description)}</p><div class="card-footer"><span>${m.tasks}</span><span>Open system&nbsp; →</span></div></article>`).join('');
