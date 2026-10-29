@@ -50,7 +50,7 @@ function showApiCenter() {
 }
 
 function showAccount() {
-  if (!state.user) { showLogin(); return; }
+  if (!state.user) return;
   $('#homeView').hidden = true; $('#moduleView').hidden = true; $('#apiView').hidden = true; $('#accountView').hidden = false;
   $('#returnHome').hidden = true; $('#crumbRoot').textContent = 'Workspace';
   $('#crumbTitle').textContent = 'Account settings';
@@ -221,7 +221,7 @@ function setUser(user) {
 }
 $('#signOut').addEventListener('click', async () => {
   try { await api('/auth/logout', { method: 'POST', body: '{}' }); } catch {}
-  setUser(null); showLogin();
+  setUser(null); showHome();
 });
 
 async function refreshHealth() {
@@ -243,7 +243,6 @@ async function refreshSession() {
       else if (MODULES.some((m) => m.id === location.hash.slice(1))) openModule(location.hash.slice(1));
     } else {
       setUser(null);
-      showLogin();
     }
   } catch { setUser(null); }
 }
