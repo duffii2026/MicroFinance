@@ -291,8 +291,6 @@ class Handler(SimpleHTTPRequestHandler):
                     row = db.execute("SELECT username,role FROM users WHERE username=%s", (user,)).fetchone()
                 return self.send_json(200, {"authenticated": True, "user": dict(row) if row else None})
             return self.send_json(200, {"authenticated": False})
-        if parsed.path.startswith("/modules/") and not self.username():
-            return self.send_error(HTTPStatus.UNAUTHORIZED, "Sign in to MFS to open this module")
         if not parsed.path.startswith("/api/v1/"):
             return super().do_GET()
         principal = self.principal()
