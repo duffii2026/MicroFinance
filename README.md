@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # MicroFinance · MFS
 
 A local workspace containing the six MM1 system modules, their original browser experiences, and a local MySQL/API/file backend.
@@ -10,7 +9,7 @@ A local workspace containing the six MM1 system modules, their original browser 
 1. Install and start Docker Desktop.
 2. Double-click `docker-start.bat`. On first run it creates `.env` and opens it so you can replace the example database passwords.
 3. Save `.env`. The script starts the app and MySQL together. Open `http://127.0.0.1:8080`.
-4. On first use, sign in with `admin` / `ChangeMe123!`, then change the password.
+4. On first use, sign in with `admin` / the value configured in `MM1_ADMIN_PASSWORD`, then change the password.
 
 ### Use an existing local MySQL server
 
@@ -18,7 +17,7 @@ A local workspace containing the six MM1 system modules, their original browser 
 2. Run `setup.bat` once to install the MySQL connector and create `.env` from `.env.example`.
 3. Configure `.env` with the connection details for your MySQL server and create the database/user if needed. The application account needs table creation and CRUD privileges in that database.
 4. Double-click `start.bat` and open the address shown in the terminal (default `http://127.0.0.1:8080`).
-5. On first use, sign in with `admin` / `ChangeMe123!`, then change the password.
+5. On first use, sign in with `admin` / the value configured in `MM1_ADMIN_PASSWORD`, then change the password.
 
 ### Docker option
 
@@ -48,6 +47,8 @@ The service uses MySQL with `utf8mb4` and InnoDB tables for API records, user ac
 ## Security notes
 
 The default account is for first-run local setup. Change its password before operational use. Session cookies are HttpOnly and SameSite=Strict. The initial module HTML files contain their own browser-storage behavior and use separate module sign-in controls; the shared API does not change those legacy permissions or migrate credentials automatically. Keep `.env` private and protect MySQL and the `data` folder with normal OS access controls. For access by multiple machines, HTTPS, role/permission enforcement, backups, and a security review should be added before exposing it beyond localhost.
-=======
-# MicroFinance
->>>>>>> origin/main
+
+
+## Production deployment
+
+The included `Caddyfile` serves `tonchet.com` with automatic HTTPS and proxies traffic to the app container. Point the domain A record to the server, allow inbound ports 80 and 443, and run Docker Compose on the server. Set unique values for `MM1_ADMIN_PASSWORD`, `MM1_DB_PASSWORD`, and `MM1_MYSQL_ROOT_PASSWORD` in the server-only `.env`; set `MM1_COOKIE_SECURE=1`. Never copy a local `.env` into the public repository. The MFS web login is required to open module pages, while MySQL and the app port stay bound to localhost.

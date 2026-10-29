@@ -199,6 +199,7 @@ $('#loginForm').addEventListener('submit', async (event) => {
     const result = await api('/auth/login', { method: 'POST', body: JSON.stringify({ username: form.get('username'), password: form.get('password') }) });
     closeLogin(); setUser(result.user);
     if (location.hash === '#account') showAccount();
+    else if (MODULES.some((m) => m.id === location.hash.slice(1))) openModule(location.hash.slice(1));
   } catch (error) { $('#formError').textContent = error.message; }
   finally { submit.disabled = false; }
 });
@@ -238,18 +239,19 @@ async function refreshSession() {
     if (session.authenticated) {
       setUser(session.user);
       if (location.hash === '#account') { closeLogin(); showAccount(); }
+      else if (MODULES.some((m) => m.id === location.hash.slice(1))) openModule(location.hash.slice(1));
     } else {
       setUser(null);
-      if (location.hash === '#account') showLogin();
+      showLogin();
     }
   } catch { setUser(null); }
 }
 
 try { setSidebarCollapsed(localStorage.getItem('mfs-sidebar-collapsed') === 'true'); } catch {}
 const route = location.hash.slice(1);
-if (MODULES.some((m) => m.id === route)) openModule(route);
-else if (route === 'api') showApiCenter();
+if (route === 'api') showApiCenter();
 else if (route === 'account') { /* wait for the restored sign-in session */ }
+else if (!MODULES.some((m) => m.id === route)) showHome();
 refreshHealth(); refreshSession();
 
 

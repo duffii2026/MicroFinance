@@ -9,7 +9,7 @@ if errorlevel 1 (
 )
 if not exist .env (
   copy .env.example .env >nul
-  echo Created .env from the example. Edit the database passwords before operational use.
+  echo Created .env from the example. Edit the initial admin and database passwords before operational use.
   notepad .env
 )
 docker compose up --build

@@ -37,6 +37,8 @@ HOST = os.environ.get("MM1_HOST", "127.0.0.1")
 PORT = int(os.environ.get("MM1_PORT", os.environ.get("MM1_APP_PORT", "8080")))
 CORS_ORIGINS = {origin.strip() for origin in os.environ.get("MM1_CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",") if origin.strip()}
 SESSION_SECONDS = 8 * 60 * 60
+COOKIE_SECURE = os.environ.get("MM1_COOKIE_SECURE", "0").strip().lower() in {"1", "true", "yes"}
+INITIAL_ADMIN_PASSWORD = os.environ.get("MM1_ADMIN_PASSWORD", "ChangeMe123!")
 DB_CONFIG = {
     "host": os.environ.get("MM1_DB_HOST", "127.0.0.1"),
     "port": int(os.environ.get("MM1_DB_PORT", "3306")),
@@ -166,7 +168,7 @@ def init_db() -> None:
         # Local first-run owner setup: change the initial password at first sign-in.
         if not db.execute("SELECT 1 FROM users LIMIT 1").fetchone():
             salt = secrets.token_hex(16)
-            digest = hashlib.pbkdf2_hmac("sha256", b"ChangeMe123!", salt.encode(), 240000).hex()
+            digest = hashlib.pbkdf2_hmac("sha256", INITIAL_ADMIN_PASSWORD.encode("utf-8"), salt.encode(), 240000).hex()
             db.execute("INSERT INTO users(username,password_hash,salt,role) VALUES(%s,%s,%s,'Admin')",
                        ("admin", digest, salt))
         db.execute("INSERT IGNORE INTO settings(`key`,value) VALUES('initialized','true')")
@@ -289,6 +291,8 @@ class Handler(SimpleHTTPRequestHandler):
                     row = db.execute("SELECT username,role FROM users WHERE username=%s", (user,)).fetchone()
                 return self.send_json(200, {"authenticated": True, "user": dict(row) if row else None})
             return self.send_json(200, {"authenticated": False})
+        if parsed.path.startswith("/modules/") and not self.username():
+            return self.send_error(HTTPStatus.UNAUTHORIZED, "Sign in to MFS to open this module")
         if not parsed.path.startswith("/api/v1/"):
             return super().do_GET()
         principal = self.principal()
@@ -383,7 +387,7 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(raw)))
             self.send_header("Cache-Control", "no-store")
-            self.send_header("Set-Cookie", f"mm1_session={token}; HttpOnly; SameSite=Strict; Path=/; Max-Age={SESSION_SECONDS}")
+            self.send_header("Set-Cookie", f"mm1_session={token}; HttpOnly; SameSite=Strict; Path=/; Max-Age={SESSION_SECONDS}{'; Secure' if COOKIE_SECURE else ''}")
             self.end_headers()
             self.wfile.write(raw)
             return
@@ -423,7 +427,7 @@ class Handler(SimpleHTTPRequestHandler):
                 SESSIONS.pop(morsel.value, None)
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Set-Cookie", "mm1_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0")
+            self.send_header("Set-Cookie", "mm1_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0" + ("; Secure" if COOKIE_SECURE else ""))
             self.end_headers()
             self.wfile.write(b'{"ok":true}')
             return
@@ -611,7 +615,7 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-store")
-            self.send_header("Set-Cookie", f"mm1_session={token}; HttpOnly; SameSite=Strict; Path=/; Max-Age={SESSION_SECONDS}")
+            self.send_header("Set-Cookie", f"mm1_session={token}; HttpOnly; SameSite=Strict; Path=/; Max-Age={SESSION_SECONDS}{'; Secure' if COOKIE_SECURE else ''}")
             self.end_headers()
             self.wfile.write(body)
             return
