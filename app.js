@@ -229,10 +229,8 @@ $('#signOut').addEventListener('click', async () => {
 async function refreshHealth() {
   try {
     const state = await api('/health');
-    $('#statusDot').classList.add('online'); $('#serverStatus').textContent = 'Local service online';
     $('#healthBadge').classList.add('online'); $('#healthBadge').textContent = 'Online'; $('#apiState').textContent = `${state.service} · ${state.version}`;
   } catch {
-    $('#statusDot').classList.remove('online'); $('#serverStatus').textContent = 'Service unavailable';
     $('#healthBadge').classList.remove('online'); $('#healthBadge').textContent = 'Offline'; $('#apiState').textContent = 'Start the local service';
   }
 }
