@@ -162,7 +162,8 @@ $('#copyQuickStart').addEventListener('click', async () => { await navigator.cli
 $('#accountReturn').addEventListener('click', showHome);
 $('#passwordForm').addEventListener('submit', async (event) => {
   event.preventDefault();
-  const form = new FormData(event.currentTarget);
+  const formElement = event.currentTarget;
+  const form = new FormData(formElement);
   const currentPassword = String(form.get('currentPassword') || '');
   const newPassword = String(form.get('newPassword') || '');
   const confirmPassword = String(form.get('confirmPassword') || '');
@@ -172,7 +173,7 @@ $('#passwordForm').addEventListener('submit', async (event) => {
   const button = $('#savePassword'); button.disabled = true;
   try {
     await api('/auth/password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) });
-    event.currentTarget.reset(); $('#passwordSuccess').hidden = false;
+    formElement.reset(); $('#passwordSuccess').hidden = false;
   } catch (error) { $('#passwordError').textContent = error.message; }
   finally { button.disabled = false; }
 });
