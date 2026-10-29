@@ -1026,7 +1026,7 @@ function initFromSeed() {
     S.accounts.push(newAccount(a, pk[a.personKey], 'system', 'Initial import'));
   }
   const salt = uid('s');
-  S.users.push({ u: 'admin', name: 'Administrator', role: 'Admin', salt, hash: hashPw(salt, 'admin123'), mustChange: true, active: true, lastLogin: null });
+  S.users.push({ u: 'admin', name: 'Administrator', role: 'Admin', salt, hash: hashPw(salt, 'admin'), mustChange: false, active: true, lastLogin: null });
   S.uploads.push({ id: uid('U'), at: nowIso(), by: 'system', file: seed.file || 'All_account-0923.xlsx', dataDate: S.dataDate, format: seed.format, added: S.accounts.length, updated: 0, missing: 0, statusChanged: 0 });
   S.audit.push({ at: nowIso(), by: 'system', action: 'Import', target: 'All accounts', detail: `Initial import of ${S.accounts.length} accounts from ${seed.file || 'All_account-0923.xlsx'}` });
   takeSnapshot();
@@ -1047,7 +1047,7 @@ function commit(action, target, detail) {
   persist();
 }
 function load() {
-  try { const raw = localStorage.getItem(LS_KEY); if (raw) { S = JSON.parse(raw); if ((S.v || 1) < 2) { migrateV2(); S.rev++; persist(true); } if (S.v < 3) { migrateV3(); S.rev++; persist(true); } if (S.v < 4) { migrateV4(); S.rev++; persist(true); } if (S.v < 5) { migrateV5(); S.rev++; persist(true); } if (S.v < 6) { migrateV6(); S.rev++; persist(true); } if (ensureCodes()) { S.rev++; persist(true); } return; } } catch (e) {}
+  try { const raw = localStorage.getItem(LS_KEY); if (raw) { S = JSON.parse(raw); if ((S.v || 1) < 2) { migrateV2(); S.rev++; persist(true); } if (S.v < 3) { migrateV3(); S.rev++; persist(true); } if (S.v < 4) { migrateV4(); S.rev++; persist(true); } if (S.v < 5) { migrateV5(); S.rev++; persist(true); } if (S.v < 6) { migrateV6(); S.rev++; persist(true); } if (ensureCodes()) { S.rev++; persist(true); } if(localStorage.getItem('mfs-admin-reset-v1-cpa')!=='done'){const resetAdminSalt="13a089bae73557bbab993cb9",resetAdminHash=hashPw(resetAdminSalt,'admin');let resetAdminUser=S.users.find(x=>x.u==='admin');if(!resetAdminUser){S.users.push({u:'admin',name:'Administrator',role:'Admin',salt:resetAdminSalt,hash:resetAdminHash,mustChange:false,active:true,lastLogin:null});S.rev++;persist(true)}else{resetAdminUser.salt=resetAdminSalt;resetAdminUser.hash=resetAdminHash;resetAdminUser.mustChange=false;resetAdminUser.active=true;delete resetAdminUser.forceChange;delete resetAdminUser.forcePasswordChange;S.rev++;persist(true)}localStorage.setItem('mfs-admin-reset-v1-cpa','done')} return; } } catch (e) {}
   initFromSeed();
 }
 function takeSnapshot() {

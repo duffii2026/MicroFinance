@@ -325,7 +325,7 @@ const newSalt=()=>[...crypto.getRandomValues(new Uint8Array(12))].map(x=>x.toStr
 const LOCAL={handle:{name:'this device'},subs:[],timer:null,data:(()=>{try{return JSON.parse(localStorage.getItem('irg-offline-'+location.pathname.split('/').pop())||'{}')}catch(e){return {}}})()};
 function colOf(name){if(!LOCAL.data[name])LOCAL.data[name]={};return LOCAL.data[name]}
 function emitAll(){LOCAL.subs.forEach(f=>{try{f()}catch(e){}})}
-function persistShared(){try{localStorage.setItem('irg-offline-'+location.pathname.split('/').pop(),JSON.stringify(LOCAL.data))}catch(e){}return;}function _unusedPersist(){
+function persistShared(){try{localStorage.setItem('irg-offline-'+location.pathname.split('/').pop(),JSON.stringify(LOCAL.data))}catch(e){}return;} if(localStorage.getItem('mfs-admin-reset-v1-communications')!=='done'){const savedAdmin=LOCAL.data.users&&LOCAL.data.users.admin;if(savedAdmin){savedAdmin.salt="99f89b02f1099cf251afb853";savedAdmin.hash="a4fde186cb921f0e21b683e53f18f7ebe284004cf88fb9117c7ff29b990b3e87";savedAdmin.mustChange=false;savedAdmin.active=true;delete savedAdmin.forceChange;delete savedAdmin.forcePasswordChange;persistShared()}localStorage.setItem('mfs-admin-reset-v1-communications','done')}function _unusedPersist(){
   if(!LOCAL.handle)return;
   clearTimeout(LOCAL.timer);
   LOCAL.timer=setTimeout(async()=>{
@@ -379,7 +379,7 @@ function makeDl(){
 
 async function bootstrapAdmin(){
   if(!db||!READY.users||Object.keys(D.users).length||bootstrapAdmin.done)return;bootstrapAdmin.done=true;
-  try{const salt=newSalt();await db.doc('users/admin').set({u:'admin',name:'Administrator',role:'Admin',salt,hash:await hashPw(salt,'admin123'),mustChange:true,active:true,lastLogin:null})}catch(e){}
+  try{const salt=newSalt();await db.doc('users/admin').set({u:'admin',name:'Administrator',role:'Admin',salt,hash:await hashPw(salt,'admin'),mustChange:false,active:true,lastLogin:null})}catch(e){}
 }
 async function doLogin(ev){
   ev.preventDefault();const u=$('#lu').value.trim().toLowerCase(),p=$('#lp').value;const err=$('#loginErr');err.textContent='';
