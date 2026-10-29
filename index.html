@@ -1,79 +1,13 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#132230">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#132230" />
   <title>MFS · Micro Finance Systems</title>
-  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" />
 </head>
-<body>
-  <div class="app-shell">
-    <aside class="sidebar" id="sidebar">
-      <a class="brand" href="#home" aria-label="MFS home">
-        <span class="brand-mark">MFS</span>
-        <span><strong>MFS</strong><small>MICRO FINANCE SYSTEMS</small></span>
-      </a>
-      <div class="workspace-label">WORKSPACE</div>
-      <nav class="nav" aria-label="Main navigation">
-        <button class="nav-item active" data-page="home"><span class="nav-icon"><i class="fas fa-th-large" aria-hidden="true"></i></span><span class="nav-label">System overview</span></button>
-        <button class="nav-item" data-page="api"><span class="nav-icon"><i class="fas fa-code"></i></span><span class="nav-label">API Center</span></button>
-        <div class="nav-section">MODULES <span>06</span></div>
-        <div id="moduleNav"></div>
-      </nav>
-      <div class="sidebar-bottom">
-        <button class="user-row account-trigger" id="accountLink" type="button" aria-label="Open account settings"><span class="avatar" id="userAvatar">A</span><span class="user-meta"><b id="userName">Local workspace</b><small id="userRole">Not signed in</small></span></button>
-      </div>
-    </aside>
-    <main class="main-area">
-      <header class="topbar">
-        <button class="mobile-menu" id="mobileMenu" aria-label="Show navigation" aria-expanded="true" title="Show or hide navigation">☰</button>
-        <div class="crumb"><span id="crumbRoot">Workspace</span><span class="crumb-sep">/</span><b id="crumbTitle">System overview</b></div>
-        <div class="top-actions"><span class="local-badge"><span></span><span id="environmentLabel">LOCAL &amp; PRIVATE</span></span><button class="return-home-top" id="returnHome" type="button" hidden><i class="fas fa-arrow-left"></i> All systems</button><button class="top-user" id="topUser" type="button" hidden aria-label="Open account settings"><i class="fas fa-user-circle"></i><span id="topUserName"></span></button><button class="top-logout" id="signOut" type="button" hidden><i class="fas fa-sign-out-alt"></i> Log out</button></div>
-      </header>
-      <div class="content" id="homeView">
-        <section class="welcome">
-          <div><div class="eyebrow">IR GROUP · PSS DEPARTMENT</div><h1>MFS<br><span>Micro Finance Systems</span></h1><p>One workspace for your financial operations, records, access, and communication tools.</p></div>
-          <div class="welcome-seal"><div class="seal-icon">MFS</div><span>LOCAL WORKSPACE</span><small>VERSION 1.0</small></div>
-        </section>
-        <section class="section-heading"><div><div class="eyebrow">YOUR WORKSPACE</div><h2>System modules</h2></div><span class="module-count">06 SYSTEMS</span></section>
-        <section class="module-grid" id="moduleGrid"></section>
-        <section class="lower-grid">
-          <article class="panel about-panel"><div class="panel-head"><div><div class="eyebrow">BUILT FOR YOUR TEAM</div><h3>Connected operations</h3></div><span class="panel-icon">◎</span></div><p>Each module keeps its familiar screens and tasks. This workspace gives you one place to open them and a local backend foundation for records, files, and future API integrations.</p><div class="feature-row"><span><i>✓</i>Runs on your computer</span><span><i>✓</i>MySQL database</span><span><i>✓</i>Local file storage</span></div></article>
-          <article class="panel service-panel"><div class="panel-head"><div><div class="eyebrow">LOCAL SERVICE</div><h3>Backend status</h3></div><span class="status-pill" id="healthBadge">Checking</span></div><div class="service-line"><span>API service</span><b id="apiState">Checking…</b></div><div class="service-line"><span>Database</span><b>MySQL · local server</b></div><div class="service-line"><span>File storage</span><b>Local folders</b></div><button class="text-link" id="apiDocs">View API guide <span>→</span></button></article>
-        </section>
-        <footer class="footer"><span>MFS · MICRO FINANCE SYSTEMS</span><span>LOCAL WORKSPACE · YOUR DATA STAYS ON THIS MACHINE</span></footer>
-      </div>
-      <section class="module-view" id="moduleView" hidden>
-        <div class="module-frame-wrap"><div class="frame-loading" id="frameLoading"><span class="loader"></span><b>Opening module…</b></div><iframe id="moduleFrame" title="System module" loading="lazy"></iframe></div>
-      </section>
-      <section class="api-view" id="apiView" hidden>
-        <div class="api-page-head"><div><div class="eyebrow">DEVELOPER INTEGRATION</div><h1>API Center</h1><p>Explore the MFS endpoints for all six modules and manage secure integration keys.</p></div><span class="api-version"><i class="fas fa-circle"></i> API VERSION 1</span></div>
-        <div class="api-summary"><article><span class="api-summary-icon"><i class="fas fa-link"></i></span><div><small>BASE URL</small><b id="apiBaseUrl">http://127.0.0.1:8081/api/v1</b></div><button id="copyBaseUrl" title="Copy base URL"><i class="far fa-copy"></i></button></article><article><span class="api-summary-icon"><i class="fas fa-shield-alt"></i></span><div><small>AUTHENTICATION</small><b>Bearer API key</b></div></article><article><span class="api-summary-icon"><i class="fas fa-database"></i></span><div><small>DATA STORE</small><b>MySQL · local machine</b></div></article></div>
-        <div class="api-layout"><div class="api-main-column">
-          <section class="api-panel developer-guide"><div class="api-panel-heading"><div><div class="eyebrow">DEVELOPER GUIDE</div><h2>Connect to MFS step by step</h2></div><a class="guide-download" href="api-guide.html"><i class="far fa-file-alt"></i> Open full guide</a></div><ol class="guide-steps"><li><span>01</span><div><b>Choose your module</b><p>Open a module below and review its workflow mapping. The module ID is part of every records URL.</p></div></li><li><span>02</span><div><b>Create a scoped API key</b><p>Sign in as an administrator in the key manager. Name the integration, select only the needed modules, choose an expiry, and copy the key once.</p></div></li><li><span>03</span><div><b>Set your base URL and key</b><p>Use the base URL above and send <code>Authorization: Bearer YOUR_MFS_API_KEY</code> with each records or file request.</p></div></li><li><span>04</span><div><b>Check the service, then read or write</b><p>Call <code>GET /health</code> first. Then use the selected module's collection route to list, create, replace, or delete JSON records.</p></div></li><li><span>05</span><div><b>Map fields and attach files</b><p>Agree field names and stable IDs with the MFS team. Upload related files through <code>/files</code> and save the returned file ID with your record.</p></div></li></ol><div class="guide-boundary"><i class="fas fa-info-circle"></i><p><b>Data boundary:</b> the shared API stores records in MySQL, while original module screens retain their existing browser storage. API changes do not automatically appear in those screens until an explicit sync or migration is built.</p></div></section>
-          <section class="api-panel"><div class="api-panel-heading"><div><div class="eyebrow">ENDPOINT REFERENCE</div><h2>Module APIs</h2></div><span id="moduleApiCount">06 MODULES</span></div><div id="moduleApiList" class="module-api-list"></div></section>
-          <section class="api-panel"><div class="api-panel-heading"><div><div class="eyebrow">SHARED SERVICES</div><h2>Authentication &amp; files</h2></div><i class="fas fa-cloud api-heading-icon"></i></div><div class="shared-endpoints"><div class="endpoint-row"><span class="method method-get">GET</span><code>/health</code><small>Service and MySQL status · public</small></div><div class="endpoint-row"><span class="method method-get">GET</span><code>/session</code><small>Check browser session</small></div><div class="endpoint-row"><span class="method method-post">POST</span><code>/auth/login · /auth/logout · /auth/password</code><small>Browser account session and password management</small></div><div class="endpoint-row"><span class="method method-post">POST</span><code>/files</code><small>Upload a file (multipart form, up to 25 MB)</small></div><div class="endpoint-row"><span class="method method-get">GET</span><code>/files?module={module}&amp;recordId={id}</code><small>List permitted file metadata</small></div><div class="endpoint-row"><span class="method method-get">GET</span><code>/files/{id}</code><small>Download a permitted file</small></div></div></section>
-          <section class="api-panel"><div class="api-panel-heading"><div><div class="eyebrow">QUICK START</div><h2>Make your first request</h2></div><i class="fas fa-terminal api-heading-icon"></i></div><p class="api-helper">Send your key in the Authorization header. The key is checked against its module permissions on every request.</p><pre class="api-code" id="quickStartCode"></pre><button class="copy-code-btn" id="copyQuickStart"><i class="far fa-copy"></i> Copy example</button></section>
-        </div><aside class="api-side-column"><section class="api-panel key-panel"><div class="api-panel-heading"><div><div class="eyebrow">ACCESS MANAGEMENT</div><h2>API keys</h2></div><span class="key-admin-icon"><i class="fas fa-key"></i></span></div><p class="api-helper">Create keys for your integrations, limit each key to selected modules, and revoke access at any time.</p><div id="keyAdminGate" class="key-gate"><p>Sign in with an administrator account to manage API keys.</p><button class="api-primary-btn" id="apiSignIn"><i class="fas fa-lock"></i> Administrator sign in</button></div><div id="keyAdminContent" hidden>
-            <form id="createKeyForm" class="key-create-form"><label>Integration name<input name="name" maxlength="128" placeholder="e.g. Finance reporting" required></label><label>Expiration<select name="expiresInDays"><option value="30">30 days</option><option value="90">90 days</option><option value="365">1 year</option><option value="never">Never expires</option></select></label><div class="scope-heading">MODULE ACCESS <small>Select one or more</small></div><div id="keyScopes" class="scope-grid"></div><div id="keyFormError" class="form-error" role="alert"></div><button type="submit" class="api-primary-btn"><i class="fas fa-plus"></i> Generate API key</button></form>
-            <div class="key-list-heading"><b>Issued keys</b><button id="refreshKeys" type="button" title="Refresh keys"><i class="fas fa-sync-alt"></i></button></div><div id="apiKeyList" class="api-key-list"></div>
-          </div></section><section class="api-panel api-security-note"><span><i class="fas fa-lock"></i></span><p><b>Keep keys private</b><br>The full key appears only once when generated. Store it securely and share it only with trusted integrations.</p></section></aside></div>
-        <footer class="footer"><span>MFS · DEVELOPER API</span><span>SCOPED ACCESS · MYSQL BACKED</span></footer>
-      </section>
-      <section class="account-view" id="accountView" hidden>
-        <div class="account-page-head"><div><div class="eyebrow">PROFILE &amp; SECURITY</div><h1>Account settings</h1><p>Review your local workspace account and update your password.</p></div><button class="return-home" id="accountReturn"><i class="fas fa-arrow-left"></i> Back to overview</button></div>
-        <div class="account-layout"><section class="account-card account-profile"><div class="account-profile-avatar" id="accountAvatar">A</div><div><div class="eyebrow">SIGNED-IN ACCOUNT</div><h2 id="accountName">Administrator</h2><span class="account-role" id="accountRole">Admin</span></div><div class="account-profile-meta"><span><i class="fas fa-desktop"></i> Local MFS workspace</span><span><i class="fas fa-shield-alt"></i> Password protected</span></div></section>
-          <section class="account-card password-card"><div class="eyebrow">PASSWORD SECURITY</div><h2>Change password</h2><p>Enter your current password and choose a new password.</p><form id="passwordForm" class="password-form"><label>Current password<input type="password" name="currentPassword" autocomplete="current-password" required></label><label>New password<input type="password" name="newPassword" autocomplete="new-password" required></label><label>Confirm new password<input type="password" name="confirmPassword" autocomplete="new-password" required></label><div id="passwordError" class="form-error" role="alert"></div><div id="passwordSuccess" class="password-success" role="status" hidden><i class="fas fa-check-circle"></i> Password updated successfully.</div><button type="submit" class="api-primary-btn" id="savePassword"><i class="fas fa-lock"></i> Update password</button></form></section></div>
-        <footer class="footer"><span>MFS · ACCOUNT SECURITY</span><span>YOUR PASSWORD IS STORED AS A SECURE HASH</span></footer>
-      </section>
-    </main>
-  </div>
-  <div class="modal-backdrop" id="modalBackdrop" hidden><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><button class="modal-close" id="modalClose" aria-label="Close">×</button><div class="eyebrow">LOCAL WORKSPACE ACCESS</div><h2 id="modalTitle">Sign in to MFS</h2><p id="modalIntro">Use your MFS account to sign in.</p><form id="loginForm"><label>Username<input name="username" autocomplete="username" value="admin" required></label><label>Password<input name="password" type="password" autocomplete="current-password" required></label><div class="form-error" id="formError" role="alert"></div><button class="primary-btn" type="submit">Sign in <span>→</span></button></form></section></div>
-  <script src="syntax-highlighter.js"></script>
-  <script src="app.js"></script>
-  <script src="font-accessibility.js"></script>
-</body>
+<body><div id="root"></div><script type="module" src="/src/main.jsx"></script></body>
 </html>
-

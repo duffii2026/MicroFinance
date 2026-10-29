@@ -7,7 +7,12 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
-echo Starting MM1 Micro Finance Systems...
+if not exist dist\index.html (
+  echo React workspace is not built. Run setup.bat first.
+  pause
+  exit /b 1
+)
+echo Starting MFS Micro Finance Systems...
 if not exist .env (
   echo .env is missing. Run setup.bat first and configure MySQL settings.
   pause

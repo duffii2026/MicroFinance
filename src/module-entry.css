@@ -1,0 +1,9 @@
+html, body, #module-root { min-height: 100%; margin: 0; width: 100%; }
+body { min-width: 320px; }
+#module-root { min-height: 100vh; }
+#mfs-module-root { min-height: 100vh; }
+#mfs-module-root, #mfs-module-root * { box-sizing: border-box; }
+#mfs-module-root :where(p, label, input, select, textarea, button, td, th, li, small, span, a) { font-size: max(15px, 1em); }
+#mfs-module-root :where(i, svg, path, [aria-hidden="true"]) { font-size: inherit; }
+.micro-app-loading, .micro-app-error { font: 16px/1.5 system-ui, sans-serif; padding: 24px; color: #203548; }
+.micro-app-script-error { background: #fff1ed; border: 1px solid #dca79b; color: #733d32; padding: 12px 16px; font: 15px/1.5 system-ui, sans-serif; }

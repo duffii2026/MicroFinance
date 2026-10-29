@@ -14,7 +14,7 @@
 </head>
 <body>
 <div class="guide-shell">
-  <header class="guide-top"><a class="guide-brand" href="index.html#api"><span>MFS</span> DEVELOPER DOCUMENTATION</a><div class="guide-actions"><span class="guide-session" id="guideSession" hidden><i class="fas fa-user-circle"></i><span id="guideUserName"></span></span><button class="guide-logout" id="guideLogout" type="button" hidden><i class="fas fa-sign-out-alt"></i> Log out</button><a href="index.html#api"><i class="fas fa-arrow-left"></i> API CENTER</a></div></header>
+  <header class="guide-top"><a class="guide-brand" href="/#api" target="_top"><span>MFS</span> DEVELOPER DOCUMENTATION</a><div class="guide-actions"><span class="guide-session" id="guideSession" hidden><i class="fas fa-user-circle"></i><span id="guideUserName"></span></span><button class="guide-logout" id="guideLogout" type="button" hidden><i class="fas fa-sign-out-alt"></i> Log out</button><a href="/#api" target="_top"><i class="fas fa-arrow-left"></i> API CENTER</a></div></header>
   <section class="guide-hero"><div class="eyebrow">LOCAL INTEGRATION · VERSION 1</div><h1>MFS Developer API Guide</h1><p>Follow these steps to create a scoped key, connect to the local API, and read or write records across the six MFS modules. Copy the examples and replace the sample values with your integration settings.</p><div class="guide-meta"><span><i class="fas fa-database"></i> MYSQL BACKEND</span><span><i class="fas fa-key"></i> SCOPED BEARER KEYS</span><span><i class="fas fa-cubes"></i> SIX MODULES</span></div></section>
   <div class="guide-alert"><i class="fas fa-info-circle"></i><p><b>Know the data boundary:</b> the shared API stores JSON records in MySQL. The original module screens still use their existing browser storage and are not automatically synchronized with API records. Agree on a data mapping or build an explicit sync before expecting API changes to appear in the legacy screens. The API accepts JSON as provided and does not validate module-specific business rules.</p></div>
   <div class="guide-layout">
@@ -141,7 +141,7 @@ document.getElementById('guideLogout').addEventListener('click', async () => {
   try {
     const response = await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     if (!response.ok) throw new Error('Could not sign out');
-    window.location.href = 'index.html#home';
+    window.top.location.href = '/#home';
   } catch (error) {
     button.disabled = false; button.title = error.message;
   }

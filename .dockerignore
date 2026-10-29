@@ -10,3 +10,7 @@ __pycache__/
 .inspect-*.py
 .check-*.py
 .host-check.py
+
+node_modules/
+.pnpm-store/
+dist/

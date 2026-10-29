@@ -36,11 +36,11 @@ a{color:var(--steel)}
 
 /* ---------- shell ---------- */
 #app{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100%}
-aside{background:var(--side);color:#C8D4DF;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+aside{background:var(--side);color:#C8D4DF;display:flex;flex-direction:column;position:static;top:auto;align-self:start;height:auto;max-height:none;overflow:visible}
 .brand{padding:20px 20px 16px;border-bottom:1px solid var(--side-2)}
 .brand b{display:block;font-family:var(--head);font-size:19px;color:#fff;font-weight:600}
 .brand small{color:#8397AA}
-nav{padding:10px 8px;overflow:auto;flex:1}
+nav{padding:10px 8px;overflow:visible;flex:0 0 auto}
 nav button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;border-radius:5px;padding:9px 12px;color:#C8D4DF;cursor:pointer}
 nav button:hover{background:var(--side-2);color:#fff}
 nav button.on{background:#fff;color:var(--ink);font-weight:600}

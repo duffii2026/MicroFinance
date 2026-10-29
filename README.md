@@ -14,7 +14,7 @@ A local workspace containing the six MM1 system modules, their original browser 
 ### Use an existing local MySQL server
 
 1. Install Python 3.10 or newer and MySQL 8.0 or newer.
-2. Run `setup.bat` once to install the MySQL connector and create `.env` from `.env.example`.
+2. Install Node.js 22 or newer, enable pnpm with `corepack enable`, then run `setup.bat` once. It installs the React build dependencies, builds the web frontend, installs the MySQL connector, and creates `.env` from `.env.example`.
 3. Configure `.env` with the connection details for your MySQL server and create the database/user if needed. The application account needs table creation and CRUD privileges in that database.
 4. Double-click `start.bat` and open the address shown in the terminal (default `http://127.0.0.1:8080`).
 5. On first use, sign in with `admin` / the value configured in `MM1_ADMIN_PASSWORD`, then change the password.
@@ -38,7 +38,7 @@ Configure app and MySQL settings in `.env`; `MM1_APP_PORT` sets the app port and
 | MM1-05 Communication Channel | Communication channels, teams/users, positions and access definitions | Maintain channel records, configure the team/position lists, set access, and export channel information. |
 | MM1-06 Company Database | Company profiles, registrations, accounts, contacts, contracts, communication details and supporting files | Search/select a company, maintain company and registration details, manage accounts and documents, then export. |
 
-The module pages are preserved from the supplied HTML files and run locally in the unified shell. Their original offline data remains in each browser's local storage. The new backend is available for future migration and integration; the preserved module records have not been silently copied into the new database.
+The main workspace, dashboard, API key manager, and account settings are built with React. Each of the six module systems and the detailed API guide now loads through an isolated React micro-app entry, preserving the original module workflows and browser data while those workflows are migrated. The module screens and their business logic still use the original HTML/JavaScript, so this is an incremental conversion rather than a completed React rewrite. Their existing browser data remains separate; module records are not silently copied into MySQL.
 
 ## Local data and API
 
@@ -51,4 +51,4 @@ The default account is for first-run local setup. Change its password before ope
 
 ## Production deployment
 
-The included `Caddyfile` serves `tonchet.com` with automatic HTTPS and proxies traffic to the app container. Point the domain A record to the server, allow inbound ports 80 and 443, and run Docker Compose on the server. Set unique values for `MM1_ADMIN_PASSWORD`, `MM1_DB_PASSWORD`, and `MM1_MYSQL_ROOT_PASSWORD` in the server-only `.env`; set `MM1_COOKIE_SECURE=1`. Never copy a local `.env` into the public repository. The MFS web login is required to open module pages, while MySQL and the app port stay bound to localhost.
+The included `Caddyfile` serves `tonchet.com` with automatic HTTPS and proxies traffic to the app container. Docker builds the React frontend as part of the image. Point the domain A record to the server, allow inbound ports 80 and 443, and run Docker Compose on the server. Set unique values for `MM1_ADMIN_PASSWORD`, `MM1_DB_PASSWORD`, and `MM1_MYSQL_ROOT_PASSWORD` in the server-only `.env`; set `MM1_COOKIE_SECURE=1`. Never copy a local `.env` into the public repository. Administrator sign-in is available from the top bar for API key and account management, while MySQL and the app port stay bound to localhost.

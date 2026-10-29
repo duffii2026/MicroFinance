@@ -18,6 +18,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
 ROOT = Path(__file__).resolve().parent
+WEB_ROOT = ROOT / "dist" if (ROOT / "dist" / "index.html").is_file() else ROOT
 DATA_DIR = Path(os.environ.get("MM1_DATA_DIR", str(ROOT / "data"))).resolve()
 FILES_DIR = DATA_DIR / "files"
 def load_env_file():
@@ -181,7 +182,7 @@ class Handler(SimpleHTTPRequestHandler):
     server_version = "MM1Local/1.0"
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=str(ROOT), **kwargs)
+        super().__init__(*args, directory=str(WEB_ROOT), **kwargs)
 
     def log_message(self, fmt, *args):
         print("[%s] %s" % (self.log_date_time_string(), fmt % args))
