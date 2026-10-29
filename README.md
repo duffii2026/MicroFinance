@@ -1,4 +1,5 @@
-# MM1 Micro Finance Systems
+<<<<<<< HEAD
+# MicroFinance · MFS
 
 A local workspace containing the six MM1 system modules, their original browser experiences, and a local MySQL/API/file backend.
 
@@ -47,3 +48,6 @@ The service uses MySQL with `utf8mb4` and InnoDB tables for API records, user ac
 ## Security notes
 
 The default account is for first-run local setup. Change its password before operational use. Session cookies are HttpOnly and SameSite=Strict. The initial module HTML files contain their own browser-storage behavior and use separate module sign-in controls; the shared API does not change those legacy permissions or migrate credentials automatically. Keep `.env` private and protect MySQL and the `data` folder with normal OS access controls. For access by multiple machines, HTTPS, role/permission enforcement, backups, and a security review should be added before exposing it beyond localhost.
+=======
+# MicroFinance
+>>>>>>> origin/main
