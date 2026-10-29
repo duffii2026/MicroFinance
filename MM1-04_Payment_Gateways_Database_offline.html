@@ -1,0 +1,1294 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>MM1-04 · Payment Gateways Database</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600&display=swap">
+<style>
+
+/* Layout: dark navy sidebar + paper work area, same family as CPA Control. Grouped ledgers read like the Excel sheets (band, rows, sub-total, grand total). */
+:root{
+  --paper:#F2F4F6;--surface:#FFFFFF;--ink:#17212C;--muted:#5E6B78;--faint:#8A96A3;--line:#DCE1E6;--line2:#EBEEF1;
+  --steel:#23507A;--steel-d:#1A3D5E;--steel-l:#E6EEF5;--on-steel:#FFFFFF;
+  --side:#132230;--side-2:#1C3043;--side-ink:#C8D4DF;--side-line:#2B435A;
+  --red:#B42318;--red-l:#FDECEA;--amber:#B54708;--amber-l:#FEF3E2;--green:#067647;--green-l:#E7F6EC;
+  --band:#EEF2F5;--grand:#DDE8F2;--shadow:0 8px 30px rgba(15,30,45,.22);
+  --head:"Barlow Semi Condensed","Bahnschrift","DIN Alternate","Roboto Condensed","Arial Narrow",sans-serif;
+  --body:"Segoe UI","Inter",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular",Consolas,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#0E151C;--surface:#162029;--ink:#E6ECF1;--muted:#9AA8B5;--faint:#6F7E8C;--line:#2A3947;--line2:#223039;
+    --steel:#6FA3D6;--steel-d:#8DB8E3;--steel-l:#1B3248;--on-steel:#0E151C;
+    --side:#0A1118;--side-2:#14212C;--side-ink:#AEBBC8;--side-line:#243543;
+    --red:#F07A6C;--red-l:#3A1A16;--amber:#E3A948;--amber-l:#33270F;--green:#5CC98A;--green-l:#15301F;
+    --band:#1B2630;--grand:#1F3A52;--shadow:0 8px 30px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#0E151C;--surface:#162029;--ink:#E6ECF1;--muted:#9AA8B5;--faint:#6F7E8C;--line:#2A3947;--line2:#223039;
+  --steel:#6FA3D6;--steel-d:#8DB8E3;--steel-l:#1B3248;--on-steel:#0E151C;
+  --side:#0A1118;--side-2:#14212C;--side-ink:#AEBBC8;--side-line:#243543;
+  --red:#F07A6C;--red-l:#3A1A16;--amber:#E3A948;--amber-l:#33270F;--green:#5CC98A;--green-l:#15301F;
+  --band:#1B2630;--grand:#1F3A52;--shadow:0 8px 30px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--paper);color:var(--ink);font:14px/1.45 var(--body);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--head);font-weight:600;margin:0;letter-spacing:.01em;text-wrap:balance}
+h1{font-size:24px}h2{font-size:18px}h3{font-size:15px}
+:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
+.hidden{display:none!important}
+.mono{font-family:var(--mono);font-size:12.5px}
+.muted{color:var(--muted)}.faint{color:var(--faint)}
+small{font-size:11.5px}
+
+/* controls */
+.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:600;min-width:0}
+.i{width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:8px 10px;font-weight:400;font-size:14px;min-width:0}
+.i:disabled{background:var(--paper);color:var(--muted)}
+textarea.i{min-height:64px;resize:vertical}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:7px 12px;cursor:pointer;font-weight:600;font-size:13px}
+.btn:hover{border-color:var(--steel)}
+.btn.pri{background:var(--steel);border-color:var(--steel);color:var(--on-steel)}
+.btn.pri:hover{background:var(--steel-d);border-color:var(--steel-d)}
+.btn.danger{color:var(--red);border-color:var(--red)}
+.btn.sm{padding:4px 9px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:default}
+.err{color:var(--red);font-size:13px;min-height:18px}
+.hint{font-size:12px;color:var(--muted)}
+
+/* app shell */
+#app{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh}
+aside{background:var(--side);color:var(--side-ink);display:flex;flex-direction:column;position:sticky;top:env(safe-area-inset-top,0px);align-self:start;height:100vh;max-height:100vh;overflow:auto}
+.brand{padding:18px 18px 14px;border-bottom:1px solid var(--side-line)}
+.brand b{display:block;font:600 19px var(--head);color:#fff}
+.brand small{color:#8397AA}
+nav{padding:10px 8px;display:flex;flex-direction:column;gap:2px;flex:1}
+.ng{font:600 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:#6F8499;padding:12px 10px 4px}
+nav button{all:unset;box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;color:var(--side-ink);font-size:13.5px}
+nav a.navlink{box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;color:var(--side-ink);font-size:13.5px;text-decoration:none}
+nav a.navlink:hover{background:var(--side-2)}
+nav a.navlink:focus-visible{outline:2px solid #8DB8E3}
+nav button:hover{background:var(--side-2)}
+nav button:focus-visible{outline:2px solid #8DB8E3}
+nav button[aria-current="page"]{background:var(--steel);color:var(--on-steel);font-weight:600}
+nav .ct{font:11px var(--mono);opacity:.7}
+.side-foot{padding:14px 18px;border-top:1px solid var(--side-line);font-size:12.5px}
+.side-foot .btns{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.side-foot .btn{background:transparent;color:var(--side-ink);border-color:var(--side-line)}
+main{padding:22px clamp(16px,3vw,36px) 48px;min-width:0}
+.topbar{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;margin-bottom:16px}
+.topbar .sub{color:var(--muted);font-size:13px}
+.sync{margin-left:auto;font:12px var(--mono);color:var(--muted)}
+@media (max-width:860px){
+  #app{grid-template-columns:1fr}
+  aside{position:static;max-height:none;height:auto}
+  nav{flex-direction:row;overflow-x:auto;padding:8px;flex:none}
+  .ng{display:none}
+  nav button{white-space:nowrap}
+  .side-foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 16px}
+  .side-foot .btns{margin-top:0}
+}
+
+/* toolbar + summary */
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:12px}
+.toolbar .f{min-width:120px}
+.toolbar .grow{flex:1 1 220px}
+.toolbar .sp{flex:1}
+.sumstrip{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.chip{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 14px;min-width:120px}
+.chip span{display:block;font:600 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.chip b{font:600 22px var(--head);font-variant-numeric:tabular-nums}
+.chip.big b{font-size:28px;color:var(--steel)}
+
+/* tables */
+.tbox{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:auto;max-height:calc(100vh - 230px)}
+.pager{display:flex;align-items:center;gap:8px;justify-content:flex-end;margin:8px 0;font-size:13px;color:var(--muted)}
+.pager .btn[disabled]{opacity:.4;cursor:default}
+table.t{border-collapse:collapse;width:100%;min-width:760px;font-size:13px}
+table.t th{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);background:var(--band);white-space:nowrap;position:sticky;top:0;z-index:3;box-shadow:0 1px 0 var(--line)}
+table.t td{padding:8px 10px;border-bottom:1px solid var(--line2);vertical-align:top}
+table.t td.n,table.t th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.n small{display:block;color:var(--muted);font-size:10.5px}
+td.neg{color:var(--red)}
+tr.row{cursor:pointer}
+tr.row:hover td{background:var(--steel-l)}
+tr.row:focus-visible{outline:2px solid var(--steel);outline-offset:-2px}
+tr.band td{background:var(--band);font:600 13px var(--head);letter-spacing:.04em;text-transform:uppercase;color:var(--steel);padding:7px 10px;border-bottom:1px solid var(--line)}
+tr.band td span{font:11px var(--mono);color:var(--muted);text-transform:none;letter-spacing:0;margin-left:8px}
+tr.sub td{background:var(--steel-l);font-weight:600;border-bottom:1px solid var(--line)}
+tr.grand td{background:var(--grand);font:600 14px var(--head);border-bottom:0}
+td.rem{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+td.wrap{max-width:300px}
+.pill{display:inline-flex;align-items:center;gap:5px;font:600 11.5px var(--body);padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.g{color:var(--green);background:var(--green-l)}
+.pill.a{color:var(--amber);background:var(--amber-l)}
+.pill.x,.pill.n{color:var(--muted);background:var(--band)}
+.tag{font:600 11px var(--mono);padding:2px 7px;border-radius:4px;background:var(--band);color:var(--muted);white-space:nowrap}
+.tag.in{background:var(--green-l);color:var(--green)}.tag.out{background:var(--amber-l);color:var(--amber)}
+.bank{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.bank i{width:9px;height:9px;border-radius:2px;display:inline-block}
+.stale{color:var(--amber)}
+.empty{padding:36px 16px;text-align:center;color:var(--muted)}
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;padding:5px 10px;border:1px solid var(--line,#ccc);border-radius:8px;cursor:pointer}
+.chk input{margin:0}
+.defbox{background:var(--steel-l);border-left:3px solid var(--steel);border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.5}
+.defbox b{font-weight:700}
+.note{font-size:12.5px;color:var(--muted);margin-top:10px}
+.warn{background:var(--amber-l);color:var(--amber);border-radius:6px;padding:8px 12px;font-size:13px;margin-top:10px}
+
+/* overview */
+.cgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;align-items:stretch}.cgrid>.cbox:last-child{grid-column:span 2}@media(max-width:1100px){.cgrid{grid-template-columns:repeat(2,1fr)}.cgrid>.cbox:last-child{grid-column:1/-1}}@media(max-width:700px){.cgrid{grid-template-columns:1fr}}
+.cbox{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.cbox h3{font-family:var(--head);font-size:16px;margin:0 0 2px}.cbox .sub{color:var(--faint);font-size:12px;margin-bottom:10px}
+.dnw{display:flex;align-items:center;gap:18px;flex-wrap:wrap}.dnw svg{flex:0 0 auto}
+.leg{display:flex;flex-direction:column;gap:6px;flex:1;min-width:140px;font-size:13px}
+.leg div{display:flex;align-items:center;gap:8px}.leg i{width:10px;height:10px;border-radius:3px;flex:0 0 auto}.leg b{margin-left:auto}
+.leg div[data-loc]{cursor:pointer}.leg div[data-loc]:hover{text-decoration:underline}
+.brow{display:grid;grid-template-columns:minmax(90px,38%) 1fr auto;align-items:center;gap:10px;font-size:13px;margin:7px 0}
+.brow .tr{height:12px;background:var(--line2);border-radius:6px;overflow:hidden;display:flex}.brow .tr span{display:block;height:100%}
+.brow .n{font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+.cbox .tot{font-family:var(--head);font-size:26px;fill:var(--ink)}.cbox .tl{font-size:11px;fill:var(--faint)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}.card{min-height:96px}@media(max-width:1000px){.cards{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.cards{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:6px;cursor:pointer;text-align:left}
+.card:hover{border-color:var(--steel)}
+.card .k{font:600 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.card .v{font:600 28px var(--head);font-variant-numeric:tabular-nums}
+.card .m{font-size:12.5px;color:var(--muted)}
+.ok{color:var(--green)}.bad{color:var(--red)}
+.sec{display:flex;flex-direction:column;gap:10px;margin-bottom:22px}
+.mini{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(10,18,26,.55);display:flex;align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 16px 16px;overflow:auto;z-index:50}
+.modal{background:var(--surface);border-radius:10px;width:100%;max-width:760px;box-shadow:var(--shadow);margin:auto 0}
+.modal header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.modal .x{all:unset;cursor:pointer;font-size:22px;line-height:1;padding:2px 8px;color:var(--muted)}
+.modal .x:focus-visible{outline:2px solid var(--steel)}
+.mb{padding:16px 18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.mb .full{grid-column:1/-1}
+.modal footer{display:flex;flex-wrap:wrap;gap:8px;padding:12px 18px;border-top:1px solid var(--line);align-items:center}
+.modal footer .sp{flex:1}
+@media (max-width:560px){.mb{grid-template-columns:1fr}}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pc{display:inline-flex;align-items:center;gap:4px;background:var(--steel-l);color:var(--steel);border-radius:999px;padding:3px 4px 3px 10px;font-size:12.5px;font-weight:600}
+.pc button{all:unset;cursor:pointer;padding:0 6px;font-size:15px;line-height:1}
+.addrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.addrow .i{flex:1 1 140px;width:auto}
+.hist{grid-column:1/-1;border:1px solid var(--line);border-radius:6px;overflow:auto}
+.hist table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:380px}
+.hist th,.hist td{padding:5px 8px;text-align:left;border-bottom:1px solid var(--line2)}
+.hist th{font:600 10.5px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--band)}
+.hist td.n,.hist th.n{text-align:right;font-variant-numeric:tabular-nums}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:8px;font-size:13px;z-index:80;max-width:calc(100vw - 32px)}
+.ck{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-bottom:1px solid var(--line2)}
+.ck:last-child{border-bottom:0}
+.ck input{margin-top:3px;width:17px;height:17px;flex:none}
+.ck.done .tx{color:var(--muted);text-decoration:line-through}
+.ck .ar{font:600 11px var(--mono);color:var(--steel);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* login */
+#login{min-height:100vh;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
+.login-art{background:var(--side);color:#fff;padding:48px clamp(24px,5vw,64px);display:flex;flex-direction:column;justify-content:space-between;gap:32px}
+.login-art h1{font-size:clamp(28px,4vw,40px);color:#fff;margin-top:14px;line-height:1.1}
+.login-art p{color:#A9B9C9;max-width:44ch;margin:14px 0 0}
+.login-art .eb{color:#8397AA;font-size:13px}
+.codes{display:flex;flex-wrap:wrap;gap:8px}
+.codes span{font:600 12px var(--mono);letter-spacing:.06em;border:1px solid #2B435A;color:#C8D4DF;padding:4px 9px;border-radius:4px}
+.login-form{display:flex;align-items:center;justify-content:center;padding:32px 16px}
+.login-form form{width:100%;max-width:340px;display:flex;flex-direction:column;gap:14px}
+@media (max-width:760px){#login{grid-template-columns:1fr}.login-art{padding:28px 16px;gap:18px}}
+
+
+/* Payment Gateway additions */
+.sumstrip .chip.bad b{color:var(--red)}
+.pill.r{color:var(--red);background:var(--red-l)}
+.days{font:600 18px var(--head);color:var(--red);font-variant-numeric:tabular-nums}
+.empty b{display:block;color:var(--ink);font:600 20px var(--head);margin-bottom:6px}
+.empty .acts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.grp{margin-bottom:18px}
+.grp>header{display:flex;gap:10px;align-items:baseline;margin-bottom:6px}
+.grp>header .c{font:600 11.5px var(--mono);color:var(--red)}
+.cell{display:inline-block;min-width:78px;text-align:center;border-radius:4px;padding:3px 6px;font:600 12px var(--mono);cursor:pointer;border:0}
+.cell.ok{background:var(--green-l);color:var(--green)}.cell.late{background:var(--red-l);color:var(--red)}
+.cell.warn{background:var(--amber-l);color:var(--amber)}.cell.none{background:var(--band);color:var(--muted)}
+.modal .body{padding:16px 18px;display:grid;gap:16px}
+.modal h2{font-size:18px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kv div>span:first-child{display:block;font:600 10.5px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.tl{display:grid;gap:12px}
+.rs{border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--paper)}
+.rs .meta{font:600 11.5px var(--mono);color:var(--muted);margin-bottom:6px}
+.rs p{margin:0;white-space:pre-wrap}
+.shots{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.shots img{height:84px;max-width:140px;object-fit:cover;border-radius:4px;border:1px solid var(--line);cursor:zoom-in;background:var(--band)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.lock{font:600 12px var(--mono);color:var(--muted);border:1px dashed var(--line);border-radius:5px;padding:8px 10px}
+.light{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:90;padding:16px}
+.light img{max-width:100%;max-height:100%;border-radius:4px}
+td.act{white-space:nowrap}
+.tbox td.wrap{white-space:pre-wrap}
+td.rem{max-width:220px}
+textarea.i{min-height:72px}
+
+/* Payment Gateway: location buttons, MCA tabs */
+.seg{display:inline-flex;gap:6px;flex-wrap:wrap}
+.locb{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:9px 18px;cursor:pointer;font:600 15px var(--head);letter-spacing:.04em;display:inline-flex;gap:8px;align-items:baseline}
+.locb small{font:600 11px var(--mono);color:var(--muted)}
+.cpdiv{width:1px;align-self:stretch;background:var(--line);margin:0 6px}.cpb{border-style:dashed;border-color:#C8921B}.cpb:hover{border-color:#C8921B;background:var(--amber-l)}
+.locb:hover{border-color:var(--steel)}
+.locb.on{background:var(--steel);border-color:var(--steel);color:var(--on-steel)}.locb.on small{color:var(--on-steel);opacity:.8}
+.mtab[aria-pressed="true"]{background:var(--steel);border-color:var(--steel);color:var(--on-steel)}
+.rs .meta a{color:var(--steel)}
+.kv b{font:600 15px var(--head)}
+</style>
+<div id="login">
+  <div class="login-art">
+    <div>
+      <div class="eb">IR Group · PSS Department</div>
+      <h1>MM1-04 · Payment Gateways Database</h1>
+      <p>Information about each payment gateway and its merchants: contacts, contracts and CI / CO rates. No balances or money figures.</p>
+    </div>
+    <div class="codes"><span>GATEWAYS</span><span>MERCHANTS</span><span>RATES</span><span>CONTACTS</span></div>
+  </div>
+  <div class="login-form">
+    <form id="loginForm" autocomplete="on">
+      <h2>Sign in</h2>
+      <label class="f" for="lu">Username<input class="i" id="lu" autocomplete="username" required></label>
+      <label class="f" for="lp">Password<input class="i" id="lp" type="password" autocomplete="current-password" required></label>
+      <div class="err" id="loginErr" role="alert"></div>
+      <button class="btn pri" id="loginBtn" type="submit" style="justify-content:center;padding:10px" disabled>Connecting…</button>
+      <p class="hint" style="margin:0">Ask your Admin for an account. Sign-in locks the page; it is not bank-grade security.</p>
+      <p class="hint" style="margin:0">Version 0.1 · 15 Oct 2026</p>
+    </form>
+  </div>
+</div>
+<div id="app" class="hidden">
+  <aside>
+    <div class="brand"><b>MM1-04 · Payment Gateways Database</b><small>IR Group · PSS Department</small></div>
+    <nav id="nav" aria-label="Payment Gateway"></nav>
+    <div class="side-foot"><div id="who"></div><div class="btns"><button class="btn sm" id="btnPw" type="button">Password</button><button class="btn sm" id="btnOut" type="button">Sign out</button></div></div>
+  </aside>
+  <main><div class="topbar"><h1 id="pageTitle"></h1><span class="sub" id="pageSub"></span><span class="sync" id="todayTxt"></span></div><section id="view"><div class="empty">Loading…</div></section></main>
+</div>
+<div id="modalRoot"></div><div id="toastRoot"></div>
+<script type="application/json" id="offlineSeed">{"hist": {}, "users": {"admin": {"u": "admin", "name": "Administrator", "role": "Admin", "salt": "6c0bea84b33e0d1a01230056", "hash": "bec6e2649051e78086511b128cb73dea411b4f19bcf0951dea9a3e5486fe84a7", "mustChange": true, "active": true, "lastLogin": null}}, "settings": {"cpActive": {"dataDate": "2026-09-30", "fileName": "CPA Control System (live copy)", "loadedAt": "2026-10-16T02:30:00.000Z", "loadedBy": "Claude", "rows": [{"bank": "ACLEDA", "code": "CPA-003", "holder": "PSS-KH", "name": "KIM VANNAK", "project": "Combined"}, {"bank": "PiPAY", "code": "CPA-004", "holder": "PSS-KH2", "name": "LY SOPHEA", "project": "Taiwan"}, {"bank": "Wing", "code": "CPA-008", "holder": "PSS-KH2", "name": "TEP CHANTHOU", "project": "Taiwan-B777"}, {"bank": "Wing", "code": "CPA-009", "holder": "TW-OP", "name": "SREY POV", "project": "Combined"}, {"bank": "ABA", "code": "CPA-014", "holder": "TW-OP", "name": "LIM KOSAL", "project": "Taiwan-B777"}, {"bank": "Wing", "code": "CPA-015", "holder": "PSS-KH", "name": "OUK DINA", "project": "Combined"}, {"bank": "PiPAY", "code": "CPA-016", "holder": "PSS-KH2", "name": "VONG SOVANN", "project": "Taiwan"}, {"bank": "ACLEDA", "code": "CPA-019", "holder": "PSS-KH", "name": "SENG BUNTHOEUN", "project": "Taiwan"}, {"bank": "PiPAY", "code": "CPA-020", "holder": "PSS-KH2", "name": "KAO SREYMOM", "project": "Taiwan-B777"}, {"bank": "Wing", "code": "CPA-022", "holder": "TW-OP", "name": "CHAN SREYNEANG", "project": "Taiwan"}, {"bank": "ACLEDA", "code": "CPA-023", "holder": "PSS-KH", "name": "KIM VANNAK", "project": "Taiwan-B777"}, {"bank": "PiPAY", "code": "CPA-024", "holder": "PSS-KH2", "name": "LY SOPHEA", "project": "Combined"}, {"bank": "ABA", "code": "CPA-026", "holder": "TW-OP", "name": "PICH MALY", "project": "Taiwan-B777"}, {"bank": "PiPAY", "code": "CPA-028", "holder": "PSS-KH2", "name": "TEP CHANTHOU", "project": "Taiwan"}, {"bank": "ABA", "code": "CPA-030", "holder": "TW-OP", "name": "NGUON SAMNANG", "project": "Combined"}, {"bank": "PiPAY", "code": "CPA-032", "holder": "PSS-KH2", "name": "CHEA VANNY", "project": "Taiwan-B777"}, {"bank": "Wing", "code": "CPA-036", "holder": "PSS-KH2", "name": "VONG SOVANN", "project": "Combined"}, {"bank": "ABA", "code": "CPA-038", "holder": "TW-OP", "name": "CHEA RATTANA", "project": "Taiwan-B777"}, {"bank": "PiPAY", "code": "CPA-040", "holder": "PSS-KH2", "name": "KAO SREYMOM", "project": "Taiwan"}]}}, "gateways": {"gw_003": {"name": "BayonWallet", "seq": 3, "source": "Central Database", "status": "Active", "updatedAt": "2026-10-16T00:55:00.000Z", "updatedBy": "Claude"}, "gw_006": {"name": "LotusPay", "seq": 6, "source": "Central Database", "status": "Active", "updatedAt": "2026-10-16T00:55:00.000Z", "updatedBy": "Claude"}, "gw_007": {"name": "OrbitPay", "seq": 7, "source": "Central Database", "status": "Active", "updatedAt": "2026-10-16T00:55:00.000Z", "updatedBy": "Claude"}, "tm_pending": {"name": "DemoMoney (DM)", "pending": true, "seq": 0, "source": "Not in Central Database yet", "status": "", "updatedAt": "2026-10-16T03:00:00.000Z", "updatedBy": "Claude"}, "gw_002": {"name": "SamplePay", "seq": 2, "source": "Central Database", "status": "Active", "updatedAt": "2026-10-16T00:55:00.000Z", "updatedBy": "Claude"}, "gw_004": {"name": "TestGate", "seq": 4, "source": "Central Database", "status": "Active", "updatedAt": "2026-10-16T00:55:00.000Z", "updatedBy": "Claude"}, "gw_005": {"name": "GoldDemo", "seq": 5, "source": "Central Database", "status": "Active", "updatedAt": "2026-10-16T00:55:00.000Z", "updatedBy": "Claude"}, "gw_001": {"name": "PayDemo", "seq": 1, "source": "Central Database", "status": "Active", "updatedAt": "2026-10-16T00:55:00.000Z", "updatedBy": "Claude"}}, "merchants": {"cd_m13": {"cdProject": "PHP", "code": "MCA-PHP-019", "company": "Auto Demo-Wing", "gwId": "gw_001", "location": "PHP", "source": "Central Database", "status": "Active", "updatedAt": "2026-10-16T00:55:00.000Z", "updatedBy": "Claude"}, "cd_m03": {"cdProject": "KH", "code": "MCA-KH-005 / MCA-KH-006", "company": "Bayon Wallet", "gwId": "gw_003", "location": "KH", "source": "Central Database", "status": "Active", "updatedAt": "2026-10-16T00:55:00.000Z", "updatedBy": "Claude"}, "cd_m02": {"cdProject": "KH", "code": "MCA-KH-003_C / MCA-KH-004_C", "company": "SamplePay Mekong", "gwId": "gw_002", "location": "KH", "source": "Central Database", "status": "Non-active", "updatedAt": "2026-10-16T00:55:00.000Z", "updatedBy": "Claude"}, "cd_m10": {"cdProject": "PHP", "code": "MCA-PHP-015", "company": "GoldDemo Gcash", "gwId": "gw_005", "location": "PHP", "source": "Central Database", "status": "Active", "updatedAt": "2026-10-16T00:55:00.000Z", "updatedBy": "Claude"}, "cd_m05": {"cdProject": "KH", "code": "MCA-KH-009_C", "company": "Lotus Auto collection", "gwId": "gw_006", "location": "KH", "source": "Central Database", "status": "Non-active", "updatedAt": "2026-10-16T00:55:00.000Z", "updatedBy": "Claude"}, "cd_m14": {"cdProject": "IJ Bingo", "code": "MCA-020_C / MCA-021_C", "company": "Coastal Pay", "gwId": "gw_007", "location": "KH", "source": "Central Database", "status": "Non-active", "updatedAt": "2026-10-16T00:55:00.000Z", "updatedBy": "Claude"}, "cd_m08": {"cdProject": "VN", "code": "MCA-VN-013", "company": "Silk Pay", "gwId": "gw_002", "location": "VN", "source": "Central Database", "status": "Active", "updatedAt": "2026-10-16T00:55:00.000Z", "updatedBy": "Claude"}, "cd_m06": {"cdProject": "KH", "code": "MCA-KH-010 / MCA-KH-011", "company": "TestGate Royal", "gwId": "gw_004", "location": "KH", "source": "Central Database", "status": "Active", "updatedAt": "2026-10-16T00:55:00.000Z", "updatedBy": "Claude"}, "cd_m01": {"cdProject": "KH", "code": "MCA-KH-001_C / MCA-KH-002", "company": "PayDemo Angkor", "gwId": "gw_001", "location": "KH", "source": "Central Database", "status": "Active", "updatedAt": "2026-10-16T00:55:00.000Z", "updatedBy": "Claude"}, "cd_m15": {"cdProject": "IJ Bingo", "code": "MCA-022 / MCA-023", "company": "Delta Pay Trading", "gwId": "gw_005", "location": "KH", "source": "Central Database", "status": "Active", "updatedAt": "2026-10-16T00:55:00.000Z", "updatedBy": "Claude"}, "cd_m12": {"cdProject": "PHP", "code": "MCA-PHP-017", "company": "GoldDemo OGC", "gwId": "gw_005", "location": "PHP", "source": "Central Database", "status": "Active", "updatedAt": "2026-10-16T00:55:00.000Z", "updatedBy": "Claude"}, "cd_m09": {"cdProject": "VN", "code": "MCA-VN-014", "company": "Phnom Pay", "gwId": "gw_003", "location": "VN", "source": "Central Database", "status": "Active", "updatedAt": "2026-10-16T00:55:00.000Z", "updatedBy": "Claude"}, "cd_m04": {"cdProject": "KH", "code": "MCA-KH-007 / MCA-KH-008", "company": "Riverside Media", "gwId": "gw_004", "location": "KH", "source": "Central Database", "status": "Active", "updatedAt": "2026-10-16T00:55:00.000Z", "updatedBy": "Claude"}, "cd_m11": {"cdProject": "PHP", "code": "MCA-PHP-016", "company": "GoldDemo Maya", "gwId": "gw_005", "location": "PHP", "source": "Central Database", "status": "Active", "updatedAt": "2026-10-16T00:55:00.000Z", "updatedBy": "Claude"}, "cd_m07": {"cdProject": "VN", "code": "MCA-VN-012", "company": "SB Demo Pay", "gwId": "gw_002", "location": "VN", "source": "Central Database", "status": "Active", "updatedAt": "2026-10-16T00:55:00.000Z", "updatedBy": "Claude"}, "cd_m16": {"cdProject": "IJ Bingo", "code": "MCA-024 / MCA-025", "company": "Orbit Auto", "gwId": "gw_007", "location": "KH", "source": "Central Database", "status": "Active", "updatedAt": "2026-10-16T00:55:00.000Z", "updatedBy": "Claude"}}, "log": {}, "docs": {}, "docdata": {}, "memos": {}}</script>
+<script>
+/* OFFLINE MODE: used only when opened outside Claude (no window.claude). Data is kept in this browser (localStorage) and starts from the dummy seed. */
+(function(){
+if(window.claude&&window.claude.use)return;
+var KEY='mm104_offline_db_v1';
+var SEED=JSON.parse(document.getElementById('offlineSeed').textContent);
+var store;
+try{var raw=localStorage.getItem(KEY);store=raw?JSON.parse(raw):null}catch(e){store=null}
+if(!store)store=JSON.parse(JSON.stringify(SEED));
+var persistT=null;
+function persist(){clearTimeout(persistT);persistT=setTimeout(function(){try{localStorage.setItem(KEY,JSON.stringify(store))}catch(e){}},50)}
+var subs={};
+function clone(o){return o==null?o:JSON.parse(JSON.stringify(o))}
+function snap(c){var o=store[c]||{};return{docs:Object.keys(o).map(function(id){return{id:id,exists:true,data:function(){return clone(o[id])}}}),size:Object.keys(o).length}}
+function notify(c){(subs[c]||[]).forEach(function(f){try{f(snap(c))}catch(e){}})}
+function split(p){var i=p.indexOf('/');return[p.slice(0,i),p.slice(i+1)]}
+function applyUpd(base,upd){var o=clone(base)||{};Object.keys(upd).forEach(function(k){var v=upd[k];if(v&&typeof v==='object'&&v.__delete__===true)delete o[k];else o[k]=clone(v)});return o}
+function doc(p){var a=split(p),c=a[0],id=a[1];return{
+  get:function(){return Promise.resolve({id:id,exists:!!(store[c]&&store[c][id]),data:function(){return clone((store[c]||{})[id])}})},
+  set:function(d){store[c]=store[c]||{};store[c][id]=applyUpd({},d);persist();notify(c);return Promise.resolve()},
+  update:function(u){if(!store[c]||!store[c][id])return Promise.reject(new Error('not-found'));store[c][id]=applyUpd(store[c][id],u);persist();notify(c);return Promise.resolve()},
+  delete:function(){if(store[c])delete store[c][id];persist();notify(c);return Promise.resolve()}}}
+function query(c,field,dir,lim){function res(){var s=snap(c);if(field){s.docs.sort(function(x,y){var a=x.data()[field],b=y.data()[field];return(a>b?1:a<b?-1:0)*(dir==='desc'?-1:1)})}if(lim)s.docs=s.docs.slice(0,lim);return s}return{onSnapshot:function(cb){var f=function(){cb(res())};(subs[c]=subs[c]||[]).push(f);setTimeout(f,0);return function(){subs[c]=(subs[c]||[]).filter(function(x){return x!==f})}},
+  orderBy:function(f,d){return query(c,f,d||'asc',lim)},
+  limit:function(n){return query(c,field,dir,n)},
+  get:function(){var s=snap(c);if(field){s.docs.sort(function(x,y){var a=x.data()[field],b=y.data()[field];return(a>b?1:a<b?-1:0)*(dir==='desc'?-1:1)})}if(lim)s.docs=s.docs.slice(0,lim);return Promise.resolve(s)}}}
+var DB={doc:doc,collection:function(c){var q=query(c);q.doc=function(id){return doc(c+'/'+id)};q.add=function(d){var id='a'+Math.random().toString(36).slice(2,12);return doc(c+'/'+id).set(d).then(function(){return{id:id}})};q.onSnapshot=function(cb){(subs[c]=subs[c]||[]).push(cb);setTimeout(function(){cb(snap(c))},0);return function(){subs[c]=(subs[c]||[]).filter(function(f){return f!==cb})}};return q}};
+var DL={save:function(o){return new Promise(function(res){var u=URL.createObjectURL(o.data),a=document.createElement('a');a.href=u;a.download=o.filename||'file';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(u);a.remove();res()},100)})}};
+window.claude={use:function(n){return Promise.resolve(n==='db'?DB:n==='downloads'?DL:null)}};
+document.addEventListener('DOMContentLoaded',function(){
+  
+});
+})();
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const pad=n=>String(n).padStart(2,'0');
+const todayStr=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+const fmtD=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||'');return m?`${+m[3]} ${MON[+m[2]-1]} ${m[1]}`:''};
+const fmtDT=iso=>{if(!iso)return '';const d=new Date(iso);if(isNaN(d))return '';return `${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())}`};
+const uniq=a=>[...new Set(a.filter(Boolean))].sort((x,y)=>x.localeCompare(y));
+const rid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function toast(t){const r=$('#toastRoot');r.innerHTML=`<div class="toast" role="status">${esc(t)}</div>`;clearTimeout(toast.t);toast.t=setTimeout(()=>r.innerHTML='',3000)}
+
+let db=null,dl=null,ME=null;
+const ACTS=[['edit','Add and edit records'],['files','Upload files and memos'],['delete','Delete memos and files'],['export','Excel export']];
+const posDefs=()=>{const L=((D.settings&&D.settings.positions)||{}).list||{},all=(typeof MENUS!=='undefined'?MENUS:[]).map(m=>m[0]);
+  const def={Admin:{menus:all,acts:ACTS.map(a=>a[0])},Editor:{menus:all,acts:['edit','files','delete','export']},Viewer:{menus:all,acts:[]}};
+  const o={};Object.keys(def).forEach(k=>o[k]=k!=='Admin'&&L[k]?{menus:L[k].menus||[],acts:L[k].acts||[],docs:L[k].docs,dk:L[k].dk||[]}:def[k]);
+  Object.keys(L).forEach(k=>{if(!def[k])o[k]={menus:L[k].menus||[],acts:L[k].acts||[],docs:L[k].docs,dk:L[k].dk||[]}});return o};
+const posNames=()=>Object.keys(posDefs());
+const rl=r=>r==='Admin'?'Master Admin':r;
+const can=p=>{if(!ME)return false;if(p==='view')return true;if(ME.role==='Admin')return true;if(p==='admin')return false;const q=posDefs()[ME.role];if(!q)return false;return p.startsWith('m:')?q.menus.includes(p.slice(2)):q.acts.includes(p)};
+const menuOk=k=>k==='users'||k==='access'||k==='lists'?can('admin'):can('m:'+(k==='mer'?'gw':k));
+const store={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
+const D={cpacc:{},docs:{},gateways:{},merchants:{},settings:{},memos:{},hist:{},log:{},users:{}};
+const READY={};
+const UI={tab:'dash',q:'',loc:'',st:'',gw:'',cpLoc:''};
+const CPA_URL='https://claude.ai/artifact/DnVkTpFsSLQVUzL9qp8qWF';
+const DEF_LOCS=['KH','PHP','VN','TW'];
+const STS=['Active','Non-active'];
+const locs=()=>{const s=D.settings.main;return s&&Array.isArray(s.locations)&&s.locations.length?s.locations:DEF_LOCS};
+const rows=c=>Object.entries(D[c]).map(([id,x])=>({...x,id}));
+const gwRows=()=>rows('gateways').filter(g=>!g.isCP&&g.id!=='cp');
+const cpDoc=()=>({name:'CP',isCP:true,seq:0,...(D.gateways.cp||{}),id:'cp'});
+const seqOf=g=>+g.seq||0;
+const gcode=g=>g&&seqOf(g)?'PG-'+String(seqOf(g)).padStart(3,'0'):'';
+const gLab=g=>g?(g.isCP?'CP':`${gcode(g)?gcode(g)+' · ':''}${g.name||''}`):'';
+const gwOf=m=>D.gateways[m.gwId];
+const mloc=m=>(m&&m.location)||(m&&gwOf(m)&&gwOf(m).location)||'';
+const NOLOC='__none',locLab=l=>l===NOLOC?'Location not set':l;
+const num=v=>v===''||v==null||isNaN(+v)?null:+v;
+const pc=v=>v==null||v===''?'<span class="faint">–</span>':(+v).toFixed(2).replace(/\.?0+$/,'')+'%';
+const pcTx=v=>v==null||v===''?'':(+v).toFixed(2).replace(/\.?0+$/,'')+'%';
+const stPill=s=>`<span class="pill ${s==='Active'?'g':'n'}">${esc(s||'Active')}</span>`;
+const txt=s=>s?esc(s):'<span class="faint">–</span>';
+function confirmP(msg,ok){return new Promise(res=>{const o=document.createElement('div');o.className='ov';o.style.zIndex=120;o.innerHTML=`<div class="modal" style="max-width:420px"><div class="body"><p style="margin:0 0 14px">${esc(msg)}</p><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" type="button" id="cfNo">Cancel</button><button class="btn pri" type="button" id="cfYes">${esc(ok||'Delete')}</button></div></div></div>`;document.body.appendChild(o);const done=v=>{o.remove();res(v)};o.querySelector('#cfNo').onclick=()=>done(false);o.querySelector('#cfYes').onclick=()=>done(true);o.addEventListener('mousedown',e=>{if(e.target===o)done(false)})})}
+function openModal(title,sub,body,footer){
+  $('#modalRoot').innerHTML=`<div class="ov" id="ov"><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><header><div><h2>${esc(title)}</h2>${sub?`<div class="faint">${sub}</div>`:''}</div><button class="x" type="button" id="mx" aria-label="Close">×</button></header><div class="body">${body}</div>${footer?`<footer>${footer}</footer>`:''}</div></div>`;
+  $('#mx').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal()});
+  document.onkeydown=e=>{if(e.key==='Escape'){if($('.light'))$('.light').remove();else closeModal()}};
+}
+const closeModal=()=>{$('#modalRoot').innerHTML='';document.onkeydown=null;UI.modal=null;if(ME&&typeof draw==='function')draw()};
+const canView=d=>/^image\//.test((d&&d.mime)||'')||/pdf/i.test((d&&d.mime)||'')||/\.pdf$/i.test((d&&d.name)||'');
+let PDFJS=null;
+async function loadPdfJs(){if(PDFJS)return PDFJS;const B='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+  const sc=u=>new Promise((ok,no)=>{const x=document.createElement('script');x.src=u;x.onload=ok;x.onerror=()=>no(new Error('Could not load '+u.split('/').pop()));document.head.appendChild(x)});
+  await sc(B+'pdf.min.js');await sc(B+'pdf.worker.min.js');
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc=B+'pdf.worker.min.js';PDFJS=window.pdfjsLib;return PDFJS}
+async function viewDoc(u,d){
+  if(/^image\//.test(d.mime||'')){lightbox(u);return}
+  const o=document.createElement('div');o.className='light';o.style.cssText+=';align-items:stretch;flex-direction:column;gap:8px';
+  o.innerHTML=`<div style="display:flex;gap:8px;align-items:center;color:#fff"><b style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d.name||'File')}</b><button class="btn sm" type="button" id="pvDl">Download</button><button class="btn sm" type="button" id="pvX">Close</button></div><div id="pvBody" style="flex:1;overflow:auto;background:#525659;border-radius:8px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:10px"><span style="color:#fff">Opening…</span></div>`;
+  document.body.appendChild(o);const X=()=>o.remove();o.querySelector('#pvX').onclick=X;
+  o.querySelector('#pvDl').onclick=async()=>{try{await dl.save({filename:d.name,data:dataToBlob(u)});toast('File ready.')}catch(e){if(!e||e.code!=='declined')toast('Could not download the file.')}};
+  const body=o.querySelector('#pvBody');
+  try{const L=await loadPdfJs();const bin=atob(u.split(',')[1]||'');const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);
+    const pdf=await L.getDocument({data:a}).promise;body.innerHTML='';
+    for(let n=1;n<=pdf.numPages;n++){const pgx=await pdf.getPage(n);const vp0=pgx.getViewport({scale:1});const wd=Math.min(body.clientWidth-20,900);const sc=wd/vp0.width,vp=pgx.getViewport({scale:sc*(window.devicePixelRatio||1)});
+      const c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;c.style.cssText=`width:${wd}px;max-width:100%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.4)`;body.appendChild(c);await pgx.render({canvasContext:c.getContext('2d'),viewport:vp}).promise}
+  }catch(e){body.innerHTML='<span style="color:#fff">This file could not be shown here. Use Download to open it.<br><small>'+esc(String((e&&e.message)||e))+'</small></span>'}}
+function lightbox(src){const d=document.createElement('div');d.className='light';d.innerHTML=`<img alt="Picture" src="${src}">`;d.onclick=()=>d.remove();document.body.appendChild(d)}
+async function logH(kind,targetId,label,action,detail,extra){try{await db.collection('hist').doc(rid('h')).set({at:new Date().toISOString(),by:ME.u,byName:ME.name,kind,targetId,label,action,detail:detail||'',...(extra||{})})}catch(e){}}
+async function logAct(action,target,detail){try{await db.collection('log').doc(rid('l')).set({at:new Date().toISOString(),by:ME?ME.u:'',name:ME?ME.name:'',action,target,detail:detail||''})}catch(e){}}
+async function saveX(sheets,filename){
+  if(!window.XLSX||!dl){toast('Download is not available here.');return}
+  const wb=XLSX.utils.book_new();
+  sheets.forEach(s=>{const ws=XLSX.utils.aoa_to_sheet(s.rows);ws['!cols']=s.rows[0].map(h=>({wch:Math.max(14,Math.min(44,String(h).length+4))}));XLSX.utils.book_append_sheet(wb,ws,s.name)});
+  try{const buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});await dl.save({filename,data:new Blob([buf])});toast('File ready.')}catch(e){if(!e||e.code!=='declined')toast('Could not save the file.')}
+}
+
+/* ---------- fields ---------- */
+/* ---------- fields ---------- */
+const GW_F=[['name','Gateway name','text',1],['status','Status','st'],['picName','PIC name','text'],['picPhone','Phone number','text'],['picTelegram','Telegram number','text'],['picEmail','Email','text'],['picWhatsapp','WhatsApp number','text'],['picOther','Other communication channel (if any)','text',1],['generalInfo','General info','area']];
+const MR_F=[['code','Code (MCA)','text'],['company','Company','text',1],['companyCode','Company code','text'],['gwId','Payment gateway','gw'],['status','Status','st'],['location','Location','loc'],
+ ['picName','Company PIC name','text'],
+ ['contractStart','Contract start date','date'],['contractEnd','Contract expiry date','date']];
+const CO_CODE=[['companyCode','Code Company','text']];
+const CCH=[['cPicPhone','Phone number','text'],['cPicTelegram','Telegram number','text'],['cPicEmail','Email','text'],['cPicWhatsapp','WhatsApp number','text'],['cPicOther','Other communication channel (if any)','text',1]];
+const MCH=[['picPhone','Phone number','text'],['picTelegram','Telegram number','text'],['picEmail','Email','text'],['picWhatsapp','WhatsApp number','text'],['picOther','Other communication channel (if any)','text',1]];
+const cpList=()=>{const x=D.settings.cpActive;return x&&Array.isArray(x.rows)?x:{rows:[]}};
+const DEF_CPRULE={project:{'Taiwan':'TW','Taiwan-B777':'TW'},holder:{'TW-OP':'TW','PSS-KH':'KH','PSS-KH2':'KH'}};
+const cpRule=()=>{const x=D.settings.cpRule;return x&&x.project&&x.holder?x:DEF_CPRULE};
+const cpAuto=r=>{const k=cpRule();return (r.project&&k.project[r.project])||(r.holder&&k.holder[r.holder])||''};
+const cpLocOf=r=>((D.cpacc[r.code]&&D.cpacc[r.code].location)||cpAuto(r)||'');
+const cpFilt=()=>cpList().rows.filter(r=>!UI.cpLoc||(UI.cpLoc===NOLOC?!cpLocOf(r):cpLocOf(r)===UI.cpLoc));
+const cpGroups=()=>{const g={};cpFilt().forEach(r=>{(g[r.bank||'Other']=g[r.bank||'Other']||[]).push(r)});return Object.entries(g).sort((a,b)=>a[0].localeCompare(b[0]))};
+function cpHtml(w){const L=cpList(),G=cpGroups();
+  const head=`<h3>Banks with active accounts (${G.length})</h3><div class="faint" style="margin:2px 0 8px">${L.rows.length?`${L.rows.length} active accounts, taken from the CPA Control System${L.dataDate?`, CPA data date ${esc(fmtD(L.dataDate))}`:''}. Copied on ${esc(fmtDT(L.loadedAt))}${L.loadedBy?` by ${esc(L.loadedBy)}`:''}. Only accounts with status Active.`:'Not loaded yet.'}</div>`;
+  const rowsAll=cpList().rows,nAll=rowsAll.length,cnt=l=>rowsAll.filter(r=>l===NOLOC?!cpLocOf(r):cpLocOf(r)===l).length;
+  const chipL=[...locs(),...uniq(rowsAll.map(cpLocOf).filter(x=>x&&!locs().includes(x)))];
+  const chips=nAll?`<div class="seg" style="margin:0 0 10px" role="tablist" aria-label="Location">${[['','All',nAll],...chipL.map(l=>[l,l,cnt(l)]),[NOLOC,'Location not set',cnt(NOLOC)]].filter((x,k)=>k===0||x[2]>0||x[0]===UI.cpLoc).map(([v,l,n])=>`<button type="button" class="locb ${UI.cpLoc===v?'on':''}" data-cploc="${esc(v)}">${esc(l)}<small>${n}</small></button>`).join('')}${can('admin')?'<span class="sp"></span><button type="button" class="btn sm" id="cpRuleBtn">Location rule</button>':''}</div><div class="faint" style="margin:-4px 0 8px">Location comes from the CPA project or holder (see Location rule). It follows CPA when the list is refreshed.</div>`:'';
+  const body=G.length?`<div class="tbox"><table class="t" style="min-width:0"><thead><tr><th>No.</th><th>Bank</th><th>Active accounts</th></tr></thead><tbody>${G.map(([bank,rs],i)=>`<tr class="row" tabindex="0" data-bank="${esc(bank)}"><td class="mono"><b>${i+1}</b></td><td><b>${esc(bank)}</b></td><td class="n">${rs.length}</td></tr>`).join('')}</tbody></table></div><div class="faint" style="margin-top:6px">Click a bank to see its accounts, then an account to see its PIC, contract and memo.</div>`:'';
+  return `<div id="cpBox">${head}${chips}${body}<div class="hint" style="margin-top:8px">Account numbers and balances are not kept here. Open an account to reach it in the CPA Control System.</div><div class="err" id="cpErr" role="alert"></div></div>`}
+const chanHtml=g=>[['Phone',g.picPhone],['Telegram',g.picTelegram],['Email',g.picEmail],['WhatsApp',g.picWhatsapp],['Other',g.picOther]].filter(x=>x[1]).map(x=>`<div><span class="faint">${x[0]}</span> ${esc(x[1])}</div>`).join('')||'<span class="faint">–</span>';
+const CHK=['picPhone','picTelegram','picEmail','picWhatsapp','picOther'];
+const CDRO=['name','status','code','company','gwId','location','companyCode'];
+const isCD=o=>o&&o.source==='Central Database';
+const roG=(o,f)=>(isCD(o)||o.isCP)&&CDRO.includes(f[0]);
+const EXPIRY_DAYS=30;
+const dayDiff=(a,b)=>Math.round((Date.parse(a+'T00:00:00Z')-Date.parse(b+'T00:00:00Z'))/864e5);
+const expOf=m=>{if(!m||!m.contractEnd)return null;const d=dayDiff(m.contractEnd,todayStr());return d<0?{k:'x',d,t:'Expired '+(-d)+(d===-1?' day ago':' days ago')}:d<=EXPIRY_DAYS?{k:'s',d,t:d===0?'Expires today':'Expires in '+d+(d===1?' day':' days')}:{k:'o',d,t:''}};
+const expPill=m=>{const e=expOf(m);return e&&e.k!=='o'?`<span class="pill ${e.k==='x'?'r':'a'}">${esc(e.t)}</span>`:''};
+const nf=v=>v==null||v===''?'':Number(v).toLocaleString('en-US',{maximumFractionDigits:2});
+const mLab=m=>m?`${m.code?m.code+' · ':''}${m.company||''}`:'';
+const rateOf=m=>{const r=(m&&m.rate)||{};return {currency:r.currency||[],tiers:r.tiers||[],fees:r.fees||[],depMin:r.depMin,depMax:r.depMax,wdMin:r.wdMin,wdMax:r.wdMax,setUnit:r.setUnit||'',setN:r.setN,other:r.other||'',collPct:r.collPct,wdPct:r.wdPct}};
+const rkind=m=>{const g=m&&(m.gw||gwOf(m)),n=((g&&g.name)||'').toLowerCase().replace(/\s+/g,'');return n.includes('pipay')?'pipay':n.includes('lnw')?'lnw':'full'};
+const tierLab=t=>t?`${nf(t.from)||'0'} – ${t.to!=null&&t.to!==''?nf(t.to):'and above'}`:'';
+const rng=(m,k)=>{if(rkind(m)==='lnw'){const x=rateOf(m)[k==='ci'?'collPct':'wdPct'];return x==null||x===''?'<span class="faint">–</span>':pcTx(+x)}const v=rateOf(m).tiers.map(t=>t[k]).filter(x=>x!=null&&x!=='').map(Number);if(!v.length)return '<span class="faint">–</span>';const a=Math.min(...v),b=Math.max(...v);return a===b?pcTx(a):pcTx(a)+' – '+pcTx(b)};
+const setTxt=r=>r.setUnit&&r.setN!=null&&r.setN!==''?`Every ${r.setN} ${r.setUnit.toLowerCase()}${+r.setN===1?'':'s'}`:'';
+function mRows(){return rows('merchants').map(m=>({...m,gw:gwOf(m)}))}
+function mFilt(list){
+  const q=UI.q.toLowerCase();
+  return list.filter(m=>(!UI.loc||(UI.loc===NOLOC?!mloc(m):mloc(m)===UI.loc))&&(!UI.st||(m.status||'Active')===UI.st)&&(!UI.gw||m.gwId===UI.gw)
+    &&(!q||[m.code,m.company,m.companyCode,gLab(m.gw),m.picName,m.picPhone,m.picTelegram,m.picEmail,m.picWhatsapp,m.picOther].join(' ').toLowerCase().includes(q)));
+}
+const searchBox=ph=>`<label class="f" style="flex:1;min-width:180px">Search<input class="i" id="fq" type="search" value="${esc(UI.q)}" placeholder="${esc(ph)}"></label>`;
+const selBox=(id,label,val,opts)=>`<label class="f">${label}<select class="i" id="${id}"><option value="">All</option>${opts.map(([v,l])=>`<option value="${esc(v)}" ${v===val?'selected':''}>${esc(l)}</option>`).join('')}</select></label>`;
+const emptyRow=(n,t,s)=>`<tr><td colspan="${n}" class="empty"><b>${t}</b>${s||''}</td></tr>`;
+
+/* ---------- dashboard ---------- */
+const CPAL=['var(--steel)','var(--green)','#C8921B','#1F9D8F','#7C5CFA','var(--red)','var(--faint)'];
+function donutSvg(items,tot,lab){const R=62,C=2*Math.PI*R,sum=items.reduce((a,x)=>a+x.v,0);let off=0;
+  const arcs=sum?items.filter(x=>x.v>0).map(x=>{const len=x.v/sum*C,a=`<circle cx="80" cy="80" r="${R}" fill="none" stroke="${x.c}" stroke-width="22" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 80 80)"/>`;off+=len;return a}).join(''):`<circle cx="80" cy="80" r="${R}" fill="none" stroke="var(--line2)" stroke-width="22"/>`;
+  return `<svg width="160" height="160" viewBox="0 0 160 160" role="img" aria-label="${esc(lab)}">${arcs}<text x="80" y="82" text-anchor="middle" class="tot">${tot}</text><text x="80" y="98" text-anchor="middle" class="tl">${esc(lab)}</text></svg>`}
+const donutBox=(title,sub,items,lab)=>{const tot=items.reduce((a,x)=>a+x.v,0);return `<div class="cbox"><h3>${esc(title)}</h3><div class="sub">${esc(sub)}</div><div class="dnw">${donutSvg(items,tot,lab)}<div class="leg">${items.map(x=>`<div ${x.loc!=null?`data-loc="${esc(x.loc)}"`:''}><i style="background:${x.c}"></i>${esc(x.l)}<b>${x.v}${tot?` <span class="faint" style="font-weight:400">${Math.round(x.v/tot*100)}%</span>`:''}</b></div>`).join('')}</div></div></div>`};
+const barsBox=(title,sub,rowsA,empty)=>{const mx=Math.max(1,...rowsA.map(r=>r.parts.reduce((a,p)=>a+p.v,0)));return `<div class="cbox"><h3>${esc(title)}</h3><div class="sub">${esc(sub)}</div>${rowsA.length?rowsA.map(r=>{const t=r.parts.reduce((a,p)=>a+p.v,0);return `<div class="brow"><span>${esc(r.l)}</span><div class="tr">${r.parts.map(p=>`<span style="width:${p.v/mx*100}%;background:${p.c}"></span>`).join('')}</div><span class="n">${esc(r.n!=null?r.n:t)}</span></div>`}).join(''):`<div class="faint">${esc(empty||'No data yet.')}</div>`}</div>`};
+function dashView(){
+  const gs=gwRows(),ms=rows('merchants'),cps=rows('cpacc');
+  const act=x=>(x.status||'Active')==='Active';
+  const gr=gs.filter(g=>!g.pending),gp=gs.length-gr.length,ga=gr.filter(act).length,ma=ms.filter(act).length;
+  const L=locs();
+  const msIn=(g,l)=>ms.filter(m=>m.gwId===g.id&&mloc(m)===l);
+  const byLoc=L.map(l=>{const g=gs.filter(x=>x.location===l||msIn(x,l).length),m=ms.filter(x=>mloc(x)===l);return {l,g:g.length,m:m.length,a:m.filter(act).length}});
+  const noLocMs=ms.filter(m=>!mloc(m));
+  const ex=(d)=>{if(!d)return null;const n=dayDiff(d,todayStr());return n<=EXPIRY_DAYS?{n,t:n<0?'Expired '+(-n)+(n===-1?' day ago':' days ago'):n===0?'Expires today':'Expires in '+n+(n===1?' day':' days')}:null};
+  const exp=[];
+  ms.forEach(m=>{[['MCA','contractEnd'],['Company','cContractEnd']].forEach(([k,f])=>{const e=ex(m[f]);if(e&&(k==='Company'||act(m)))exp.push({kind:k,name:mLab(m),date:m[f],e,att:'data-m="'+esc(m.id)+'"'})})});
+  cps.forEach(c=>{const r=cpAccOf(c.id);if(!r)return;[['CP account','contractEnd'],['CP company','cContractEnd']].forEach(([k,f])=>{const e=ex(c[f]);if(e)exp.push({kind:k,name:r.code+' · '+(r.name||''),date:c[f],e,att:'data-cp="'+esc(c.id)+'"'})})});
+  exp.sort((a,b)=>a.e.n-b.e.n);
+  const miss=[];
+  ms.filter(act).forEach(m=>{const x=[];
+    if(!m.picName)x.push('MCA PIC');
+    if(!contractDocs(m.id,'merchants').length)x.push('MCA contract file');
+    if(!m.cPicName)x.push('Company PIC');
+    if(!contractDocs(m.id,'companies').length)x.push('Company contract file');
+    if(rkind(m)==='lnw'?(rateOf(m).collPct==null&&rateOf(m).wdPct==null):!rateOf(m).tiers.length)x.push('Rate');
+    if(x.length)miss.push({m,x})});
+  const cnt=k=>miss.filter(z=>z.x.includes(k)).length;
+  const hs=[...rows('hist'),...rows('log').map(l=>({at:l.at,byName:l.name,kind:'Activity',label:l.target||'',action:l.action,detail:l.detail}))].sort((a,b)=>(b.at||'').localeCompare(a.at||'')).slice(0,10);
+  const dLoc=[...byLoc.map((x,i)=>({l:x.l,v:x.m,c:CPAL[i%4],loc:x.l})),{l:'Location not set',v:noLocMs.length,c:'var(--faint)',loc:NOLOC}];
+  const dSt=[{l:'Active',v:ma,c:'var(--green)'},{l:'Non-active',v:ms.length-ma,c:'var(--faint)'}];
+  const gwBars=gr.map(g=>{const l=ms.filter(m=>m.gwId===g.id);const a=l.filter(act).length;return {l:g.name||'',parts:[{v:a,c:'var(--steel)'},{v:l.length-a,c:'var(--faint)'}],n:a+' active / '+l.length}}).filter(r=>r.parts[0].v+r.parts[1].v>0).sort((a,b)=>(b.parts[0].v+b.parts[1].v)-(a.parts[0].v+a.parts[1].v));
+  const bk={ex:0,s30:0,s90:0,ok:0,none:0};
+  ms.filter(act).forEach(m=>{const d=m.contractEnd;if(!d){bk.none++;return}const n=dayDiff(d,todayStr());if(n<0)bk.ex++;else if(n<=30)bk.s30++;else if(n<=90)bk.s90++;else bk.ok++});
+  const expBars=[['Expired',bk.ex,'var(--red)'],['Within 30 days',bk.s30,'var(--amber)'],['31 – 90 days',bk.s90,'#C8921B'],['More than 90 days',bk.ok,'var(--green)'],['No date set',bk.none,'var(--faint)']].map(([l,v,c])=>({l,parts:[{v,c}]}));
+  const mk=['MCA PIC','MCA contract file','Company PIC','Company contract file','Rate'];
+  const missBars=mk.map(k=>({l:k,parts:[{v:cnt(k),c:'var(--amber)'}],n:cnt(k)+' of '+ma}));
+  const charts=`<div class="cgrid">${donutBox('MCAs by location','All MCAs',dLoc,'MCAs')}${donutBox('MCA status','Active and non-active',dSt,'MCAs')}${barsBox('MCAs per payment gateway','Active (blue) and non-active (grey)',gwBars)}${barsBox('Contract expiry (active MCAs)','How far away each MCA contract ends',expBars)}${barsBox('Missing information','Active MCAs still missing this item',missBars)}</div>`;
+  return `<div class="defbox"><b>Information only.</b> This dashboard shows counts, charts, contract dates and what is still missing. It holds no balances or money figures.</div>
+  <div class="cards">
+    <div class="card" data-go="gw"><span class="k">Payment gateways</span><span class="v">${gr.length}</span><span class="m">${ga} active · ${gr.length-ga} non-active${gp?` · ${gp} not in the Central Database yet`:''}</span></div>
+    <div class="card" data-go="gw"><span class="k">MCAs</span><span class="v">${ms.length}</span><span class="m">${ma} active · ${ms.length-ma} non-active</span></div>
+    ${byLoc.map(x=>`<div class="card" data-loc="${esc(x.l)}"><span class="k">${esc(x.l)}</span><span class="v">${x.m}</span><span class="m">MCA${x.m===1?'':'s'} (${x.a} active) · ${x.g} gateway${x.g===1?'':'s'}</span></div>`).join('')}
+    <div class="card" data-loc="${NOLOC}"><span class="k">Location not set</span><span class="v">${noLocMs.length}</span><span class="m">MCA${noLocMs.length===1?'':'s'} with no location in the Central Database</span></div>
+    <div class="card" ${exp.length?'style="border-color:var(--amber)"':''}><span class="k">Contracts to check</span><span class="v">${exp.length}</span><span class="m">Expired or ending within ${EXPIRY_DAYS} days</span></div>
+  </div>
+  ${charts}
+  <div class="sec"><h2>Company list and rates (CI / CO)</h2><div class="tbox" style="margin-top:8px"><table class="t" style="min-width:760px"><thead><tr><th>Code Company</th><th>Company</th><th>Payment gateway</th><th>Location</th><th>Status</th><th>CI fee %</th><th>CO fee %</th></tr></thead><tbody>
+  ${ms.length?ms.slice().sort((x,y)=>(x.companyCode||'').localeCompare(y.companyCode||'')).map(m=>`<tr class="row" tabindex="0" data-m="${esc(m.id)}"><td class="mono">${esc(m.companyCode||'')||'<span class="faint">–</span>'}</td><td><b>${esc(m.company||'')||'<span class="faint">–</span>'}</b></td><td>${gwOf(m)?esc(gwOf(m).name||''):'<span class="faint">–</span>'}</td><td>${mloc(m)?esc(mloc(m)):'<b>Location not set</b>'}</td><td>${stPill(m.status||'Active')}</td><td>${rng(m,'ci')}</td><td>${rng(m,'co')}</td></tr>`).join(''):emptyRow(7,'No MCAs yet.')}
+  </tbody></table></div><div class="faint" style="margin-top:6px">Click a row to open the MCA and its Company tab. A range means the fee changes by amount tier.</div></div>
+  <div class="sec" style="margin-top:20px"><h2>Contracts expiring soon</h2><div class="tbox" style="margin-top:8px"><table class="t" style="min-width:600px"><thead><tr><th>Type</th><th>Record</th><th>Contract expiry</th><th>When</th></tr></thead><tbody>
+  ${exp.length?exp.map(z=>`<tr class="row" tabindex="0" ${z.att}><td>${esc(z.kind)}</td><td><b>${esc(z.name)}</b></td><td class="mono">${esc(fmtD(z.date))}</td><td><span class="pill ${z.e.n<0?'r':'a'}">${esc(z.e.t)}</span></td></tr>`).join(''):emptyRow(4,'No contracts expired or ending in the next '+EXPIRY_DAYS+' days.')}
+  </tbody></table></div></div>
+  <div class="sec" style="margin-top:20px"><h2>Missing information (active MCAs)</h2>
+  <div class="faint" style="margin:4px 0 8px">${['MCA PIC','MCA contract file','Company PIC','Company contract file','Rate'].map(k=>`${k}: <b>${cnt(k)}</b>`).join(' · ')}</div>
+  <div class="tbox"><table class="t" style="min-width:600px"><thead><tr><th>MCA</th><th>Gateway</th><th>Still missing</th></tr></thead><tbody>
+  ${miss.length?miss.map(z=>`<tr class="row" tabindex="0" data-m="${esc(z.m.id)}"><td><b>${esc(mLab(z.m))}</b></td><td>${gwOf(z.m)?esc(gwOf(z.m).name||''):'<span class="faint">–</span>'}</td><td>${z.x.map(t=>`<span class="pill a">${esc(t)}</span>`).join(' ')}</td></tr>`).join(''):emptyRow(3,'Nothing is missing for the active MCAs.')}
+  </tbody></table></div></div>
+  ${(()=>{const L=rows('memos').slice().sort((a,b)=>(b.at||'').localeCompare(a.at||''));
+   const info=m=>{if(m.gwId){const g=D.gateways[m.gwId];return {t:'Payment gateway',n:g?(g.name||m.gwId):'(deleted)',att:g?`data-gwm="${esc(m.gwId)}"`:''}}if(m.mcaId||m.coId){const x=D.merchants[m.mcaId||m.coId];return {t:m.mcaId?'MCA':'MCA · Company tab',n:x?mLab({...x}):'(deleted)',att:x?`data-m="${esc(m.mcaId||m.coId)}"`:''}}
+    const c=m.cpId||m.cpCoId;if(c){const r=cpAccOf(c);return {t:m.cpId?'CP account':'CP company',n:r?(r.code+(r.name?' · '+r.name:'')):c,att:`data-cp="${esc(c)}"`}}return {t:'–',n:'',att:''}};
+   return `<div class="sec" style="margin-top:20px"><h2>All memos (${L.length})</h2><div class="tbox" style="margin-top:8px"><table class="t" style="min-width:760px"><thead><tr><th>Date and time</th><th>About</th><th>Record</th><th>Memo</th><th>By</th></tr></thead><tbody>
+   ${L.length?L.map(m=>{const i=info(m);return `<tr class="row" tabindex="0" ${i.att}><td class="mono">${esc(fmtDT(m.at))}</td><td>${esc(i.t)}</td><td><b>${esc(i.n)}</b></td><td class="wrap">${esc(m.text||'')}${m.fileName?` <span class="pill a">${esc(m.fileName)}</span>`:''}</td><td>${esc(m.byName||'')}</td></tr>`}).join(''):emptyRow(5,'No memos yet.')}
+   </tbody></table></div></div>`})()}`;
+}
+function dashViewOld(){
+  const gs=gwRows(),ms=mRows(),ga=gs.filter(g=>(g.status||'Active')==='Active').length,ma=ms.filter(m=>(m.status||'Active')==='Active').length;
+  const L=locs();
+  const byLoc=L.map(l=>{const g=gs.filter(x=>x.location===l||ms.some(m=>m.gwId===x.id&&mloc(m)===l));return {l,n:g.length,m:ms.filter(m=>mloc(m)===l).length}});
+  const none=ms.filter(m=>!mloc(m)).length;
+  const soon=ms.filter(m=>{const e=expOf(m);return e&&e.k!=='o'&&(m.status||'Active')==='Active'});
+  const list=ms.slice().sort((a,b)=>(a.company||'').localeCompare(b.company||''));
+  return `<div class="defbox"><b>Information only.</b> This page holds contacts, contracts and rates for the payment gateways and their MCAs. It does not hold balances or any money figures.</div>
+  <div class="cards">
+    <div class="card" data-go="gw"><span class="k">Payment gateways</span><span class="v">${gs.length}</span><span class="m">${ga} active · ${gs.length-ga} non-active</span></div>
+    <div class="card" data-go="mer"><span class="k">MCAs</span><span class="v">${ms.length}</span><span class="m">${ma} active · ${ms.length-ma} non-active</span></div>
+    ${byLoc.map(x=>`<div class="card" data-loc="${esc(x.l)}"><span class="k">${esc(x.l)}</span><span class="v">${x.n}</span><span class="m">${x.n===1?'gateway':'gateways'} · ${x.m} MCA${x.m===1?'':'s'}</span></div>`).join('')}
+    <div class="card" data-go="mer" ${soon.length?'style="border-color:var(--amber)"':''}><span class="k">Contracts to check</span><span class="v ${soon.length?'bad':''}">${soon.length}</span><span class="m">Expired or expiring within ${EXPIRY_DAYS} days (active MCAs)</span></div>
+    <a class="card" href="${CPA_URL}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:inherit"><span class="k">CP · manual accounts ↗</span><span class="v">–</span><span class="m">Opens the CPA system. Go to Accounts, then AGS, for the active accounts in use per bank. Nothing from CPA is copied here.</span></a>
+  </div>
+  ${none?`<div class="warn">${none} MCA(s) have no location yet. They are under the "Location not set" button on the Payment gateways page.</div>`:''}
+  <div class="sec"><h2>MCA list and rates</h2>
+  <div class="tbox"><table class="t" style="min-width:980px"><thead><tr><th>Code (MCA)</th><th>Company</th><th>Gateway</th><th>Loc.</th><th>Status</th><th>Contract expiry</th><th class="n">CI fee</th><th class="n">CO fee</th></tr></thead><tbody>
+  ${list.length?list.map(m=>`<tr class="row" tabindex="0" data-m="${esc(m.id)}"><td class="mono"><b>${esc(m.code||'')}</b></td><td><b>${esc(m.company||'')}</b>${m.companyCode?`<div class="faint mono">${esc(m.companyCode)}</div>`:''}</td><td>${txt(m.gw?m.gw.name:'')}</td><td>${txt(mloc(m))}</td><td>${stPill(m.status)}</td><td>${m.contractEnd?esc(fmtD(m.contractEnd)):'<span class="faint">–</span>'} ${expPill(m)}</td><td class="n">${rng(m,'ci')}</td><td class="n">${rng(m,'co')}</td></tr>`).join(''):emptyRow(8,'No MCAs yet.',can('edit')?'Add a payment gateway first, then add its MCAs.':'')}
+  </tbody></table></div>
+  <div class="note">CI is Cash In and CO is Cash Out. The fee column shows the lowest and highest rate across the volume ranges. Open an MCA to see every range. A dash means it has not been entered yet.</div></div>`;
+}
+
+/* ---------- gateways: location buttons, then the list ---------- */
+function gwView(){
+  const all=gwRows(),ms=rows('merchants');
+  const L=[...locs(),...uniq([...ms.map(mloc),...all.map(g=>g.location)].filter(x=>x&&!locs().includes(x)))];
+  const hasNone=ms.some(m=>!mloc(m))||all.some(g=>!g.location&&!ms.some(m=>m.gwId===g.id));
+  const B=hasNone?[...L,NOLOC]:L;
+  if(!UI.loc||!B.includes(UI.loc))UI.loc=B[0];
+  const msIn=(g,l)=>ms.filter(m=>m.gwId===g.id&&(l===NOLOC?!mloc(m):mloc(m)===l));
+  const inLoc=(g,l)=>l===NOLOC?(!g.location&&(!ms.some(m=>m.gwId===g.id)||msIn(g,l).length>0)):(g.location===l||msIn(g,l).length>0);
+  const gl=all.filter(g=>inLoc(g,UI.loc)).sort((a,b)=>seqOf(a)-seqOf(b));
+  const nlMs=ms.filter(m=>!mloc(m)).sort((a,b)=>(a.code||a.company||'').localeCompare(b.code||b.company||'')),nlGw=all.filter(g=>!g.location&&!ms.some(m=>m.gwId===g.id)).sort((a,b)=>seqOf(a)-seqOf(b));
+  return `<div class="toolbar"><div class="seg" role="tablist" aria-label="Location">${B.map(l=>`<button type="button" class="locb ${l===UI.loc?'on':''}" data-pickloc="${esc(l)}" role="tab" aria-selected="${l===UI.loc}">${esc(locLab(l))}<small>${l===NOLOC?nlMs.length+nlGw.length:all.filter(g=>inLoc(g,l)).length}</small></button>`).join('')}</div><span class="cpdiv" aria-hidden="true"></span><button type="button" class="locb cpb" id="cpBtn">CP <span class="faint" style="font:500 12px var(--body)">CPA accounts</span><small>${cpGroups().length} banks</small></button>${can('admin')?'<button class="btn" type="button" id="addLoc">+ Location</button>':''}<span class="sp"></span>${can('export')?'<button class="btn" type="button" id="xGw">Excel</button>':''}</div>
+  <div class="defbox"><b>Source:</b> gateways and MCAs come from the Central Database and cannot be changed here. <b>How to read this:</b> 1. Location button (above) → 2. Payment gateway (below). CP is separate: use the CP button after the locations → 3. Click a gateway: its MCA list → 4. Click an MCA: company PIC, communication channels, contract file and dates, memo, and Rate → 5. Rate: CI / CO %, fees, limits, currency, settlement and the before → now history. Blank means the Central Database has no data yet.</div>
+  ${UI.loc===NOLOC?`<div class="hint" style="margin:0 0 8px">These MCAs have no location in the Central Database yet. Click one to open it.</div><div class="tbox"><table class="t" style="min-width:820px"><thead><tr><th>No.</th><th>Code (MCA)</th><th>Company</th><th>Payment gateway</th><th>Status</th></tr></thead><tbody>
+  ${nlMs.length?nlMs.map((m,i)=>`<tr class="row" tabindex="0" data-m="${esc(m.id)}"><td class="mono"><b>${i+1}</b></td><td class="mono"><b>${esc(m.code||'–')}</b></td><td>${esc(m.company||'')}</td><td>${gwOf(m)?esc(gLab(gwOf(m))):'<span class="faint">–</span>'}</td><td>${stPill(m.status)}</td></tr>`).join(''):emptyRow(5,'Every MCA has a location.')}
+  </tbody></table></div>
+  ${nlGw.length?`<div class="hint" style="margin:14px 0 8px">Payment gateways with no MCA yet</div><div class="tbox"><table class="t" style="min-width:0"><thead><tr><th>No.</th><th>Payment gateway</th><th>Status</th></tr></thead><tbody>${nlGw.map((g,i)=>`<tr class="row" tabindex="0" data-g="${esc(g.id)}"><td class="mono"><b>${i+1}</b> <span class="faint">${esc(gcode(g))}</span></td><td><b>${esc(g.name||'')}</b>${g.pending?'<div class="faint">Not in the Central Database yet</div>':''}</td><td>${g.pending?'<span class="faint">–</span>':stPill(g.status)}</td></tr>`).join('')}</tbody></table></div>`:''}`:`
+  <div class="tbox"><table class="t" style="min-width:820px"><thead><tr><th>No.</th><th>Payment gateway</th><th>Status</th><th>MCAs in this location</th></tr></thead><tbody>
+  ${gl.length?gl.map((g,i)=>`<tr class="row" tabindex="0" data-g="${esc(g.id)}"><td class="mono"><b>${i+1}</b> <span class="faint">${esc(gcode(g))}</span></td><td><b>${esc(g.name||'')}</b>${g.pending?'<div class="faint">Not in the Central Database yet</div>':''}</td><td>${g.pending?'<span class="faint">–</span>':stPill(g.status)}</td><td>${(()=>{const x=msIn(g,UI.loc);return x.length?`<b>${x.length}</b>${x.map(m=>`<div class="faint">${esc(m.code||'–')} · ${esc(m.company||'')}</div>`).join('')}`:'<span class="faint">0</span>'})()}</td></tr>`).join(''):emptyRow(4,'No payment gateways in '+esc(locLab(UI.loc))+' yet.',can('edit')?'Press "+ Add gateway" to add one.':'')}
+  </tbody></table></div>`}`;
+}
+function fieldHtml(prefix,[k,l,t,full],o,w){
+  const id=prefix+k,dis=w?'':'disabled',cls=full?' full':'';
+  if(t==='area')return `<label class="f full">${l}<textarea class="i" id="${id}" ${dis}>${esc(o[k]||'')}</textarea></label>`;
+  if(t==='loc'){const L=[...locs(),...(o[k]&&!locs().includes(o[k])?[o[k]]:[])];return `<label class="f${cls}">${l}<select class="i" id="${id}" ${dis}>${['<option value="">Not set</option>',...L.map(x=>`<option ${o[k]===x?'selected':''}>${esc(x)}</option>`)].join('')}</select></label>`}
+  if(t==='st')return `<label class="f${cls}">${l}<select class="i" id="${id}" ${dis}>${STS.map(x=>`<option ${(o[k]||'Active')===x?'selected':''}>${x}</option>`).join('')}</select></label>`;
+  if(t==='gw')return `<label class="f${cls}">${l}<select class="i" id="${id}" ${dis}><option value="">Choose…</option>${gwRows().sort((a,b)=>seqOf(a)-seqOf(b)).map(g=>`<option value="${esc(g.id)}" ${o[k]===g.id?'selected':''}>${esc(gLab(g)+(g.location?' ('+g.location+')':''))}</option>`).join('')}</select></label>`;
+  if(t==='date')return `<label class="f${cls}">${l}<input class="i" id="${id}" type="date" value="${esc(o[k]||'')}" ${dis}></label>`;
+  return `<label class="f${cls}">${l}<input class="i" id="${id}" value="${esc(o[k]||'')}" ${dis}></label>`;
+}
+function readFields(prefix,F){const v={};F.forEach(([k])=>{const e=$('#'+prefix+k);if(e)v[k]=String(e.value).trim()});return v}
+function diffText(F,o,v,isNew){
+  const ch=[];F.forEach(([k,l,t])=>{
+    let a=o[k]==null?'':o[k],b=v[k]==null?'':v[k];
+    if(t==='gw'){a=gLab(D.gateways[a]);b=gLab(D.gateways[b])}
+    if(String(a)!==String(b))ch.push(isNew?`${l}: ${b||'—'}`:`${l}: ${a||'—'} → ${b||'—'}`)});
+  return ch.join(' · ');
+}
+/* dated memos on a gateway */
+function memoList(key,id){
+  const ms=rows('memos').filter(m=>m[key]===id).sort((a,b)=>(b.at||'').localeCompare(a.at||''));
+  return ms.length?ms.map(m=>{const d=m.docId?D.docs[m.docId]:null;return `<div class="rs"><div class="meta">${esc(fmtDT(m.at))} · ${esc(m.byName||'')}${can('delete')?` · <a href="#" data-dm="${esc(m.id)}">Delete</a>`:''}</div>${m.text?`<p>${esc(m.text)}</p>`:''}${m.docId?`<div style="margin-top:4px">${d?`${canView(d)?`<button class="btn sm" type="button" data-mv="${esc(m.docId)}">View: ${esc(d.name)}</button> <button class="btn sm" type="button" data-md="${esc(m.docId)}">Download</button>`:`<button class="btn sm" type="button" data-md="${esc(m.docId)}">Download: ${esc(d.name)}</button>`}`:`<span class="faint">${esc(m.fileName||'File')} (not available)</span>`}</div>`:''}</div>`}).join(''):'<div class="faint">No memos yet.</div>';
+}
+const memoBlock=(key,id,w,sub)=>`<div><h3>Memo</h3><div class="faint" style="margin:2px 0 8px">${sub}</div>${w&&can('files')?`<div class="addrow"><input class="i" id="memoNew_${key}" placeholder="Write a memo" maxlength="500"><button class="btn" type="button" id="memoAdd_${key}">Add memo</button></div><div style="margin-top:6px"><input class="i" id="memoF_${key}" type="file"><div class="faint" style="margin-top:2px">Optional: attach a file to this memo (PDF, image, Word; up to 700 KB).</div></div>`:''}<div class="err" id="memoErr_${key}" role="alert"></div><div class="tl" id="memoList_${key}" style="margin-top:10px">${memoList(key,id)}</div></div>`;
+function bindMemoBlock(key,id,kind,lab){
+  const scope=(key==='mcaId'?'merchants/':key==='coId'?'companies/':key==='cpId'?'cpacc/':key==='cpCoId'?'cpco/':'gateways/')+id;
+  const paint=()=>{$('#memoList_'+key).innerHTML=memoList(key,id);bind()};
+  const bind=()=>{
+    document.querySelectorAll('[data-dm]').forEach(a=>a.onclick=async e=>{e.preventDefault();if(!await confirmP('Delete this memo?'))return;const m=D.memos[a.dataset.dm]||{};try{await db.doc('memos/'+a.dataset.dm).delete()}catch(x){toast('Could not delete: '+((x&&x.message)||'no permission')+'.');return}
+      if(m.docId){try{await db.doc('docs/'+m.docId).delete()}catch(x){}try{await db.doc('docdata/'+m.docId).delete()}catch(x){}}
+      try{await logH(kind,id,lab,'Memo deleted','')}catch(x){}
+      toast('Memo deleted.');setTimeout(paint,250)});
+    document.querySelectorAll('[data-mv],[data-md]').forEach(b=>b.onclick=async()=>{const did=b.dataset.mv||b.dataset.md,d=D.docs[did];b.disabled=true;try{const u=await docGet(did);if(!u){toast('The file could not be found.');return}if(b.dataset.mv)await viewDoc(u,d);else{await dl.save({filename:d.name,data:dataToBlob(u)});toast('File ready.')}}catch(e){if(!e||e.code!=='declined')toast('Could not open the file.')}finally{b.disabled=false}});
+  };
+  bind();const ma=$('#memoAdd_'+key);
+  if(ma)ma.onclick=async()=>{const t=$('#memoNew_'+key).value.trim(),f=$('#memoF_'+key).files[0],er=$('#memoErr_'+key);er.textContent='';if(!t&&!f){er.textContent='Write a memo or attach a file.';return}
+    ma.disabled=true;
+    try{let did='',fname='';
+      if(f){let u=await readFile(f),mime=f.type||'application/octet-stream';if(/^image\//.test(mime)&&mime!=='image/gif'){u=await imgShrink(u);mime='image/jpeg'}
+        if(u.length*0.75>DOCMAX){er.textContent='That file is too large (up to 700 KB).';ma.disabled=false;return}
+        did=rid('d');fname=f.name;await db.doc('docdata/'+did).set({data:u});
+        await db.doc('docs/'+did).set({target:scope,kind:'Memo',name:f.name,mime,size:Math.round(u.length*0.75),note:'Memo',at:new Date().toISOString(),by:ME.u,byName:ME.name})}
+      await db.doc('memos/'+rid('n')).set({[key]:id,text:t,docId:did,fileName:fname,at:new Date().toISOString(),by:ME.u,byName:ME.name});
+      await logH(kind,id,lab,'Memo added',(t||'').slice(0,100)+(fname?' [file: '+fname+']':''));$('#memoNew_'+key).value='';$('#memoF_'+key).value='';setTimeout(paint,300)}
+    catch(x){er.textContent='Could not save the memo.'}
+    ma.disabled=false}
+}
+/* related files (any file) next to a memo */
+const relScope=(key,id)=>(key==='mcaId'?'merchants/':key==='coId'?'companies/':key==='cpId'?'cpacc/':key==='cpCoId'?'cpco/':'gateways/')+id;
+const relDocsOf=scope=>Object.entries(D.docs||{}).map(([i,x])=>({...x,id:i})).filter(x=>x.target===scope&&x.kind==='File'&&docOk('Related file','view')).sort((a,b)=>(b.at||'').localeCompare(a.at||''));
+const relBox=(k,w,who)=>`<div><h3>Related files</h3><div class="faint" style="margin:2px 0 8px">Upload any file about this ${who} (PDF, picture, Word, Excel; up to ${fsz(DOCMAX)} each). You can view it here, download it again, or delete it.</div>
+  ${w&&can('files')&&docOk('Related file','upload')?`<div class="addrow"><input class="i" id="rfF_${k}" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.doc,.docx,.xls,.xlsx,.csv,.txt"><button class="btn" type="button" id="rfUp_${k}">Upload</button></div><div class="addrow" style="margin-top:6px"><input class="i" id="rfN_${k}" placeholder="Short note about the file (optional)" maxlength="200"></div><div class="faint" id="rfMsg_${k}" role="alert" style="margin-top:4px"></div>`:''}
+  <div id="rfList_${k}" style="margin-top:8px"></div></div>`;
+function relPaint(k,id,w,kind,lab){
+  const scope=relScope(k,id),ds=relDocsOf(scope),box=$('#rfList_'+k);if(!box)return;
+  box.innerHTML=ds.length?`<div class="tbox"><table class="t" style="min-width:0"><thead><tr><th>File</th><th>Added</th><th></th></tr></thead><tbody>${ds.map(x=>`<tr><td><b>${esc(x.name)}</b><div class="faint">${esc(fsz(x.size||0))}${x.note?' · '+esc(x.note):''}</div></td><td>${esc(fmtDT(x.at))}<div class="faint">${esc(x.byName||'')}</div></td><td style="white-space:nowrap">${canView(x)?`<button class="btn sm" type="button" data-fv="${x.id}">View</button> `:''}<button class="btn sm" type="button" data-fd="${x.id}">Download</button>${w&&can('delete')&&docOk('Related file','change')?` <button class="btn sm" type="button" data-fx="${x.id}">Delete</button>`:''}</td></tr>`).join('')}</tbody></table></div>`:'<div class="faint">No file uploaded yet.</div>';
+  box.querySelectorAll('[data-fv],[data-fd]').forEach(b=>b.onclick=async()=>{const q=b.dataset.fv||b.dataset.fd,x=D.docs[q];b.disabled=true;try{const u=await docGet(q);if(!u){toast('The file could not be found.');return}if(b.dataset.fv)await viewDoc(u,x);else{await dl.save({filename:x.name,data:dataToBlob(u)});toast('File ready.')}}catch(e){if(!e||e.code!=='declined')toast('Could not open the file.')}finally{b.disabled=false}});
+  box.querySelectorAll('[data-fx]').forEach(b=>b.onclick=async()=>{const q=b.dataset.fx,x=D.docs[q];if(!await confirmP('Delete "'+x.name+'"?'))return;try{await db.doc('docs/'+q).delete();await db.doc('docdata/'+q).delete();await logH(kind,id,lab,'File deleted',x.name);toast('Deleted.');setTimeout(()=>relPaint(k,id,w,kind,lab),250)}catch(e){toast('Could not delete.')}});
+}
+function relBind(k,id,w,kind,lab){
+  relPaint(k,id,w,kind,lab);const up=$('#rfUp_'+k);if(!up)return;
+  up.onclick=async()=>{const inp=$('#rfF_'+k),msg=$('#rfMsg_'+k),fs=[...inp.files];if(!fs.length){msg.textContent='Choose a file.';return}
+    up.disabled=true;let ok=0,bad=[];
+    for(const f of fs){try{let u=await readFile(f),mime=f.type||'application/octet-stream';if(/^image\//.test(mime)&&mime!=='image/gif'){u=await imgShrink(u);mime='image/jpeg'}
+      if(u.length*0.75>DOCMAX){bad.push(f.name+' (too large)');continue}
+      const did=rid('d');await db.doc('docdata/'+did).set({data:u});
+      await db.doc('docs/'+did).set({target:relScope(k,id),kind:'File',name:f.name,mime,size:Math.round(u.length*0.75),note:($('#rfN_'+k).value||'').trim(),at:new Date().toISOString(),by:ME.u,byName:ME.name});
+      await logH(kind,id,lab,'File uploaded',f.name);ok++}catch(e){bad.push(f.name)}}
+    up.disabled=false;inp.value='';$('#rfN_'+k).value='';msg.textContent=(ok?ok+' uploaded. ':'')+(bad.length?'Not uploaded: '+bad.join(', '):'');setTimeout(()=>relPaint(k,id,w,kind,lab),300)};
+}
+function gwModal(id){
+  const isCP=id==='cp',w=can('edit');if(!isCP&&!D.gateways[id])return;
+  const o=isCP?cpDoc():{...D.gateways[id]};
+  const ms=isCP?[]:rows('merchants').filter(m=>m.gwId===id).sort((a,b)=>(a.code||a.company||'').localeCompare(b.code||b.company||''));
+  openModal(o.name||'Payment gateway',isCP?'From the CPA Control System':o.pending?'Not in the Central Database yet':esc(gcode(o))+' · '+esc(o.status||'Active'),
+   isCP?cpHtml(w)
+   :`<div><h3>MCAs connected to this gateway (${ms.length})</h3>${ms.length?`<div class="tbox" style="margin-top:8px"><table class="t" style="min-width:0"><thead><tr><th>Code (MCA)</th><th>Company</th><th>Location</th><th>Status</th><th>Contract expiry</th></tr></thead><tbody>${ms.map(m=>`<tr class="row" tabindex="0" data-mm="${esc(m.id)}"><td class="mono"><b>${esc(m.code||'–')}</b></td><td>${esc(m.company||'')}</td><td>${mloc(m)?esc(mloc(m)):'<b>Location not set</b>'}</td><td>${stPill(m.status)}</td><td>${m.contractEnd?esc(fmtD(m.contractEnd)):'<span class="faint">–</span>'} ${expPill(m)}</td></tr>`).join('')}</tbody></table></div><div class="faint" style="margin-top:6px">Click an MCA to see its contract, PIC, rate and memo.</div>`:'<div class="faint" style="margin-top:6px">No MCAs yet.</div>'}</div><div style="margin-top:16px">${memoBlock('gwId',id,w,'Notes and files about this payment gateway. They also show on the Dashboard.')}</div>`,
+   `${isCP?'<a class="btn" href="${CPA_URL}" target="_blank" rel="noopener noreferrer">Open CPA ↗</a>':''}<span class="sp"></span><button class="btn" type="button" id="mClose">Close</button>`);
+  $('#mClose').onclick=closeModal;
+  if(!isCP)bindMemoBlock('gwId',id,'Gateway',o.name||id);
+  const cpR=$('#cpRef');if(cpR){const cf=$('#cpFile'),ce=$('#cpErr');cpR.onclick=()=>{ce.textContent='';cf.value='';cf.click()};cf.onchange=async()=>{const f=cf.files[0];if(!f)return;
+    try{if(typeof XLSX==='undefined')throw new Error('The Excel reader did not load. Check the connection.');const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];const raw=XLSX.utils.sheet_to_json(ws,{defval:''});
+      const pick=(r,n)=>{const k=Object.keys(r).find(x=>x.trim().toLowerCase()===n);return k?String(r[k]).trim():''};
+      if(!raw.length||!Object.keys(raw[0]).some(k=>k.trim().toLowerCase()==='account name')||!Object.keys(raw[0]).some(k=>k.trim().toLowerCase()==='status')){ce.textContent='This does not look like the CPA accounts export (needs Bank, Account Name, Status).';return}
+      const rowsN=raw.filter(r=>pick(r,'status')==='Active').map(r=>({code:pick(r,'code'),bank:pick(r,'bank'),name:pick(r,'account name'),project:pick(r,'project'),holder:pick(r,'holder')}));
+      if(!rowsN.length){ce.textContent='No Active accounts found in this file.';return}
+      const banks=new Set(rowsN.map(r=>r.bank)).size;
+      if(!await confirmP('Found '+rowsN.length+' active accounts in '+banks+' bank(s). Replace the CP list with these? Account numbers and balances in the file are ignored.'))return;
+      await db.doc('settings/cpActive').set({rows:rowsN,dataDate:'',loadedAt:new Date().toISOString(),loadedBy:ME.name,fileName:f.name});
+      await logAct('CP list refreshed','CP',rowsN.length+' active accounts from '+f.name);toast('CP list refreshed.');setTimeout(()=>{closeModal();gwModal("cp")},300)
+    }catch(e){ce.textContent='Could not read the file. '+(e&&e.message?e.message:'')}}};
+  document.querySelectorAll('tr[data-mm]').forEach(el=>{const go=()=>merModal(el.dataset.mm);el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter')go()}});
+  document.querySelectorAll('tr[data-bank]').forEach(el=>{const go=()=>cpBankModal(el.dataset.bank);el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter')go()}});
+  document.querySelectorAll('[data-cploc]').forEach(b=>b.onclick=()=>{UI.cpLoc=b.dataset.cploc;closeModal();gwModal('cp')});
+  const rb=$('#cpRuleBtn');if(rb)rb.onclick=()=>cpRuleModal();
+}
+function cpRuleModal(){
+  if(!can('admin'))return;
+  const cur=cpRule();let R=[...Object.entries(cur.project).map(([v,l])=>({f:'project',v,l})),...Object.entries(cur.holder).map(([v,l])=>({f:'holder',v,l}))];
+  const opts=sel=>[...locs()].map(x=>`<option ${x===sel?'selected':''}>${esc(x)}</option>`).join('');
+  const paint=()=>{$('#ruList').innerHTML=R.map((x,i)=>`<tr><td><select class="i ru_f" data-i="${i}"><option value="project" ${x.f==='project'?'selected':''}>Project</option><option value="holder" ${x.f==='holder'?'selected':''}>Holder</option></select></td><td><input class="i ru_v" data-i="${i}" value="${esc(x.v)}"></td><td><select class="i ru_l" data-i="${i}">${opts(x.l)}</select></td><td><button type="button" class="btn sm" data-rd="${i}">Remove</button></td></tr>`).join('')||'<tr><td colspan="4" class="empty">No rules.</td></tr>';
+    $('#ruList').querySelectorAll('[data-rd]').forEach(b=>b.onclick=()=>{R.splice(+b.dataset.rd,1);paint()});
+    $('#ruList').querySelectorAll('.ru_f').forEach(e=>e.onchange=()=>R[+e.dataset.i].f=e.value);$('#ruList').querySelectorAll('.ru_v').forEach(e=>e.oninput=()=>R[+e.dataset.i].v=e.value.trim());$('#ruList').querySelectorAll('.ru_l').forEach(e=>e.onchange=()=>R[+e.dataset.i].l=e.value)};
+  openModal('Location rule','Which CPA project or holder means which location',`<div class="faint" style="margin-bottom:8px">The project is checked first. If the project is Unassigned or not listed, the holder is checked. An account with no match is shown under Location not set. A location picked by hand on an account always wins.</div><div class="tbox"><table class="t" style="min-width:0"><thead><tr><th>CPA field</th><th>Value in CPA</th><th>Location</th><th></th></tr></thead><tbody id="ruList"></tbody></table></div><div style="margin-top:8px"><button type="button" class="btn" id="ruAdd">+ Add rule</button></div><div class="err" id="ruErr" role="alert"></div>`,
+   `<button class="btn" type="button" id="mBack">← Back to CP</button><span class="sp"></span><button class="btn" type="button" id="mClose">Close</button><button class="btn pri" type="button" id="ruSave">Save rule</button>`);
+  paint();$('#mClose').onclick=closeModal;$('#mBack').onclick=()=>{closeModal();gwModal('cp')};
+  $('#ruAdd').onclick=()=>{R.push({f:'holder',v:'',l:locs()[0]});paint()};
+  $('#ruSave').onclick=async()=>{const o={project:{},holder:{}};for(const x of R){if(!x.v)continue;if(o[x.f][x.v]&&o[x.f][x.v]!==x.l){$('#ruErr').textContent=x.v+' has two different locations.';return}o[x.f][x.v]=x.l}
+    try{await db.doc('settings/cpRule').set({...o,updatedAt:new Date().toISOString(),updatedBy:ME.name});await logAct('CP location rule','CP',R.filter(x=>x.v).map(x=>x.f+' '+x.v+' → '+x.l).join('; '));toast('Rule saved.');closeModal();gwModal('cp')}catch(e){$('#ruErr').textContent='Could not save.'}}
+}
+
+/* ---------- CP: bank -> accounts -> account ---------- */
+const cpAccOf=code=>cpList().rows.find(r=>r.code===code);
+const cpaLink=code=>CPA_URL+'#acc='+encodeURIComponent(code);
+function cpBankModal(bank){
+  const rs=cpFilt().filter(r=>(r.bank||'Other')===bank).sort((a,b)=>(a.code||'').localeCompare(b.code||''));
+  openModal('CP · '+bank,'Manual accounts · '+rs.length+' active',
+   `<div><h3>Active accounts in ${esc(bank)} (${rs.length})</h3><div class="tbox" style="margin-top:8px"><table class="t" style="min-width:0"><thead><tr><th>CPA code</th><th>Account name</th><th>Project / holder</th><th>Location</th></tr></thead><tbody>${rs.map(r=>`<tr class="row" tabindex="0" data-acc="${esc(r.code)}"><td class="mono"><b>${esc(r.code||'–')}</b></td><td>${esc(r.name||'')}</td><td>${esc([r.project,r.holder].filter(Boolean).join(' / '))||'<span class="faint">–</span>'}</td><td>${esc(cpLocOf(r))||'<span class="faint">Not set</span>'}</td></tr>`).join('')}</tbody></table></div><div class="faint" style="margin-top:6px">Click an account to see its PIC, contract and memo.</div></div>`,
+   `<button class="btn" type="button" id="mBack">← Back to CP</button><a class="btn" href="${CPA_URL}" target="_blank" rel="noopener noreferrer">Open CPA ↗</a><span class="sp"></span><button class="btn" type="button" id="mClose">Close</button>`);
+  $('#mClose').onclick=closeModal;$('#mBack').onclick=()=>gwModal('cp');
+  document.querySelectorAll('tr[data-acc]').forEach(el=>{const go=()=>cpAccModal(el.dataset.acc);el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter')go()}});
+}
+function cpAccModal(code){
+  const r=cpAccOf(code);if(!r)return;const w=can('edit'),o={...(D.cpacc[code]||{})};
+  const r0=rateOf(o);
+  const ro=(l,v)=>`<label class="f">${l}<input class="i" value="${esc(v||'')}" disabled></label>`;
+  const lab=r.code+' · '+(r.name||'');
+  const chBtn=(bid,pid,list)=>`<div style="margin-top:12px"><button type="button" class="btn" id="${bid}" aria-expanded="false">Communication channels${list.filter(f=>o[f[0]]).length?` (${list.filter(f=>o[f[0]]).length} filled)`:''} ▸</button><div id="${pid}" class="hidden mb" style="margin-top:10px">${list.map(f=>fieldHtml('m_',f,o,w)).join('')}</div></div>`;
+  const AF=[['location','Location','loc'],['picName','PIC name','text'],...MCH,['contractStart','Contract start date','date'],['contractEnd','Contract expiry date','date']];
+  const CF=[['companyCode','Code Company','text'],['companyName','Company','text'],['cPicName','Company PIC name','text'],...CCH,['cContractStart','Contract start date','date'],['cContractEnd','Contract expiry date','date']];
+  openModal(r.code,esc(r.name||'')+' · '+esc(r.bank||'')+' · Active'+(cpLocOf(r)?' · '+esc(cpLocOf(r)):''),
+   `<div class="chips" role="tablist" style="margin-bottom:4px"><button type="button" class="btn sm mtab" data-mt="mca" aria-pressed="true">Account</button><button type="button" class="btn sm mtab" data-mt="co" aria-pressed="false">Company</button></div>
+   <div id="pMca"><div class="faint" style="margin:6px 0 10px">Information about this account: its PIC, contract and memo.</div>
+   <div class="mb">${ro('CPA code',r.code)}${ro('Account name',r.name)}${ro('Bank',r.bank)}${ro('Project',r.project)}${ro('Holder',r.holder)}${ro('Status','Active')}${fieldHtml('m_',AF[0],o,w)}${fieldHtml('m_',AF[1],o,w)}</div>
+   <div class="faint" style="margin-top:6px">Location from CPA: <b>${esc(cpAuto(r))||'not set'}</b>. Choose a location above only to override it.</div>
+   <div class="hint" style="margin-top:10px">Balance and full account details are not kept here. <a href="${CPA_URL}" target="_blank" rel="noopener noreferrer"><b>Open the CPA Control System ↗</b></a> and search for <b>${esc(r.code)}</b>.</div>
+   ${chBtn('bMch','pMch',MCH)}
+   <div class="mb" style="margin-top:12px">${AF.slice(7).map(f=>fieldHtml('m_',f,o,w)).join('')}</div>
+   <div style="margin-top:14px">${contractBox(code,w,'cpacc','account')}</div>
+   <div style="margin-top:16px">${memoBlock('cpId',code,w,'Notes and files about this account.')}</div>
+   <div style="margin-top:16px">${relBox('cpId',w,'account')}</div>
+   <div class="hint" style="margin-top:10px">Code, name, bank, project, holder and status come from the CPA Control System and cannot be changed here. Balances and account numbers are not kept here. To see them, open CPA and look for code ${esc(r.code)}.</div>
+   <div class="err" id="eErr" role="alert"></div></div>
+   <div id="pCo" class="hidden"><div class="faint" style="margin:6px 0 10px">Information about the company: its PIC, contract, rate and memo.</div>
+   <div class="mb">${CF.slice(0,3).map(f=>fieldHtml('m_',f,o,w)).join('')}</div>
+   ${chBtn('bCch','pCch',CCH)}
+   <div class="mb" style="margin-top:12px">${CF.slice(8).map(f=>fieldHtml('m_',f,o,w)).join('')}</div>
+   <div style="margin-top:14px">${contractBox(code,w,'cpco','company')}</div>
+   <div style="margin-top:18px"><h3>Rate</h3>${rateForm(r0,w)}${w?'<label class="f full" style="margin-top:10px">Note for this change (optional)<input class="i" id="rNote" maxlength="200" placeholder="for example: new agreement from 1 Nov"></label>':''}<div class="err" id="rErr" role="alert"></div>${w?'<div style="margin-top:8px"><button class="btn pri" type="button" id="rSave">Save rate</button></div>':''}
+   <div style="margin-top:16px"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Rate history</h3><select class="i" id="rhF" style="width:auto" aria-label="Filter by item"><option value="">All items</option>${RH_G.map(g=>`<option>${g}</option>`).join('')}</select></div><div style="margin-top:8px" id="rHist">${rateHistory(code)}</div></div></div>
+   <div style="margin-top:16px">${memoBlock('cpCoId',code,w,'Notes and files about this company.')}</div>
+   <div style="margin-top:16px">${relBox('cpCoId',w,'company')}</div>
+   <div class="err" id="cErr" role="alert"></div></div>
+   <div style="margin-top:18px"><h3>Change history</h3><div id="cpLog" style="margin-top:8px"></div></div>`,
+   `<button class="btn" type="button" id="mBack">← Back to ${esc(r.bank||'bank')}</button><a class="btn" href="${CPA_URL}" target="_blank" rel="noopener noreferrer">Open CPA ↗</a><span class="sp"></span><button class="btn" type="button" id="mClose">${w?'Cancel':'Close'}</button>${w?`<button class="btn pri" type="button" id="eSave">Save account info</button><button class="btn pri hidden" type="button" id="cSave">Save company info</button>`:''}`);
+  $('#mClose').onclick=closeModal;$('#mBack').onclick=()=>cpBankModal(r.bank||'Other');
+  const showTab=t=>{document.querySelectorAll('.mtab').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mt===t)));$('#pMca').classList.toggle('hidden',t!=='mca');$('#pCo').classList.toggle('hidden',t!=='co');const a=$('#eSave'),c=$('#cSave');if(a)a.classList.toggle('hidden',t!=='mca');if(c)c.classList.toggle('hidden',t!=='co')};
+  document.querySelectorAll('.mtab').forEach(b=>b.onclick=()=>showTab(b.dataset.mt));
+  [['bMch','pMch'],['bCch','pCch']].forEach(([bi,pi])=>{const bb=$('#'+bi);if(bb)bb.onclick=()=>{const pp=$('#'+pi),h=pp.classList.toggle('hidden');bb.setAttribute('aria-expanded',String(!h));bb.innerHTML=bb.innerHTML.replace(/[▸▾]$/,h?'▸':'▾')}});
+  const hs=rows('hist').filter(h=>h.targetId===code&&h.kind!=='Rate').sort((a,b)=>(b.at||'').localeCompare(a.at||'')).slice(0,30);
+  $('#cpLog').innerHTML=hs.length?`<div class="tbox"><table class="t" style="min-width:0"><thead><tr><th>Date and time</th><th>By</th><th>Action</th><th>What changed</th></tr></thead><tbody>${hs.map(h=>`<tr><td class="mono">${esc(fmtDT(h.at))}</td><td>${esc(h.byName||'')}</td><td>${esc(h.action||'')}</td><td class="wrap">${esc(h.detail||'')}</td></tr>`).join('')}</tbody></table></div>`:'<div class="faint">No changes yet.</div>';
+  bindMemoBlock('cpId',code,'CP',lab);bindMemoBlock('cpCoId',code,'CP company',lab);relBind('cpId',code,w,'CP',lab);relBind('cpCoId',code,w,'CP company',lab);
+  [['cpacc','CP'],['cpco','CP company']].forEach(([sc,kind])=>{
+    ctPaint(code,w,sc);
+    const up=$('#ctUp_'+sc);if(up)up.onclick=async()=>{
+      const f=$('#ctF_'+sc).files[0],msg=$('#ctMsg_'+sc);if(!f){msg.textContent='Choose a file.';return}
+      up.disabled=true;
+      try{let u=await readFile(f),mime=f.type||'application/octet-stream';if(/^image\//.test(mime)&&mime!=='image/gif'){u=await imgShrink(u);mime='image/jpeg'}
+        if(u.length*0.75>DOCMAX){msg.textContent='That file is too large.';up.disabled=false;return}
+        const did=rid('d');await db.doc('docdata/'+did).set({data:u});
+        await db.doc('docs/'+did).set({target:sc+'/'+code,kind:'Contract',name:f.name,mime,size:Math.round(u.length*0.75),note:'Contract',at:new Date().toISOString(),by:ME.u,byName:ME.name});
+        logAct(kind+' contract uploaded',lab,f.name);await logH(kind,code,lab,'Contract uploaded',f.name);msg.textContent='Uploaded.';$('#ctF_'+sc).value='';setTimeout(()=>ctPaint(code,w,sc),300)}
+      catch(e){msg.textContent='Could not upload the file.'}
+      up.disabled=false}});
+  {
+    const setShow=()=>{const u=$('#rSetU').value,n=$('#rSetN').value,v=k=>u===k&&n?'Every '+n+(+n===1?' '+k.toLowerCase():' '+k.toLowerCase()+'s'):'N/A';$('#rSetShow').innerHTML=['Day','Week','Month'].map(k=>`<div><span>${k}</span><b>${esc(v(k))}</b></div>`).join('')};
+    setShow();$('#rSetU').onchange=setShow;$('#rSetN').oninput=setShow;
+    const bindRm=()=>{document.querySelectorAll('[data-rmt],[data-rmf]').forEach(b=>b.onclick=()=>b.closest('tr').remove())};bindRm();
+    const aT=$('#rAddT');if(aT){aT.onclick=()=>{const t=document.createElement('tbody');t.innerHTML=`<tr><td><input class="i rt_from" type="number" min="0"></td><td><input class="i rt_to" type="number" min="0" placeholder="and above"></td><td><input class="i rt_ci" type="number" step="0.01" min="0" max="100"></td><td><input class="i rt_co" type="number" step="0.01" min="0" max="100"></td><td><button class="btn sm" type="button" data-rmt="1" aria-label="Remove range">×</button></td></tr>`;$('#rTiers').appendChild(t.firstChild);bindRm()};
+      $('#rSample').onclick=async()=>{if(document.querySelectorAll('#rTiers tr').length&&!await confirmP('Replace the ranges now on the screen with the sample ones?'))return;$('#rTiers').innerHTML='';[[50000,200000,1.5,0.5],[200000,500000,1.3,0.4],[500000,null,1.0,0.3]].forEach(([f,t,ci,co])=>{aT.click();const tr=$('#rTiers').lastElementChild;tr.querySelector('.rt_from').value=f;tr.querySelector('.rt_to').value=t==null?'':t;tr.querySelector('.rt_ci').value=ci;tr.querySelector('.rt_co').value=co})};
+      if($('#rAddF'))$('#rAddF').onclick=()=>{const t=document.createElement('tbody');t.innerHTML=`<tr><td><input class="i rf_name" list="dlFee"></td><td><input class="i rf_pct" type="number" step="0.01" min="0" max="100"></td><td><button class="btn sm" type="button" data-rmf="1" aria-label="Remove fee">×</button></td></tr>`;$('#rFees').appendChild(t.firstChild);bindRm()}}
+    const rhf=$('#rhF');if(rhf)rhf.onchange=()=>{$('#rHist').innerHTML=rateHistory(code,rhf.value)};
+    const rs=$('#rSave');if(rs)rs.onclick=async()=>{
+      const r=readRate('full',rateOf(D.cpacc[code]||o)),err=$('#rErr'),e=rateErr(r);if(e){err.textContent=e;return}
+      const ch=rateDiff(rateOf(D.cpacc[code]||o),r);if(!ch.length){err.textContent='Nothing has changed.';return}const note=($('#rNote')?$('#rNote').value.trim():'').slice(0,200);
+      try{
+        await db.doc('cpacc/'+code).set({...(D.cpacc[code]||o),code,rate:r,rateUpdatedAt:new Date().toISOString(),updatedAt:new Date().toISOString(),updatedBy:ME.name});
+        await logH('Rate',code,lab,'Rate changed',ch.map(x=>`${x.item}: ${x.b} → ${x.n}`).join(' · ')+(note?' · Note: '+note:''),{changes:ch,note});if($('#rNote'))$('#rNote').value='';
+        err.textContent='';toast('Rate saved.');setTimeout(()=>{const h=$('#rHist');if(h)h.innerHTML=rateHistory(code,$('#rhF')?$('#rhF').value:'')},300);
+      }catch(x){err.textContent='Could not save. You may only have view access.'}
+    };
+  }
+  if(!w)return;
+  const saveC=async(kind,list,errId,a,b)=>{const err=$('#'+errId);err.textContent='';const v=readFields('m_',list);
+    if(v[a]&&v[b]&&v[b]<v[a]){err.textContent='The expiry date must not be before the start date.';return}
+    try{const cur=D.cpacc[code]||o;await db.doc('cpacc/'+code).set({...cur,...v,code,updatedAt:new Date().toISOString(),updatedBy:ME.name});
+      await logH(kind,code,lab,'Changed',diffText(list,cur,v,false));closeModal();toast('Saved.')}
+    catch(e){err.textContent='Could not save. You may only have view access.'}};
+  $('#eSave').onclick=()=>saveC('CP',AF,'eErr','contractStart','contractEnd');
+  $('#cSave').onclick=()=>saveC('CP company',CF,'cErr','cContractStart','cContractEnd');
+}
+
+/* ---------- MCAs ---------- */
+function merView(){
+  const all=mRows(),l=mFilt(all).sort((a,b)=>(a.code||a.company||'').localeCompare(b.code||b.company||''));
+  const gopts=gwRows().sort((a,b)=>seqOf(a)-seqOf(b)).map(g=>[g.id,gLab(g)]);
+  return `<div class="toolbar">${searchBox('Company, code, PIC, email, channel')}${selBox('fg','Gateway',UI.gw,gopts)}${selBox('fl','Location',UI.loc,[...locs().map(x=>[x,x]),[NOLOC,'Location not set']])}${selBox('fs','Status',UI.st,STS.map(x=>[x,x]))}<span class="sp"></span>${can('export')?'<button class="btn" type="button" id="xMer">Excel</button>':''}${can('edit')?'<button class="btn pri" type="button" data-go="addMer">+ Add MCA</button>':''}</div>
+  <div class="tbox"><table class="t" style="min-width:1000px"><thead><tr><th>Code (MCA)</th><th>Company</th><th>Gateway</th><th>Status</th><th>Contract start</th><th>Contract expiry</th><th class="n">CI fee</th><th class="n">CO fee</th><th>Company PIC</th></tr></thead><tbody>
+  ${l.length?l.map(m=>`<tr class="row" tabindex="0" data-m="${esc(m.id)}"><td class="mono"><b>${esc(m.code||'')}</b></td><td><b>${esc(m.company||'')}</b>${m.companyCode?`<div class="faint mono">${esc(m.companyCode)}</div>`:''}</td><td>${txt(m.gw?m.gw.name:'')}${mloc(m)?`<div class="faint">${esc(mloc(m))}</div>`:''}</td><td>${stPill(m.status)}</td><td>${m.contractStart?esc(fmtD(m.contractStart)):'<span class="faint">–</span>'}</td><td>${m.contractEnd?esc(fmtD(m.contractEnd)):'<span class="faint">–</span>'} ${expPill(m)}</td><td class="n">${rng(m,'ci')}</td><td class="n">${rng(m,'co')}</td><td>${txt(m.picName)}${[m.picPhone,m.picTelegram,m.picEmail,m.picWhatsapp,m.picOther].filter(Boolean).map(x=>`<div class="faint">${esc(x)}</div>`).join('')}</td></tr>`).join(''):emptyRow(9,all.length?'Nothing matches these filters.':'No MCAs yet.',all.length?'':(can('edit')?'Press "+ Add MCA". Add the payment gateway first if it is not in the list.':''))}
+  </tbody></table></div>`;
+}
+const FEE_SUGG=['Collection fee - ABAPAY','Collection fee - KHQR','Withdrawal fee'];
+function rateForm(r,w,kind){kind=kind||'full';
+  const dis=w?'':'disabled';
+  const tr=(t,i)=>`<tr data-tr="${i}"><td><input class="i rt_from" type="number" min="0" value="${t.from==null?'':esc(t.from)}" ${dis}></td><td><input class="i rt_to" type="number" min="0" value="${t.to==null?'':esc(t.to)}" placeholder="and above" ${dis}></td><td><input class="i rt_ci" type="number" step="0.01" min="0" max="100" value="${t.ci==null?'':esc(t.ci)}" ${dis}></td><td><input class="i rt_co" type="number" step="0.01" min="0" max="100" value="${t.co==null?'':esc(t.co)}" ${dis}></td><td>${w?'<button class="btn sm" type="button" data-rmt="1" aria-label="Remove range">×</button>':''}</td></tr>`;
+  const fr=(f,i)=>`<tr><td><input class="i rf_name" list="dlFee" value="${esc(f.name||'')}" ${dis}></td><td><input class="i rf_pct" type="number" step="0.01" min="0" max="100" value="${f.pct==null?'':esc(f.pct)}" ${dis}></td><td>${w?'<button class="btn sm" type="button" data-rmf="1" aria-label="Remove fee">×</button>':''}</td></tr>`;
+  const cur=r.currency||[];
+  return `<div class="grid2">
+   <div class="full" style="grid-column:1/-1"><h3>Currency</h3><div class="chips" style="margin-top:6px"><label class="chk"><input type="checkbox" id="rcUSD" ${cur.includes('USD')?'checked':''} ${dis}>USD</label><label class="chk"><input type="checkbox" id="rcUSDT" ${cur.includes('USDT')?'checked':''} ${dis}>USDT</label></div></div></div>
+   ${kind==='lnw'?`<div style="margin-top:14px"><h3>Fees (%)</h3><div class="grid2" style="margin-top:6px"><label class="f">Collection fee % (CI)<input class="i" id="rCollPct" type="number" step="0.01" min="0" max="100" value="${r.collPct==null?'':esc(r.collPct)}" ${dis}></label><label class="f">Withdrawal fee % (CO)<input class="i" id="rWdPct" type="number" step="0.01" min="0" max="100" value="${r.wdPct==null?'':esc(r.wdPct)}" ${dis}></label></div></div>`:''}
+   ${kind==='lnw'?'':`<div style="margin-top:14px"><h3>Fee % by daily volume (USD)</h3><div class="faint" style="margin:2px 0 6px">The range is picked by that day's total. Leave "To" empty for "and above". CI is Cash In and CO is Cash Out.</div>
+    <div class="tbox"><table class="t" style="min-width:0"><thead><tr><th>From (USD)</th><th>To (USD)</th><th>CI fee %</th><th>CO fee %</th><th></th></tr></thead><tbody id="rTiers">${(r.tiers||[]).map(tr).join('')}</tbody></table></div>
+    ${w?'<div class="btns" style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" type="button" id="rAddT">+ Add range</button><button class="btn sm" type="button" id="rSample">Fill sample ranges</button></div>':''}</div>`}
+   ${kind!=='full'?'':`<div style="margin-top:14px"><h3>Other fees (%)</h3><div class="faint" style="margin:2px 0 6px">For example collection fee ABAPAY, collection fee KHQR, withdrawal fee.</div>
+    <div class="tbox"><table class="t" style="min-width:0"><thead><tr><th>Fee</th><th>%</th><th></th></tr></thead><tbody id="rFees">${(r.fees||[]).map(fr).join('')}</tbody></table></div>
+    ${w?'<div style="margin-top:6px"><button class="btn sm" type="button" id="rAddF">+ Add fee</button></div>':''}<datalist id="dlFee">${FEE_SUGG.map(x=>`<option value="${esc(x)}">`).join('')}</datalist></div>`}
+   <div style="margin-top:14px"><h3>Limits (USD)</h3><div class="grid2" style="margin-top:6px">
+    <label class="f">Deposit (in) · minimum<input class="i" id="rDepMin" type="number" min="0" value="${r.depMin==null?'':esc(r.depMin)}" ${dis}></label><label class="f">Deposit (in) · maximum<input class="i" id="rDepMax" type="number" min="0" value="${r.depMax==null?'':esc(r.depMax)}" ${dis}></label>
+    <label class="f">Withdrawal (out) · minimum<input class="i" id="rWdMin" type="number" min="0" value="${r.wdMin==null?'':esc(r.wdMin)}" ${dis}></label><label class="f">Withdrawal (out) · maximum<input class="i" id="rWdMax" type="number" min="0" value="${r.wdMax==null?'':esc(r.wdMax)}" ${dis}></label></div></div>
+   <div style="margin-top:14px"><h3>Settlement</h3><div class="faint" style="margin:2px 0 6px">Choose day, week or month and how many. The other two show N/A.</div>
+    <div class="grid2"><label class="f">Every<select class="i" id="rSetU" ${dis}><option value="">Not set yet</option>${['Day','Week','Month'].map(u=>`<option ${r.setUnit===u?'selected':''}>${u}</option>`).join('')}</select></label><label class="f">How many<input class="i" id="rSetN" placeholder="for example 2" type="number" min="1" value="${r.setN==null?'':esc(r.setN)}" ${dis}></label></div>
+    <div class="kv" id="rSetShow" style="margin-top:8px"></div></div>
+   <label class="f" style="margin-top:14px">Other terms (for example billing cycle, customer service hours)<textarea class="i" id="rOther" ${dis}>${esc(r.other||'')}</textarea></label>`;
+}
+function readRate(kind,prev){prev=prev||{};
+  const num=e=>e.value===''?null:+e.value;
+  const tiers=!$('#rTiers')?(prev.tiers||[]):[...document.querySelectorAll('#rTiers tr')].map(t=>({from:num(t.querySelector('.rt_from')),to:num(t.querySelector('.rt_to')),ci:num(t.querySelector('.rt_ci')),co:num(t.querySelector('.rt_co'))})).filter(t=>t.from!=null||t.to!=null||t.ci!=null||t.co!=null);
+  const fees=!$('#rFees')?(prev.fees||[]):[...document.querySelectorAll('#rFees tr')].map(t=>({name:t.querySelector('.rf_name').value.trim(),pct:num(t.querySelector('.rf_pct'))})).filter(f=>f.name||f.pct!=null);
+  const cur=[$('#rcUSD').checked?'USD':'',$('#rcUSDT').checked?'USDT':''].filter(Boolean);
+  const u=$('#rSetU').value;
+  return {currency:cur,tiers,fees,depMin:num($('#rDepMin')),depMax:num($('#rDepMax')),wdMin:num($('#rWdMin')),wdMax:num($('#rWdMax')),setUnit:u,setN:u?num($('#rSetN')):null,other:$('#rOther').value.trim(),collPct:$('#rCollPct')?num($('#rCollPct')):prev.collPct??null,wdPct:$('#rWdPct')?num($('#rWdPct')):prev.wdPct??null};
+}
+function rateErr(r){
+  for(const t of r.tiers){
+    if(t.from==null)return 'Each range needs a "From" amount.';
+    if(t.to!=null&&t.to<=t.from)return 'In each range "To" must be larger than "From".';
+    for(const k of ['ci','co'])if(t[k]!=null&&(t[k]<0||t[k]>100))return 'A fee % must be between 0 and 100.';
+  }
+  const ts=r.tiers.slice().sort((a,b)=>a.from-b.from);
+  for(let i=1;i<ts.length;i++)if(ts[i-1].to==null||ts[i].from<ts[i-1].to)return 'Ranges overlap: '+tierLab(ts[i-1])+' and '+tierLab(ts[i])+'.';
+  for(const f of r.fees){if(!f.name)return 'Give each fee a name.';if(f.pct!=null&&(f.pct<0||f.pct>100))return 'A fee % must be between 0 and 100.'}
+  for(const k of ['collPct','wdPct'])if(r[k]!=null&&(r[k]<0||r[k]>100))return 'A fee % must be between 0 and 100.';
+  if(r.depMin!=null&&r.depMax!=null&&r.depMax<r.depMin)return 'Deposit maximum must not be below the minimum.';
+  if(r.wdMin!=null&&r.wdMax!=null&&r.wdMax<r.wdMin)return 'Withdrawal maximum must not be below the minimum.';
+  if(r.setUnit&&(r.setN==null||r.setN<1))return 'Enter how many '+r.setUnit.toLowerCase()+'s for the settlement.';
+  return '';
+}
+/* before -> now for every rate change */
+function rateDiff(a,b){
+  const it=[],P=v=>v==null||v===''?'–':pcTx(v),N=v=>v==null||v===''?'–':nf(v);
+  const dir=(x,y)=>x==null||x===''||y==null||y===''?'':(+y>+x?'up':+y<+x?'down':'');
+  const add=(g,item,bv,nv,d)=>it.push({g,item,b:bv,n:nv,d:d||''});
+  const ck=t=>`${nf(t.from)||'0'}–${t.to!=null&&t.to!==''?nf(t.to):'above'}`;
+  const am={},bm={};a.tiers.forEach(t=>am[ck(t)]=t);b.tiers.forEach(t=>bm[ck(t)]=t);
+  [...new Set([...Object.keys(am),...Object.keys(bm)])].forEach(k=>{
+    const x=am[k],y=bm[k];
+    if(!x){add('CI','CI fee, '+k,'–',P(y.ci));add('CO','CO fee, '+k,'–',P(y.co))}
+    else if(!y){add('CI','CI fee, '+k,P(x.ci),'removed');add('CO','CO fee, '+k,P(x.co),'removed')}
+    else{if((x.ci??null)!==(y.ci??null))add('CI','CI fee, '+k,P(x.ci),P(y.ci),dir(x.ci,y.ci));if((x.co??null)!==(y.co??null))add('CO','CO fee, '+k,P(x.co),P(y.co),dir(x.co,y.co))}});
+  const af={},bf={};a.fees.forEach(f=>af[f.name]=f);b.fees.forEach(f=>bf[f.name]=f);
+  [...new Set([...Object.keys(af),...Object.keys(bf)])].forEach(k=>{
+    const x=af[k],y=bf[k];
+    if(!x)add('Fees',k,'–',P(y.pct));else if(!y)add('Fees',k,P(x.pct),'removed');else if((x.pct??null)!==(y.pct??null))add('Fees',k,P(x.pct),P(y.pct),dir(x.pct,y.pct))});
+  if((a.collPct??null)!==(b.collPct??null))add('CI','Collection fee (CI)',P(a.collPct),P(b.collPct),dir(a.collPct,b.collPct));
+  if((a.wdPct??null)!==(b.wdPct??null))add('CO','Withdrawal fee (CO)',P(a.wdPct),P(b.wdPct),dir(a.wdPct,b.wdPct));
+  const lim=(l,x,y)=>{if((x??null)!==(y??null))add('Limits',l,N(x),N(y))};
+  lim('Deposit minimum',a.depMin,b.depMin);lim('Deposit maximum',a.depMax,b.depMax);lim('Withdrawal minimum',a.wdMin,b.wdMin);lim('Withdrawal maximum',a.wdMax,b.wdMax);
+  if(a.currency.join('/')!==b.currency.join('/'))add('Currency','Currency',a.currency.join('/')||'–',b.currency.join('/')||'–');
+  if(setTxt(a)!==setTxt(b))add('Settlement','Settlement',setTxt(a)||'–',setTxt(b)||'–');
+  if(a.other!==b.other){const T=v=>v?(v.length>60?v.slice(0,60)+'…':v):'–';add('Other','Other terms',T(a.other),T(b.other))}
+  return it;
+}
+const RH_G=['CI','CO','Fees','Limits','Currency','Settlement','Other'];
+function rateHistory(mid,f){
+  const hs=rows('hist').filter(h=>h.targetId===mid&&h.kind==='Rate').sort((a,b)=>(b.at||'').localeCompare(a.at||''));
+  const flat=[];hs.forEach(h=>{const ch=Array.isArray(h.changes)&&h.changes.length?h.changes:[{g:'Other',item:'Changes',b:'–',n:h.detail||'',d:''}];ch.forEach((c,i)=>flat.push({h,c,first:i===0}))});
+  const L=flat.filter(x=>!f||x.c.g===f);
+  const col=d=>d==='up'?'color:var(--red);font-weight:700':d==='down'?'color:var(--green);font-weight:700':'font-weight:700';
+  return L.length?`<div class="tbox"><table class="t" style="min-width:640px"><thead><tr><th>Date and time</th><th>By</th><th>Item</th><th>Before</th><th>Now</th><th>Note</th></tr></thead><tbody>${L.map(x=>`<tr><td class="mono">${esc(fmtDT(x.h.at))}</td><td>${esc(x.h.byName||'')}</td><td>${esc(x.c.item)}</td><td>${esc(x.c.b)}</td><td style="${col(x.c.d)}">${esc(x.c.n)}${x.c.d==='up'?' ▲':x.c.d==='down'?' ▼':''}</td><td class="wrap">${x.first&&x.h.note?esc(x.h.note):''}</td></tr>`).join('')}</tbody></table></div>`:`<div class="faint">${hs.length?'No changes in this group.':'No rate changes yet.'}</div>`;
+}
+/* contract files, kept with the MCA */
+const contractDocs=(mid,sc)=>Object.entries(D.docs||{}).map(([id,d])=>({...d,id})).filter(d=>d.target===sc+'/'+mid&&d.kind==='Contract'&&docOk('Contract','view')).sort((a,b)=>(b.at||'').localeCompare(a.at||''));
+function contractBox(mid,w,sc,who){
+  return `<div><h3>Contract file</h3><div class="faint" style="margin:2px 0 8px">Upload the signed contract here so it can be opened from this ${who} (PDF, image, Word; up to ${fsz(DOCMAX)}).</div>
+   ${w&&can('files')&&docOk('Contract','upload')?`<div class="addrow"><input class="i" id="ctF_${sc}" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx"><button class="btn" type="button" id="ctUp_${sc}">Upload contract</button></div><div class="faint" id="ctMsg_${sc}" role="alert" style="margin-top:4px"></div>`:''}
+   <div id="ctList_${sc}" style="margin-top:8px"></div></div>`;
+}
+function ctPaint(mid,w,sc){
+  const ds=contractDocs(mid,sc),box=$('#ctList_'+sc);if(!box)return;
+  box.innerHTML=ds.length?`<div class="tbox"><table class="t" style="min-width:0"><thead><tr><th>File</th><th>Added</th><th></th></tr></thead><tbody>${ds.map(d=>`<tr><td><b>${esc(d.name)}</b><div class="faint">${esc(fsz(d.size||0))}</div></td><td>${esc(fmtDT(d.at))}<div class="faint">${esc(d.byName||'')}</div></td><td style="white-space:nowrap"><button class="btn sm" type="button" data-${canView(d)?'cv':'cd'}="${d.id}">${canView(d)?'View':'Download'}</button>${canView(d)?` <button class="btn sm" type="button" data-cd="${d.id}">Download</button>`:''}${w&&can('delete')&&docOk('Contract','change')?` <button class="btn sm" type="button" data-cx="${d.id}">Delete</button>`:''}</td></tr>`).join('')}</tbody></table></div>`:'<div class="faint">No contract uploaded yet.</div>';
+  box.querySelectorAll('[data-cv],[data-cd]').forEach(b=>b.onclick=async()=>{const id=b.dataset.cv||b.dataset.cd,d=D.docs[id];b.disabled=true;try{const u=await docGet(id);if(!u){toast('The file could not be found.');return}if(b.dataset.cv)await viewDoc(u,d);else{await dl.save({filename:d.name,data:dataToBlob(u)});toast('File ready.')}}catch(e){if(!e||e.code!=='declined')toast('Could not open the file.')}finally{b.disabled=false}});
+  box.querySelectorAll('[data-cx]').forEach(b=>b.onclick=async()=>{const id=b.dataset.cx,d=D.docs[id];if(!await confirmP('Delete "'+d.name+'"?'))return;try{await db.doc('docs/'+id).delete();await db.doc('docdata/'+id).delete();logAct('Contract deleted',mid,d.name);toast('Deleted.');setTimeout(()=>ctPaint(mid,w,sc),250)}catch(e){toast('Could not delete.')}});
+}
+function merModal(id,preGw){
+  const isNew=false,w=can('edit');if(!id||!D.merchants[id])return;
+  const o={...D.merchants[id]};
+  const r0=rateOf(o);
+  const exp=expOf(o);
+  const chBtn=(bid,pid,list)=>`<div style="margin-top:12px"><button type="button" class="btn" id="${bid}" aria-expanded="false">Communication channels${list.filter(f=>o[f[0]]).length?` (${list.filter(f=>o[f[0]]).length} filled)`:''} ▸</button><div id="${pid}" class="hidden mb" style="margin-top:10px">${list.map(f=>fieldHtml('m_',f,o,w)).join('')}</div></div>`;
+  openModal(o.code||o.company||'MCA',esc(o.company||'')+(gwOf(o)?' · '+esc(gwOf(o).name||''):'')+(mloc(o)?' · '+esc(mloc(o)):'')+' · '+esc(o.status||'Active')+(exp&&exp.k!=='o'?` · <b style="color:var(--${exp.k==='x'?'red':'amber'})">${esc(exp.t)}</b>`:''),
+   `<div class="chips" role="tablist" style="margin-bottom:4px"><button type="button" class="btn sm mtab" data-mt="mca" aria-pressed="true">MCA</button><button type="button" class="btn sm mtab" data-mt="co" aria-pressed="false">Company</button></div>
+   <div id="pMca"><div class="faint" style="margin:6px 0 10px">Step 3 · Information about this MCA: its PIC, contract and memo.</div>
+   <div class="mb">${[['code','Code (MCA)','text'],['company','Company','text',1],['gwId','Payment gateway','gw'],['status','Status','st'],['location','Location','loc'],['picName','MCA PIC name','text']].map(f=>fieldHtml('m_',f,o,w&&!(isCD(o)&&CDRO.includes(f[0])))).join('')}</div>
+   ${chBtn('bMch','pMch',MCH)}
+   <div class="mb" style="margin-top:12px">${[['contractStart','Contract start date','date'],['contractEnd','Contract expiry date','date']].map(f=>fieldHtml('m_',f,o,w)).join('')}</div>
+   <div style="margin-top:14px">${contractBox(id,w,'merchants','MCA')}</div>
+   <div style="margin-top:16px">${memoBlock('mcaId',id,w,'Notes and files about this MCA.')}</div>
+   <div style="margin-top:16px">${relBox('mcaId',w,'MCA')}</div>
+   <div class="hint" style="margin-top:10px">Code, company, gateway, status and location come from the Central Database and cannot be changed here.</div>
+   <div class="err" id="eErr" role="alert"></div></div>
+   <div id="pCo" class="hidden"><div class="faint" style="margin:6px 0 10px">Step 4 · Information about the company: its PIC, contract, rate and memo.</div>
+   <div class="mb">${[['companyCode','Code Company','text'],['cPicName','Company PIC name','text']].map(f=>fieldHtml('m_',f,o,w&&!(isCD(o)&&CDRO.includes(f[0])))).join('')}</div>
+   ${chBtn('bCch','pCch',CCH)}
+   <div class="mb" style="margin-top:12px">${[['cContractStart','Contract start date','date'],['cContractEnd','Contract expiry date','date']].map(f=>fieldHtml('m_',f,o,w)).join('')}</div>
+   <div style="margin-top:14px">${contractBox(id,w,'companies','company')}</div>
+   <div style="margin-top:18px"><h3>Rate</h3>${rateForm(r0,w,rkind(o))}${w?'<label class="f full" style="margin-top:10px">Note for this change (optional)<input class="i" id="rNote" maxlength="200" placeholder="for example: new agreement from 1 Nov"></label>':''}<div class="err" id="rErr" role="alert"></div>${w?'<div style="margin-top:8px"><button class="btn pri" type="button" id="rSave">Save rate</button></div>':''}
+   <div style="margin-top:16px"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Rate history</h3><select class="i" id="rhF" style="width:auto" aria-label="Filter by item"><option value="">All items</option>${RH_G.map(g=>`<option>${g}</option>`).join('')}</select></div><div style="margin-top:8px" id="rHist">${rateHistory(id)}</div></div></div>
+   <div style="margin-top:16px">${memoBlock('coId',id,w,'Notes and files about this company.')}</div>
+   <div style="margin-top:16px">${relBox('coId',w,'company')}</div>
+   <div class="err" id="cErr" role="alert"></div></div>`,
+   `<span class="sp"></span><button class="btn" type="button" id="mClose">${w?'Cancel':'Close'}</button>${w?`<button class="btn pri" type="button" id="eSave">Save MCA info</button><button class="btn pri hidden" type="button" id="cSave">Save company info</button>`:''}`);
+  $('#mClose').onclick=closeModal;
+  const showTab=t=>{document.querySelectorAll('.mtab').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mt===t)));$('#pMca').classList.toggle('hidden',t!=='mca');$('#pCo').classList.toggle('hidden',t!=='co');const a=$('#eSave'),c=$('#cSave');if(a)a.classList.toggle('hidden',t!=='mca');if(c)c.classList.toggle('hidden',t!=='co')};
+  document.querySelectorAll('.mtab').forEach(b=>b.onclick=()=>showTab(b.dataset.mt));
+  [['bMch','pMch'],['bCch','pCch']].forEach(([bi,pi])=>{const bb=$('#'+bi);if(bb)bb.onclick=()=>{const pp=$('#'+pi),h=pp.classList.toggle('hidden');bb.setAttribute('aria-expanded',String(!h));bb.innerHTML=bb.innerHTML.replace(/[▸▾]$/,h?'▸':'▾')}});
+  bindMemoBlock('mcaId',id,'MCA',mLab(o));bindMemoBlock('coId',id,'Company',mLab(o));relBind('mcaId',id,w,'MCA',mLab(o));relBind('coId',id,w,'Company',mLab(o));
+  if(!isNew){
+    [['merchants','MCA'],['companies','Company']].forEach(([sc,kind])=>{
+      ctPaint(id,w,sc);
+      const up=$('#ctUp_'+sc);if(up)up.onclick=async()=>{
+        const f=$('#ctF_'+sc).files[0],msg=$('#ctMsg_'+sc);if(!f){msg.textContent='Choose a file.';return}
+        up.disabled=true;
+        try{let u=await readFile(f),mime=f.type||'application/octet-stream';if(/^image\//.test(mime)&&mime!=='image/gif'){u=await imgShrink(u);mime='image/jpeg'}
+          if(u.length*0.75>DOCMAX){msg.textContent='That file is too large.';up.disabled=false;return}
+          const did=rid('d');await db.doc('docdata/'+did).set({data:u});
+          await db.doc('docs/'+did).set({target:sc+'/'+id,kind:'Contract',name:f.name,mime,size:Math.round(u.length*0.75),note:'Contract',at:new Date().toISOString(),by:ME.u,byName:ME.name});
+          logAct(kind+' contract uploaded',mLab(o),f.name);await logH(kind,id,mLab(o),'Contract uploaded',f.name);msg.textContent='Uploaded.';$('#ctF_'+sc).value='';setTimeout(()=>ctPaint(id,w,sc),300)}
+        catch(e){msg.textContent='Could not upload the file.'}
+        up.disabled=false}});
+    const setShow=()=>{const u=$('#rSetU').value,n=$('#rSetN').value,v=k=>u===k&&n?'Every '+n+(+n===1?' '+k.toLowerCase():' '+k.toLowerCase()+'s'):'N/A';$('#rSetShow').innerHTML=['Day','Week','Month'].map(k=>`<div><span>${k}</span><b>${esc(v(k))}</b></div>`).join('')};
+    setShow();$('#rSetU').onchange=setShow;$('#rSetN').oninput=setShow;
+    const bindRm=()=>{document.querySelectorAll('[data-rmt],[data-rmf]').forEach(b=>b.onclick=()=>b.closest('tr').remove())};bindRm();
+    const aT=$('#rAddT');if(aT){aT.onclick=()=>{const t=document.createElement('tbody');t.innerHTML=`<tr><td><input class="i rt_from" type="number" min="0"></td><td><input class="i rt_to" type="number" min="0" placeholder="and above"></td><td><input class="i rt_ci" type="number" step="0.01" min="0" max="100"></td><td><input class="i rt_co" type="number" step="0.01" min="0" max="100"></td><td><button class="btn sm" type="button" data-rmt="1" aria-label="Remove range">×</button></td></tr>`;$('#rTiers').appendChild(t.firstChild);bindRm()};
+      $('#rSample').onclick=async()=>{if(document.querySelectorAll('#rTiers tr').length&&!await confirmP('Replace the ranges now on the screen with the sample ones?'))return;$('#rTiers').innerHTML='';[[50000,200000,1.5,0.5],[200000,500000,1.3,0.4],[500000,null,1.0,0.3]].forEach(([f,t,ci,co])=>{aT.click();const tr=$('#rTiers').lastElementChild;tr.querySelector('.rt_from').value=f;tr.querySelector('.rt_to').value=t==null?'':t;tr.querySelector('.rt_ci').value=ci;tr.querySelector('.rt_co').value=co})};
+      if($('#rAddF'))$('#rAddF').onclick=()=>{const t=document.createElement('tbody');t.innerHTML=`<tr><td><input class="i rf_name" list="dlFee"></td><td><input class="i rf_pct" type="number" step="0.01" min="0" max="100"></td><td><button class="btn sm" type="button" data-rmf="1" aria-label="Remove fee">×</button></td></tr>`;$('#rFees').appendChild(t.firstChild);bindRm()}}
+    const rhf=$('#rhF');if(rhf)rhf.onchange=()=>{$('#rHist').innerHTML=rateHistory(id,rhf.value)};
+    const rs=$('#rSave');if(rs)rs.onclick=async()=>{
+      const r=readRate(rkind(o),rateOf(D.merchants[id]||o)),err=$('#rErr'),e=rateErr(r);if(e){err.textContent=e;return}
+      const ch=rateDiff(rateOf(D.merchants[id]||o),r);if(!ch.length){err.textContent='Nothing has changed.';return}const note=($('#rNote')?$('#rNote').value.trim():'').slice(0,200);
+      try{
+        await db.doc('merchants/'+id).update({rate:r,rateUpdatedAt:new Date().toISOString(),updatedAt:new Date().toISOString(),updatedBy:ME.name});
+        await logH('Rate',id,mLab(o),'Rate changed',ch.map(x=>`${x.item}: ${x.b} → ${x.n}`).join(' · ')+(note?' · Note: '+note:''),{changes:ch,note});if($('#rNote'))$('#rNote').value='';
+        err.textContent='';toast('Rate saved.');setTimeout(()=>{const h=$('#rHist');if(h)h.innerHTML=rateHistory(id,$('#rhF')?$('#rhF').value:'')},300);
+      }catch(x){err.textContent='Could not save. You may only have view access.'}
+    };
+  }
+  if(!w)return;
+  const saveM=async(kind,list,extra,errId)=>{
+    const err=$('#'+errId);err.textContent='';
+    const v=readFields('m_',list);if(isCD(o))CDRO.forEach(k=>{if(k in v||k==='companyCode')v[k]=o[k]||''});
+    if(extra&&extra(v,err))return;
+    try{await db.doc('merchants/'+id).set({...o,...v,updatedAt:new Date().toISOString(),updatedBy:ME.name});
+      await logH(kind,id,mLab(o),'Changed',diffText(list,o,v,false));closeModal();toast('Saved.')}
+    catch(e){err.textContent='Could not save. You may only have view access.'}
+  };
+  $('#eSave').onclick=()=>saveM('MCA',[['picName','MCA PIC name','text'],...MCH,['contractStart','Contract start date','date'],['contractEnd','Contract expiry date','date']],(v,err)=>{if(v.contractStart&&v.contractEnd&&v.contractEnd<v.contractStart){err.textContent='The expiry date must not be before the start date.';return true}},'eErr');
+  $('#cSave').onclick=()=>saveM('Company',[['companyCode','Code Company','text'],['cPicName','Company PIC name','text'],...CCH,['cContractStart','Contract start date','date'],['cContractEnd','Contract expiry date','date']],(v,err)=>{if(v.cContractStart&&v.cContractEnd&&v.cContractEnd<v.cContractStart){err.textContent='The expiry date must not be before the start date.';return true}},'cErr');
+}
+
+function histView(){
+  const hs=[...rows('hist'),...rows('log').map(l=>({at:l.at,byName:l.name,kind:'Activity',label:l.target||'',action:l.action,detail:l.detail}))].sort((a,b)=>(b.at||'').localeCompare(a.at||''));
+  return `<div class="toolbar"><span class="sp"></span>${can('export')?'<button class="btn" type="button" id="xHist">Excel</button>':''}</div><div class="tbox"><table class="t" style="min-width:760px"><thead><tr><th>Date and time</th><th>By</th><th>Type</th><th>Record</th><th>Action</th><th>What changed</th></tr></thead><tbody>
+  ${hs.length?hs.map(h=>`<tr><td class="mono">${esc(fmtDT(h.at))}</td><td>${esc(h.byName||'')}</td><td>${esc(h.kind||'')}</td><td>${esc(h.label||'')}</td><td>${esc(h.action||'')}</td><td class="wrap">${esc(h.detail||'')}</td></tr>`).join(''):emptyRow(6,'No changes yet.')}</tbody></table></div>`;
+}
+function locModal(){
+  if(!can('admin'))return;
+  const cur=[...locs()];
+  openModal('Locations','Gateways are grouped by these locations.',`<div class="chips" id="lcList"></div><div class="addrow"><input class="i" id="lcNew" placeholder="New location, for example KH" maxlength="12"><button class="btn" type="button" id="lcAdd">Add</button></div><div class="err" id="eErr" role="alert"></div><div class="hint">A location that still has gateways cannot be removed.</div>`,`<span class="sp"></span><button class="btn" type="button" id="mClose">Close</button>`);
+  $('#mClose').onclick=closeModal;
+  const save=async list=>{try{await db.doc('settings/main').set({locations:list,updatedAt:new Date().toISOString(),updatedBy:ME.name});await logAct('Locations','',list.join(', '))}catch(e){$('#eErr').textContent='Could not save.'}};
+  const paint=()=>{const L=locs();$('#lcList').innerHTML=L.map(l=>`<span class="pc">${esc(l)}<button type="button" data-rm="${esc(l)}" aria-label="Remove ${esc(l)}">×</button></span>`).join('');
+    $('#lcList').querySelectorAll('[data-rm]').forEach(b=>b.onclick=async()=>{const l=b.dataset.rm;if(gwRows().some(g=>g.location===l)){$('#eErr').textContent=l+' still has gateways.';return}if(locs().length<2){$('#eErr').textContent='Keep at least one location.';return}await save(locs().filter(x=>x!==l));setTimeout(paint,250)})};
+  paint();
+  $('#lcAdd').onclick=async()=>{const v=$('#lcNew').value.trim().toUpperCase();if(!v)return;if(locs().includes(v)){$('#eErr').textContent='Already in the list.';return}$('#eErr').textContent='';await save([...locs(),v]);$('#lcNew').value='';setTimeout(paint,250)};
+}
+
+/* ---------- draw ---------- */
+const MENUS=[['dash','Dashboard'],['gw','Payment gateways'],['hist','Audit log']];
+const TITLES={dash:['Dashboard','Counts, contracts to check and what is still missing'],gw:['Payment gateways','Pick a location, then a gateway'],mer:['MCAs','Companies on each gateway, with contract, contacts and rates'],hist:['Audit log','Every change: who, when, and before → now'],lists:['Dropdown lists','Add, rename, reorder or delete the choices in dropdowns'],access:['Access control','Choose what each position can open and do'],users:['Users','Master Admin: everything. Editor: add and change records. Viewer: read only.']};
+function tabsHtml(){
+  const T=[['g','Lists'],...MENUS.filter(m=>m[0]!=='hist'&&menuOk(m[0])),['g','Records'],...MENUS.filter(m=>m[0]==='hist'&&menuOk(m[0])),...(can('admin')?[['g','Tools'],['users','Users'],['access','Access control'],['lists','Dropdown lists']]:[])].filter((x,i,a)=>x[0]!=='g'||(a[i+1]&&a[i+1][0]!=='g'));
+  return T.map(([k,l])=>k==='g'?`<div class="ng">${l}</div>`:`<button type="button" data-tab="${k}" ${UI.tab===k?'aria-current="page"':''}><span>${l}</span></button>`).join('');
+}
+const rateTxt=m=>{const r=rateOf(m);return rkind(m)==='lnw'?[r.collPct!=null&&r.collPct!==''?'Collection fee (CI) '+pcTx(+r.collPct):'',r.wdPct!=null&&r.wdPct!==''?'Withdrawal fee (CO) '+pcTx(+r.wdPct):''].filter(Boolean).join(' / '):r.tiers.slice().sort((a,b)=>a.from-b.from).map(t=>`${tierLab(t)}: CI ${pcTx(t.ci)||'—'} / CO ${pcTx(t.co)||'—'}`).join('; ')};
+const PAGE_N=20;
+function paginate(){
+  if(UI.tab==='access'||UI.tab==='lists')return;
+  const old=document.getElementById('pager');if(old)old.remove();
+  const big=[...document.querySelectorAll('#view .tbox table.t')].map(t=>({t,trs:[...(t.querySelector('tbody')||{children:[]}).children].filter(r=>!r.querySelector('td.empty'))})).filter(x=>x.trs.length>PAGE_N);
+  const key=UI.tab+'|'+[...document.querySelectorAll('#view input,#view select')].map(e=>e.value).join('|');if(UI.pgKey!==key){UI.pgKey=key;UI.pg=0}
+  if(big.length!==1)return;
+  const {t,trs}=big[0],n=trs.length,pages=Math.ceil(n/PAGE_N);UI.pg=Math.min(Math.max(UI.pg||0,0),pages-1);
+  trs.forEach((r,i)=>{r.style.display=Math.floor(i/PAGE_N)===UI.pg?'':'none'});
+  const box=t.closest('.tbox');
+  box.insertAdjacentHTML('afterend',`<div class="pager" id="pager"><span>${UI.pg*PAGE_N+1}–${Math.min(n,(UI.pg+1)*PAGE_N)} of ${n}</span><button class="btn sm" type="button" data-pg="-1" ${UI.pg===0?'disabled':''}>Previous</button><span>Page ${UI.pg+1} of ${pages}</span><button class="btn sm" type="button" data-pg="1" ${UI.pg>=pages-1?'disabled':''}>Next</button></div>`);
+  document.querySelectorAll('#pager [data-pg]').forEach(b=>b.onclick=()=>{UI.pg+=+b.dataset.pg;draw();const bx=document.querySelector('#view .tbox');if(bx)bx.scrollTop=0});
+}
+function draw(){
+  $('#nav').innerHTML=tabsHtml();
+  $('#todayTxt').textContent=fmtD(todayStr());
+  if(!menuOk(UI.tab)){const f=MENUS.find(m=>menuOk(m[0]));UI.tab=f?f[0]:'none'}
+  const t=UI.tab;if(t==='none'){$('#pageTitle').textContent='No access';$('#pageSub').textContent='';$('#view').innerHTML='<div class="empty">Your position cannot open any menu. Ask a Master Admin.</div>';return}
+  $('#pageTitle').textContent=TITLES[t][0];$('#pageSub').textContent=TITLES[t][1];
+  $('#view').innerHTML=t==='users'?usersView():t==='access'?accessView():t==='lists'?listsView():t==='gw'?gwView():t==='mer'?merView():t==='hist'?histView():dashView();
+  const setTab=k=>{if(k==='loc'){locModal();return}UI.tab=k;UI.q='';UI.loc='';UI.st='';UI.gw='';draw()};
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+  document.querySelectorAll('tr.row[data-g]').forEach(el=>{const go=()=>gwModal(el.dataset.g);el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter')go()}});
+  document.querySelectorAll('tr.row[data-cp]').forEach(el=>{const go=()=>cpAccModal(el.dataset.cp);el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter')go()}});
+  document.querySelectorAll('tr.row[data-gwm]').forEach(el=>{const go=()=>gwModal(el.dataset.gwm);el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter')go()}});
+  document.querySelectorAll('tr.row[data-m]').forEach(el=>{const go=()=>merModal(el.dataset.m);el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter')go()}});
+  document.querySelectorAll('.card[data-go]').forEach(el=>el.onclick=()=>setTab(el.dataset.go));
+  document.querySelectorAll('.card[data-loc],.leg [data-loc]').forEach(el=>el.onclick=()=>{UI.tab='gw';UI.q='';UI.st='';UI.gw='';UI.loc=el.dataset.loc;draw()});
+  {const al=document.getElementById('addLoc');if(al)al.onclick=()=>locModal();const cb=document.getElementById('cpBtn');if(cb)cb.onclick=()=>gwModal('cp')}
+  document.querySelectorAll('[data-pickloc]').forEach(b=>b.onclick=()=>{UI.loc=b.dataset.pickloc;draw()});
+  document.querySelectorAll('[data-go]:not(.card)').forEach(b=>b.onclick=()=>{const g=b.dataset.go;if(g==='addGw')gwModal(null);else if(g==='addMer')merModal(null)});
+  const on=(id,ev,fn)=>{const e=$('#'+id);if(e)e[ev]=fn};
+  on('fq','oninput',e=>{UI.q=e.target.value;UI.keep='fq';draw()});
+  [['fl','loc'],['fs','st'],['fg','gw']].forEach(([id,k])=>on(id,'onchange',e=>{UI[k]=e.target.value;draw()}));
+  on('xGw','onclick',()=>saveX([{name:'Payment gateways',rows:[['Code','Gateway','Location','Status','MCAs'],...gwRows().sort((a,b)=>(a.location||'').localeCompare(b.location||'')||seqOf(a)-seqOf(b)).map(g=>[gcode(g),g.name||'',g.location||'',g.status||'Active',rows('merchants').filter(m=>m.gwId===g.id).length])]},{name:'Memos',rows:[['Gateway','Date and time','By','Memo'],...rows('memos').sort((a,b)=>(b.at||'').localeCompare(a.at||'')).map(m=>[(m.mcaId?mLab(D.merchants[m.mcaId]):gLab(D.gateways[m.gwId]||(m.gwId==='cp'?cpDoc():null))),fmtDT(m.at),m.byName||'',m.text||''])]}],`Payment_Gateways_${todayStr()}.xlsx`));
+  on('xMer','onclick',()=>saveX([{name:'MCAs',rows:[['Code (MCA)','Company','Company code','Gateway','Location','Status','Contract start','Contract expiry','Company PIC','PIC phone','PIC Telegram','PIC email','Currency','Fee % by daily volume (USD)','Other fees','Deposit limit','Withdrawal limit','Settlement','Other terms','Note'],...mFilt(mRows()).sort((a,b)=>(a.code||a.company||'').localeCompare(b.code||b.company||'')).map(m=>{const r=rateOf(m);return [m.code||'',m.company||'',m.companyCode||'',m.gw?gLab(m.gw):'',mloc(m),m.status||'Active',m.contractStart||'',m.contractEnd||'',m.picName||'',m.picPhone||'',m.picTelegram||'',m.picEmail||'',r.currency.join(' / '),rateTxt(m),rkind(m)==='full'?r.fees.map(f=>`${f.name}: ${pcTx(f.pct)||'—'}`).join('; '):'',(r.depMin!=null||r.depMax!=null)?`${nf(r.depMin)||'—'} – ${nf(r.depMax)||'—'}`:'',(r.wdMin!=null||r.wdMax!=null)?`${nf(r.wdMin)||'—'} – ${nf(r.wdMax)||'—'}`:'',setTxt(r),r.other||'',m.note||'']})]}],`Payment_Gateway_MCAs_${todayStr()}.xlsx`));
+  on('xHist','onclick',()=>saveX([{name:'Audit log',rows:[['Date and time','By','Type','Record','Action','What changed'],...[...rows('hist'),...rows('log').map(l=>({at:l.at,byName:l.name,kind:'Activity',label:l.target||'',action:l.action,detail:l.detail}))].sort((a,b)=>(b.at||'').localeCompare(a.at||'')).map(h=>[fmtDT(h.at),h.byName||'',h.kind||'',h.label||'',h.action||'',h.detail||''])]}],`Payment_Gateway_history_${todayStr()}.xlsx`));
+  paginate();
+  if(UI.keep){const e=$('#'+UI.keep);if(e){e.focus();const n=e.value.length;e.setSelectionRange&&e.setSelectionRange(n,n)}UI.keep=null}
+}
+function refresh(){
+  if(!ME||Object.keys(READY).length<9)return;
+  if(!$('#ov'))draw();else{$('#nav').innerHTML=tabsHtml();document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{closeModal();if(b.dataset.tab==='loc')locModal();else{UI.tab=b.dataset.tab;draw()}})}
+}
+
+/* ---------- auth (same as Central Database) ---------- */
+/* ---------- auth (same as Central Database) ---------- */
+async function sha(x){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(x));return [...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,'0')).join('')}
+const hashPw=(salt,pw)=>sha(salt+':'+pw);
+const newSalt=()=>[...crypto.getRandomValues(new Uint8Array(12))].map(x=>x.toString(16).padStart(2,'0')).join('');
+async function bootstrapAdmin(){
+  if(!db||!READY.users||Object.keys(D.users).length||bootstrapAdmin.done)return;bootstrapAdmin.done=true;
+  try{const salt=newSalt();await db.doc('users/admin').set({u:'admin',name:'Administrator',role:'Admin',salt,hash:await hashPw(salt,'admin123'),mustChange:true,active:true,lastLogin:null})}catch(e){}
+}
+async function doLogin(ev){
+  ev.preventDefault();const u=$('#lu').value.trim().toLowerCase(),p=$('#lp').value;const err=$('#loginErr');err.textContent='';
+  const rec=D.users[u];
+  if(!rec||rec.active===false||await hashPw(rec.salt,p)!==rec.hash){err.textContent='Wrong username or password.';return}
+  ME={u,name:rec.name,role:rec.role};store.set('pg_user',u);logAct('Sign in','','');
+  try{await db.doc('users/'+u).update({lastLogin:new Date().toISOString()})}catch(e){}
+  enterApp();
+  if(rec.mustChange)passwordModal(true);
+}
+function enterApp(){
+  $('#login').classList.add('hidden');$('#app').classList.remove('hidden');
+  $('#who').innerHTML=`<b style="color:#fff">${esc(ME.name)}</b><br><small>${esc(rl(ME.role))} · ${esc(ME.u)}</small>`;
+  draw();
+}
+function logout(){logAct('Sign out','','');ME=null;store.del('pg_user');$('#app').classList.add('hidden');$('#login').classList.remove('hidden');$('#lp').value='';closeModal()}
+function checkSession(){
+  if(ME){const rec=D.users[ME.u];if(!rec||rec.active===false){logout();return}ME.role=rec.role;ME.name=rec.name;return}
+  const u=store.get('pg_user');if(u&&D.users[u]&&D.users[u].active!==false&&!D.users[u].mustChange){ME={u,name:D.users[u].name,role:D.users[u].role};enterApp()}
+}
+function openModalC(title,body,footer,opt={}){
+  $('#modalRoot').innerHTML=`<div class="ov" id="ov"><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}" style="${opt.narrow?'max-width:440px':''}"><header><h2>${esc(title)}</h2>${opt.force?'':'<button class="x" type="button" aria-label="Close" id="mx">×</button>'}</header><div class="mb" id="mbody">${body}</div><footer id="mfoot">${footer}</footer></div></div>`;
+  if(!opt.force){$('#mx').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal()})}
+  document.onkeydown=e=>{if(e.key==='Escape'&&!opt.force)closeModal()};
+  const f=$('#mbody input:not([disabled]),#mbody select:not([disabled])');if(f)f.focus();
+}
+function passwordModal(force){
+  const body=`${force?'':'<label class="f full">Current password<input class="i" id="pw0" type="password" autocomplete="current-password"></label>'}
+    <label class="f full">New password (at least 6 characters)<input class="i" id="pw1" type="password" autocomplete="new-password"></label>
+    <label class="f full">Repeat new password<input class="i" id="pw2" type="password" autocomplete="new-password"></label><div class="err full" id="pwErr" role="alert"></div>`;
+  openModalC(force?'Choose a new password':'Change password',body,`<span class="sp"></span>${force?'':'<button class="btn" type="button" id="pwCancel">Cancel</button>'}<button class="btn pri" type="button" id="pwSave">Save password</button>`,{force,narrow:1});
+  if(!force)$('#pwCancel').onclick=closeModal;
+  $('#pwSave').onclick=async()=>{
+    const err=$('#pwErr');const p1=$('#pw1').value,p2=$('#pw2').value;const rec=D.users[ME.u];
+    if(!force&&await hashPw(rec.salt,$('#pw0').value)!==rec.hash){err.textContent='Current password is wrong.';return}
+    if(p1.length<6){err.textContent='Use at least 6 characters.';return}
+    if(p1!==p2){err.textContent='The two passwords do not match.';return}
+    if(p1==='admin123'){err.textContent='Choose a different password.';return}
+    const salt=newSalt();
+    try{await db.doc('users/'+ME.u).update({salt,hash:await hashPw(salt,p1),mustChange:false});logAct('Change password','','');closeModal();toast('Password changed.')}catch(e){err.textContent='Could not save. Try again.'}
+  };
+}
+function usersView(){
+  if(!can('admin'))return '<div class="empty">Only a Master Admin can manage users.</div>';
+  const rows=Object.entries(D.users).map(([id,u])=>({...u,id})).sort((a,b)=>a.u.localeCompare(b.u));
+  setTimeout(()=>{document.querySelectorAll('#view tr.row[data-u]').forEach(tr=>{tr.onclick=()=>userModal(tr.dataset.u);tr.onkeydown=e=>{if(e.key==='Enter')userModal(tr.dataset.u)}});const a=$('#btnAddU');if(a)a.onclick=()=>userModal(null)},0);
+  return `<div class="toolbar"><span class="sp"></span><button class="btn pri" id="btnAddU" type="button">+ Add user</button></div><div class="tbox"><table class="t" style="min-width:600px"><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Status</th><th>Last sign-in</th></tr></thead><tbody>${rows.map(r=>`<tr class="row" tabindex="0" data-u="${esc(r.id)}"><td class="mono">${esc(r.u)}</td><td>${esc(r.name)}</td><td>${esc(rl(r.role))}</td><td>${r.active===false?'<span class="pill x">Disabled</span>':'<span class="pill g">Active</span>'}</td><td>${r.lastLogin?esc(fmtDT(r.lastLogin)):'<span class="faint">Never</span>'}</td></tr>`).join('')}</tbody></table></div>`;
+}
+function accessView(){
+  if(!can('admin'))return '<div class="empty">Only a Master Admin can manage access.</div>';
+  const defs=posDefs(),names=Object.keys(defs),builtin=['Admin','Editor','Viewer'],n2=names.length+1;
+  const cnt=n=>Object.values(D.users).filter(u=>u.role===n).length;
+  const row=(label,type,key)=>`<tr><td>${esc(label)}</td>${names.map(n=>{const lk=n==='Admin',on=lk||(type==='d'?(defs[n].docs===undefined||!(defs[n].dk||[]).includes(key)?(key.startsWith('vw:')?true:defs[n].acts.includes(DACT[key.slice(0,2)])):defs[n].docs.includes(key)):(type==='m'?defs[n].menus:defs[n].acts).includes(key));return `<td style="text-align:center"><input type="checkbox" class="ac" data-n="${esc(n)}" data-t="${type}" data-k="${esc(key)}" ${on?'checked':''} ${lk?'disabled':''} aria-label="${esc(rl(n))}: ${esc(label)}"></td>`}).join('')}</tr>`;
+  setTimeout(bindAccess,0);
+  return `<div class="defbox"><b>How it works:</b> each column is a position. Tick what that position can open and do, then press <b>Save access</b>. Give a position to a person in <b>Users</b>. Users and Access control are always for the Master Admin only. This controls what each person sees in this page. For a job that only some people can do (for example, upload one document type), add a position for that job, tick only its rows, and give that position to those people in <b>Users</b>.</div>
+  <div class="tbox"><table class="t" style="min-width:${180+110*names.length}px"><thead><tr><th>Permission</th>${names.map(n=>`<th style="text-align:center">${esc(rl(n))}<div class="faint">${cnt(n)} user${cnt(n)===1?'':'s'}</div>${builtin.includes(n)?'':`<a href="#" data-delpos="${esc(n)}">Remove</a>`}</th>`).join('')}</tr></thead><tbody>
+  <tr><td colspan="${n2}"><b>Menus they can open</b></td></tr>${MENUS.map(m=>row(m[1],'m',m[0])).join('')}
+  <tr><td colspan="${n2}"><b>What they can do</b></td></tr>${ACTS.map(a=>row(a[1],'a',a[0])).join('')}
+  <tr><td colspan="${n2}"><b>Upload documents of this type</b> <span class="faint">(also needs Upload files)</span></td></tr>${drTypes().map(t=>row(t||'No type (old files)','d','up:'+t)).join('')}
+  <tr><td colspan="${n2}"><b>View or download documents of this type</b></td></tr>${drTypes().map(t=>row(t||'No type (old files)','d','vw:'+t)).join('')}
+  <tr><td colspan="${n2}"><b>Replace or delete documents of this type</b> <span class="faint">(also needs Delete)</span></td></tr>${drTypes().map(t=>row(t||'No type (old files)','d','dl:'+t)).join('')}</tbody></table></div>
+  <div class="addrow" style="margin-top:12px"><input class="i" id="posNew" placeholder="New position, for example Finance" maxlength="30"><button class="btn" type="button" id="posAdd">+ Add position</button></div>
+  <div class="toolbar" style="margin-top:12px"><span class="err" id="acErr" role="alert"></span><span class="sp"></span><button class="btn pri" type="button" id="acSave">Save access</button></div>`;
+}
+function readAccess(){
+  const o={};posNames().filter(n=>n!=='Admin').forEach(n=>o[n]={menus:[],acts:[],docs:[],dk:[]});
+  document.querySelectorAll('input.ac').forEach(c=>{const q=o[c.dataset.n];if(!q)return;if(c.dataset.t==='d'){q.dk.push(c.dataset.k);if(c.checked)q.docs.push(c.dataset.k)}else if(c.checked)(c.dataset.t==='m'?q.menus:q.acts).push(c.dataset.k)});return o}
+function bindAccess(){
+  const err=$('#acErr');if(!err)return;
+  const put=async(list,msg)=>{try{await db.doc('settings/positions').set({list,updatedAt:new Date().toISOString(),updatedBy:ME.name});logAct('Access control','',msg);toast('Saved.');return true}catch(e){err.textContent='Could not save.';return false}};
+  $('#acSave').onclick=async()=>{err.textContent='';await put(readAccess(),'Access saved for: '+Object.keys(readAccess()).join(', '))};
+  $('#posAdd').onclick=async()=>{err.textContent='';const v=$('#posNew').value.trim();
+    if(!v){err.textContent='Type the position name.';return}
+    if(posNames().some(n=>n.toLowerCase()===v.toLowerCase())||/^master admin$/i.test(v)){err.textContent='That position already exists.';return}
+    const l=readAccess();l[v]={menus:MENUS.map(m=>m[0]),acts:[]};if(await put(l,'Position added: '+v))$('#posNew').value=''};
+  document.querySelectorAll('[data-delpos]').forEach(a=>a.onclick=async e=>{e.preventDefault();err.textContent='';const n=a.dataset.delpos;
+    if(Object.values(D.users).some(u=>u.role===n)){err.textContent=n+' still has users. Move them to another position first.';return}
+    if(!await confirmP('Remove the position "'+n+'"?'))return;const l=readAccess();delete l[n];await put(l,'Position removed: '+n)});
+}
+function userModal(id){
+  const isNew=!id;const r=isNew?{u:'',name:'',role:'Editor',active:true}:D.users[id];
+  openModalC(isNew?'Add user':'Edit user',`<label class="f" for="u_u">Username<input class="i" id="u_u" value="${esc(r.u)}" ${isNew?'':'disabled'} autocomplete="off"></label>
+   <label class="f" for="u_n">Full name<input class="i" id="u_n" value="${esc(r.name)}"></label>
+   <label class="f" for="u_r">Role<select class="i" id="u_r">${posNames().map(x=>`<option value="${x}" ${x===r.role?'selected':''}>${esc(rl(x))}</option>`).join('')}</select></label>
+   <label class="f" for="u_a">Status<select class="i" id="u_a"><option value="1" ${r.active!==false?'selected':''}>Active</option><option value="0" ${r.active===false?'selected':''}>Disabled</option></select></label>
+   <label class="f full" for="u_p">${isNew?'Temporary password':'Reset password (leave blank to keep)'}<input class="i" id="u_p" type="text" autocomplete="off"></label>`,
+   `<span class="sp"></span><span class="err" id="mErr" role="alert"></span><button class="btn" type="button" id="mCancel">Cancel</button><button class="btn pri" type="button" id="mSave">Save</button>`);
+  $('#mCancel').onclick=closeModal;
+  $('#mSave').onclick=async()=>{
+    const err=$('#mErr');const u=(isNew?$('#u_u').value:r.u).trim().toLowerCase(),name=$('#u_n').value.trim(),role=$('#u_r').value,active=$('#u_a').value==='1',pw=$('#u_p').value;
+    if(!/^[a-z0-9._-]{3,30}$/.test(u)){err.textContent='Username: 3 to 30 letters, numbers, dot, dash or underscore.';return}
+    if(!name){err.textContent='Enter a name.';return}
+    if(isNew&&D.users[u]){err.textContent='That username exists.';return}
+    if(isNew&&pw.length<6){err.textContent='Temporary password needs 6+ characters.';return}
+    const admins=Object.entries(D.users).filter(([k,x])=>x.role==='Admin'&&x.active!==false&&k!==u).length;
+    if((role!=='Admin'||!active)&&!isNew&&r.role==='Admin'&&admins===0){err.textContent='Keep at least one active Master Admin.';return}
+    if(!isNew&&u===ME.u&&!active){err.textContent='You cannot disable yourself.';return}
+    const doc={...(isNew?{lastLogin:null,mustChange:true}:JSON.parse(JSON.stringify(r))),u,name,role,active};delete doc.id;
+    if(pw){doc.salt=newSalt();doc.hash=await hashPw(doc.salt,pw);doc.mustChange=true}
+    try{await db.doc('users/'+u).set(doc);logAct(isNew?'Add user':'Edit user',u,`${name}, ${rl(role)}, ${active?'active':'disabled'}${pw?', password reset':''}`);closeModal();toast('Saved.')}catch(e){err.textContent='Could not save.'}
+  };
+}
+/* ---------- Lists: the Master Admin can add, rename, move and delete dropdown choices ---------- */
+const LST=[];
+function lstReg(r){r.def=r.kv?r.keys.map(k=>({k,l:r.labels[k]||k})):(r.arr?r.arr.slice():(r.store?r.store.read():[]));LST.push(r);return r}
+const lstAll=()=>(D.settings&&D.settings.lists)||{};
+function lstRead(r){
+  if(r.store&&!r.kv)return r.store.read();
+  const s=lstAll()[r.key];
+  if(r.kv)return s&&Array.isArray(s.items)&&s.items.length?s.items.map(x=>({k:x.k,l:x.l})):r.def.map(x=>({...x}));
+  return s&&Array.isArray(s.items)&&s.items.length?s.items.slice():r.def.slice();
+}
+function lstSync(){LST.forEach(r=>{const v=lstRead(r);
+  if(r.kv){r.keys.splice(0,r.keys.length,...v.map(x=>x.k));v.forEach(x=>{r.labels[x.k]=x.l;(r.labels2||[]).forEach((m,mi)=>{if(x.k in m||(mi===0&&!(r.locked||[]).includes(x.k)))m[x.k]=x.l})})}
+  else if(r.arr)r.arr.splice(0,r.arr.length,...v)})}
+const lstVal=(r,it)=>r.kv?it.l:it;
+function lstUsed(r,it){const val=r.kv?it.k:it;if(r.countFn)return r.countFn(val);let n=0;(r.uses||[]).forEach(([c,f])=>Object.values(D[c]||{}).forEach(x=>{if(x&&x[f]===val)n++}));return n}
+async function lstWrite(r,items,msg){
+  if(r.store&&!r.kv)await r.store.write(items);
+  else await db.doc('settings/lists').set({...lstAll(),[r.key]:{items,updatedAt:new Date().toISOString(),updatedBy:ME.name}});
+  logAct('List changed',r.title,msg);
+}
+async function lstMass(r,oldV,newV){
+  if(r.key==='docTypes'||r.key==='doct')await posRenameDoc(oldV,newV);
+  if(r.massFn)return r.massFn(oldV,newV);
+  const jobs=[];(r.uses||[]).forEach(([c,f])=>Object.entries(D[c]||{}).forEach(([id,x])=>{if(x&&x[f]===oldV)jobs.push([c,id,f])}));
+  for(let i=0;i<jobs.length;i+=20)await Promise.all(jobs.slice(i,i+20).map(([c,id,f])=>db.doc(c+'/'+id).update({[f]:newV})));
+  return jobs.length;
+}
+UI.lst=null;
+function listsView(){
+  if(!can('admin'))return '<div class="empty">Only a Master Admin can manage lists.</div>';
+  const box=r=>{const items=lstRead(r),ed=UI.lst&&UI.lst.k===r.key?UI.lst.i:-1;
+    return `<div class="lbox" data-lk="${esc(r.key)}"><h3>${esc(r.title)}</h3><div class="lsub">${esc(r.hint||'')}</div>
+    <div class="tbox" style="max-height:none"><table class="t tight" style="min-width:0"><thead><tr><th>Choice</th><th class="n">In use</th><th></th></tr></thead><tbody>${items.length?items.map((it,i)=>{const v=lstVal(r,it),n=lstUsed(r,it);
+      return `<tr>${ed===i?`<td><input class="i" data-lstin value="${esc(v)}" maxlength="60"></td><td class="n">${n}</td><td class="act"><button class="btn sm pri" type="button" data-lst="save" data-i="${i}">Save</button> <button class="btn sm" type="button" data-lst="cancel">Cancel</button></td>`
+      :`<td>${esc(v)}${r.kv&&(r.locked||[]).includes(it.k)?' <span class="faint">(built in)</span>':''}</td><td class="n">${n}</td><td class="act"><button class="btn sm" type="button" data-lst="up" data-i="${i}" aria-label="Move up" ${i?'':'disabled'}>↑</button> <button class="btn sm" type="button" data-lst="dn" data-i="${i}" aria-label="Move down" ${i<items.length-1?'':'disabled'}>↓</button> <button class="btn sm" type="button" data-lst="ren" data-i="${i}">Rename</button> <button class="btn sm danger" type="button" data-lst="del" data-i="${i}">Delete</button></td>`}</tr>`}).join(''):'<tr><td colspan="3" class="empty">No choices yet.</td></tr>'}</tbody></table></div>
+    <div class="addrow"><input class="i" data-lstnew placeholder="Add a new choice…" maxlength="60"><button class="btn pri" type="button" data-lst="add">Add</button><button class="btn" type="button" data-lst="reset">Reset to default</button></div><div class="err" data-lsterr role="alert"></div></div>`};
+  return `<div class="defbox"><b>Lists.</b> Every dropdown with fixed choices is managed here. <b>Add</b> a choice and it appears in the dropdown straight away. <b>Rename</b> updates every record that uses it. <b>Delete</b> works only when no record uses the choice. Only the Master Admin can change lists.</div><div class="lgrid">${LST.map(box).join('')}</div>`;
+}
+async function lstClick(e){
+  const b=e.target.closest('[data-lst]');if(!b||!can('admin'))return;
+  const bx=b.closest('[data-lk]'),r=LST.find(x=>x.key===bx.dataset.lk),err=bx.querySelector('[data-lsterr]'),act=b.dataset.lst,i=+b.dataset.i;
+  const say=t=>{err.textContent=t};say('');
+  const items=lstRead(r),dup=(v,skip)=>items.some((it,j)=>j!==skip&&lstVal(r,it).toLowerCase()===v.toLowerCase());
+  try{
+    if(act==='ren'){UI.lst={k:r.key,i};draw();const inp=document.querySelector('[data-lk="'+r.key+'"] [data-lstin]');if(inp){inp.focus();inp.select()}return}
+    if(act==='cancel'){UI.lst=null;draw();return}
+    if(act==='add'){const inp=bx.querySelector('[data-lstnew]'),v=inp.value.trim();if(!v){say('Type the new choice first.');return}if(dup(v,-1)){say('That choice already exists.');return}
+      const nv=r.kv?[...items,{k:'F'+Date.now().toString(36),l:v}]:[...items,v];await lstWrite(r,nv,'Added: '+v);toast('Added.');return}
+    if(act==='save'){const v=bx.querySelector('[data-lstin]').value.trim(),it=items[i],old=lstVal(r,it);
+      if(!v){say('The choice cannot be empty.');return}if(v!==old&&dup(v,i)){say('That choice already exists.');return}
+      if(v===old){UI.lst=null;draw();return}
+      const n=lstUsed(r,it);if(n&&!r.kv&&!confirm('Rename "'+old+'" to "'+v+'"? This also changes '+n+' record'+(n===1?'':'s')+'.'))return;
+      const nv=items.map((x,j)=>j===i?(r.kv?{k:x.k,l:v}:v):x);
+      b.disabled=true;await lstWrite(r,nv,'Renamed: '+old+' → '+v);if(!r.kv&&n)await lstMass(r,old,v);UI.lst=null;toast(n&&!r.kv?'Renamed. '+n+' record'+(n===1?'':'s')+' updated.':'Renamed.');draw();return}
+    if(act==='del'){const it=items[i],v=lstVal(r,it);
+      if(r.kv&&(r.locked||[]).includes(it.k)){say('"'+v+'" is built in and follows the account type. You can rename it but not delete it.');return}
+      const n=lstUsed(r,it);if(n){say('"'+v+'" is used by '+n+' record'+(n===1?'':'s')+'. Rename it, or change those records first.');return}
+      if(items.length<2&&!r.allowEmpty){say('Keep at least one choice.');return}
+      if(!confirm('Delete "'+v+'"?'))return;
+      await lstWrite(r,items.filter((x,j)=>j!==i),'Deleted: '+v);toast('Deleted.');return}
+    if(act==='up'||act==='dn'){const j=act==='up'?i-1:i+1;if(j<0||j>=items.length)return;const nv=items.slice();[nv[i],nv[j]]=[nv[j],nv[i]];await lstWrite(r,nv,'Moved: '+lstVal(r,items[i]));return}
+    if(act==='reset'){if(!confirm('Put "'+r.title+'" back to its original choices? Records keep what they already have.'))return;
+      await lstWrite(r,r.kv?r.def.map(x=>({...x})):r.def.slice(),'Reset to default');toast('Reset.');return}
+  }catch(x){say('Could not save. Try again.')}
+}
+document.addEventListener('click',lstClick);
+(function(){const s=document.createElement('style');s.textContent='.lgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}@media(max-width:1000px){.lgrid{grid-template-columns:minmax(0,1fr)}}.lbox{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px}.lbox h3{font-family:var(--head);font-size:16px;margin:0 0 2px}.lbox .lsub{color:var(--faint);font-size:12px;margin-bottom:10px}.lbox .addrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.lbox .addrow .i{flex:1 1 160px;width:auto}.lbox td.act{white-space:nowrap;text-align:right}.lbox .btn.danger{color:var(--red);border-color:var(--red)}.tbox table.t.tight td,.tbox table.t.tight th{padding:6px 8px}';document.head.appendChild(s)})();
+
+lstReg({key:'locs',title:'Location',hint:'Used to group gateways and MCAs (KH, PHP, VN …).',store:{read:()=>locs().slice(),write:l=>db.doc('settings/main').set({...(D.settings.main||{}),locations:l,updatedAt:new Date().toISOString(),updatedBy:ME.name})},uses:[['gateways','location'],['merchants','location']]});
+lstReg({key:'fees',title:'Fee names (suggestions)',hint:'Suggested when a fee is added to a gateway.',arr:FEE_SUGG,allowEmpty:true,uses:[]});
+/* ---------- upload docs ---------- */
+const DOCMAX=700*1024;
+const DOCT=[];
+const KINDMAP={File:'Related file',Contract:'Contract'};
+const DKEY={upload:'up',view:'vw',change:'dl'},DACT={up:'files',dl:'delete'};
+function permKey(k){
+  if(!ME)return false;if(ME.role==='Admin')return true;
+  const q=posDefs()[ME.role];if(!q)return false;
+  if(q.docs===undefined||!(q.dk||[]).includes(k))return k.startsWith('vw:')?true:q.acts.includes(DACT[k.slice(0,2)]);
+  return q.docs.includes(k)}
+const docT=d=>(d&&(d.docType||KINDMAP[d.kind]))||'';
+const docOk=(t,act)=>(act==='upload'?can('files'):act==='change'?can('delete'):true)&&permKey(DKEY[act]+':'+(t||''));
+const drTypes=()=>[...new Set([...['Related file','Contract'],...DOCT,...Object.values(D.docs||{}).map(docT).filter(Boolean)])].concat(['']);
+async function posRenameDoc(o,n){
+  const q=(D.settings&&D.settings.positions||{}).list||{},q2=JSON.parse(JSON.stringify(q));let ch=false;
+  const fx=z=>/^(up|vw|dl):/.test(z)&&z.slice(3)===o?z.slice(0,3)+n:z;
+  Object.values(q2).forEach(x=>{if(x.docs){x.docs=x.docs.map(fx);ch=true}if(x.dk){x.dk=x.dk.map(fx);ch=true}});
+  if(ch)await db.doc('settings/positions').set({list:q2,updatedAt:new Date().toISOString(),updatedBy:ME.name})}
+
+const docTargets=()=>[...gwRows().sort((a,b)=>seqOf(a)-seqOf(b)).map(g=>({key:'gateways/'+g.id,group:'Payment gateways',label:gLab(g)||g.id})),...rows('merchants').map(m=>({key:'merchants/'+m.id,group:'Merchants',label:mLab(m)||m.id}))];
+const fsz=n=>n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
+const readFile=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(f)});
+const imgShrink=url=>new Promise(res=>{const i=new Image();i.onload=()=>{const s=Math.min(1,1600/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*s);c.height=Math.round(i.height*s);c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.8))};i.onerror=()=>res(url);i.src=url});
+const dataToBlob=u=>{const m=/^data:([^;,]*)(;base64)?,(.*)$/.exec(u)||[];const bin=atob(m[3]||'');const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new Blob([a],{type:m[1]||'application/octet-stream'})};
+async function docGet(id){const s=await db.doc('docdata/'+id).get();return s.exists?s.data().data:null}
+function docsModal(pre){
+  if(!ME)return;
+  const T=docTargets(),groups=[...new Set(T.map(t=>t.group))];
+  const body=`<label class="f full" for="dcT">Record<select class="i" id="dcT"><option value="">All records (view only)</option>${groups.map(g=>`<optgroup label="${esc(g)}">${T.filter(t=>t.group===g).map(t=>`<option value="${esc(t.key)}" ${t.key===pre?'selected':''}>${esc(t.label)}</option>`).join('')}</optgroup>`).join('')}</select></label>
+   ${can('files')?(DOCT.some(t=>docOk(t,'upload'))?`<label class="f full" for="dcY">Document type<select class="i" id="dcY">${DOCT.filter(t=>docOk(t,'upload')).map(t=>`<option>${esc(t)}</option>`).join('')}</select></label>
+   <label class="f full" for="dcF">Files (PDF, image, Word, Excel; up to ${fsz(DOCMAX)} each)<input class="i" id="dcF" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.doc,.docx,.xls,.xlsx,.csv,.txt"></label>
+   <label class="f full" for="dcN">Note (optional)<input class="i" id="dcN" maxlength="200"></label>
+   <div class="full"><button class="btn pri" type="button" id="dcUp">Upload docs</button> <span class="faint" id="dcMsg" role="alert"></span></div>`:'<div class="faint full">You are not on the list of people who can upload any document type. Ask the Master Admin.</div>'):'<div class="faint full">You have view access: you can open and download documents but not upload.</div>'}
+   <div class="full" id="dcList"></div>`;
+  openModalC('Documents',body,`<span class="sp"></span><button class="btn" type="button" id="dcClose">Close</button>`);
+  $('#dcClose').onclick=closeModal;
+  const labOf=k=>(T.find(t=>t.key===k)||{}).label||'(record removed)';
+  function list(){
+    const k=$('#dcT').value;let ds=Object.entries(D.docs||{}).map(([id,d])=>({...d,id})).filter(d=>!k||d.target===k).sort((a,b)=>(b.at||'').localeCompare(a.at||''));const hid=ds.filter(d=>!docOk(docT(d),'view')).length;ds=ds.filter(d=>docOk(docT(d),'view'));
+    $('#dcList').innerHTML=ds.length?`<table class="t" style="min-width:0"><thead><tr><th>File</th><th>Type</th>${k?'':'<th>Record</th>'}<th>Added</th><th></th></tr></thead><tbody>${ds.map(d=>`<tr><td><b>${esc(d.name)}</b><div class="faint">${esc(fsz(d.size||0))}${d.note?' · '+esc(d.note):''}</div></td><td>${docT(d)?esc(docT(d)):'<span class="faint">–</span>'}</td>${k?'':`<td>${esc(labOf(d.target))}</td>`}<td>${esc(fmtDT(d.at))}<div class="faint">${esc(d.byName||'')}</div></td><td style="white-space:nowrap"><button class="btn" type="button" data-${canView(d)?'v':'d'}="${d.id}">${canView(d)?'View':'Download'}</button>${canView(d)?` <button class="btn" type="button" data-d="${d.id}">Download</button>`:''}${can('delete')&&docOk(docT(d),'change')?` <button class="btn" type="button" data-x="${d.id}">Delete</button>`:''}</td></tr>`).join('')}</tbody></table>`:'<div class="faint">No documents yet.</div>';
+    if(hid)$('#dcList').insertAdjacentHTML('beforeend','<div class="faint" style="margin-top:6px">'+hid+' file'+(hid===1?' is':'s are')+' restricted to assigned people.</div>');
+    $('#dcList').querySelectorAll('[data-v],[data-d]').forEach(b=>b.onclick=async()=>{
+      const id=b.dataset.v||b.dataset.d,d=D.docs[id];if(!docOk(docT(d),'view')){toast('Only assigned people can open this file.');return}b.disabled=true;
+      try{const u=await docGet(id);if(!u){toast('The file could not be found.');return}
+        if(b.dataset.v)await viewDoc(u,d);else{await dl.save({filename:d.name,data:dataToBlob(u)});toast('File ready.')}
+      }catch(e){if(!e||e.code!=='declined')toast('Could not open the file.')}finally{b.disabled=false}});
+    $('#dcList').querySelectorAll('[data-x]').forEach(b=>b.onclick=async()=>{
+      const id=b.dataset.x,d=D.docs[id];if(!docOk(docT(d),'change')){toast('Only assigned people can delete this file.');return}if(!await confirmP('Delete "'+d.name+'"?'))return;
+      try{await db.doc('docs/'+id).delete();await db.doc('docdata/'+id).delete();logAct('Document deleted',labOf(d.target),d.name);toast('Deleted.');setTimeout(list,150)}catch(e){toast('Could not delete.')}});
+  }
+  $('#dcT').onchange=list;list();
+  const up=$('#dcUp');if(up)up.onclick=async()=>{
+    const k=$('#dcT').value,fs=[...$('#dcF').files],msg=$('#dcMsg'),ty=$('#dcY').value;
+    if(!docOk(ty,'upload')){msg.textContent='You are not assigned to upload this document type.';return}
+    if(!k){msg.textContent='Choose the record first.';return}
+    if(!fs.length){msg.textContent='Choose a file.';return}
+    up.disabled=true;let ok=0,bad=[];
+    for(const f of fs){
+      try{let u=await readFile(f),mime=f.type||'application/octet-stream',name=f.name;
+        if(/^image\//.test(mime)&&mime!=='image/gif'){u=await imgShrink(u);mime='image/jpeg'}
+        if(u.length*0.75>DOCMAX){bad.push(f.name+' (too large)');continue}
+        const id=rid('d');
+        await db.doc('docdata/'+id).set({data:u});
+        await db.doc('docs/'+id).set({target:k,docType:ty,name,mime,size:Math.round(u.length*0.75),note:$('#dcN').value.trim(),at:new Date().toISOString(),by:ME.u,byName:ME.name});
+        logAct('Document uploaded',labOf(k),ty+' · '+name);ok++}
+      catch(e){bad.push(f.name)}
+    }
+    up.disabled=false;$('#dcF').value='';msg.textContent=(ok?ok+' uploaded. ':'')+(bad.length?'Not uploaded: '+bad.join(', '):'');
+    setTimeout(list,200);
+  };
+}
+/* ---------- boot ---------- */
+/* ===== DATA SOURCES: when the system is hosted, change ONLY this block =====
+   snapshot = the Central Database and CPA copies are loaded by the team (as now).
+   live     = the page reads the hosted database by itself every refreshMinutes.
+   Fill in central() and cpa(), set mode:'live'. Nothing else in the page changes. */
+const SOURCES={mode:'snapshot',refreshMinutes:5,
+  async central(){/* return {gateways:[{id,name,status,seq}], mcas:[{id,code,company,companyCode,gwId,project,status}]} */throw new Error('Central Database is not connected yet')},
+  async cpa(){/* return [{code,bank,name,project,holder,status}] */throw new Error('CPA Control System is not connected yet')}};
+const SRC=Object.assign(SOURCES,window.PG_SOURCES||{});
+const same=(a,b,ks)=>ks.every(k=>(a&&a[k]||'')===(b&&b[k]||''));
+async function applyCentral(c){const now=new Date().toISOString();let n=0;
+  for(const g of c.gateways||[]){const cur=D.gateways[g.id]||{};const nw={name:g.name||'',status:g.status||'Active',seq:g.seq||0};if(cur.name&&same(cur,nw,['name','status'])&&(cur.seq||0)===nw.seq)continue;await db.doc('gateways/'+g.id).set({...cur,...nw,source:'Central Database',updatedAt:now,updatedBy:'Auto sync'});n++}
+  for(const m of c.mcas||[]){const cur=D.merchants[m.id]||{};const nw={company:m.company||'',code:m.code||'',companyCode:m.companyCode||'',gwId:m.gwId||'',cdProject:m.project||'',location:locs().includes(m.project)?m.project:'',status:m.status||'Active'};if(cur.code!==undefined&&same(cur,nw,Object.keys(nw)))continue;await db.doc('merchants/'+m.id).set({...cur,...nw,source:'Central Database',updatedAt:now,updatedBy:'Auto sync'});n++}
+  return n}
+async function applyCpa(list){const rowsN=(list||[]).filter(r=>(r.status||'')==='Active').map(r=>({code:r.code||'',bank:r.bank||'',name:r.name||'',project:r.project||'',holder:r.holder||''}));
+  const cur=cpList().rows;if(rowsN.length&&JSON.stringify(cur)===JSON.stringify(rowsN))return 0;if(!rowsN.length)return 0;
+  await db.doc('settings/cpActive').set({rows:rowsN,dataDate:todayStr(),loadedAt:new Date().toISOString(),loadedBy:'Auto sync',fileName:'CPA Control System (live)'});return rowsN.length}
+let syncBusy=false;
+async function syncAll(){if(SRC.mode!=='live'||syncBusy||!ME||!can('admin'))return;syncBusy=true;
+  try{const out={};try{out.central=await applyCentral(await SRC.central())}catch(e){out.centralErr=String(e&&e.message||e)}
+    try{out.cpa=await applyCpa(await SRC.cpa())}catch(e){out.cpaErr=String(e&&e.message||e)}
+    await db.doc('settings/sync').set({at:new Date().toISOString(),...out})}catch(e){}finally{syncBusy=false}}
+async function boot(){
+  try{db=await window.claude.use('db');dl=await window.claude.use('downloads')}catch(e){}
+  if(!db){$('#loginBtn').textContent='Unavailable';$('#loginErr').textContent='Open this page signed in to claude.ai to reach the database.';return}
+  let t;
+  const sub=(c,q)=>(q||db.collection(c)).onSnapshot(s=>{
+    const o={};s.docs.forEach(d=>o[d.id]=d.data());D[c]=o;READY[c]=1;if(c==='settings')lstSync();
+    if(c==='users'){bootstrapAdmin();checkSession();const b=$('#loginBtn');if(!b.dataset.ready){b.disabled=false;b.textContent='Sign in';b.dataset.ready=1}}
+    clearTimeout(t);t=setTimeout(refresh,50)},()=>{READY[c]=1;if(c==='users'){$('#loginErr').textContent='Could not read the database.'}});
+  sub('gateways');sub('merchants');sub('cpacc');sub('settings');sub('memos');sub('hist',db.collection('hist').orderBy('at','desc').limit(500));sub('users');sub('docs',db.collection('docs').orderBy('at','desc').limit(500));sub('log',db.collection('log').orderBy('at','desc').limit(200));
+  $('#loginForm').addEventListener('submit',doLogin);
+  $('#nav').addEventListener('click',e=>{if(e.target.closest('[data-docs]'))docsModal()});$('#btnPw').onclick=()=>passwordModal(false);$('#btnOut').onclick=logout;
+  setInterval(()=>{if(ME&&!$('#ov'))draw()},3600*1000);
+  if(SRC.mode==='live'){setTimeout(syncAll,20000);setInterval(syncAll,Math.max(1,SRC.refreshMinutes)*60000)}
+}
+boot();
+})();
+</script>
+
+</body></html>

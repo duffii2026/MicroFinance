@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#132230"><title>MFS · Developer API Guide</title>
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    :root{--guide-ink:#243746;--guide-muted:#687b89;--guide-blue:#234d70;--guide-line:#dce4ea;--guide-bg:#f3f6f8}
+    body{background:var(--guide-bg);color:var(--guide-ink)}.guide-shell{max-width:1440px;margin:0 auto;padding:22px 30px 45px}.guide-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.guide-brand{display:flex;align-items:center;gap:10px;color:#294963;text-decoration:none;font-weight:800;letter-spacing:.07em}.guide-brand span{display:grid;place-items:center;width:34px;height:34px;background:#234d70;border-radius:8px;color:white;font:700 13px var(--head)}.guide-actions{display:flex;gap:8px;align-items:center}.guide-actions a{border:1px solid #d1dce4;background:#fff;color:#3e5e77;text-decoration:none;padding:8px 11px;border-radius:6px;font-size:10px;font-weight:700}.guide-hero{position:relative;overflow:hidden;border-radius:12px;background:linear-gradient(115deg,#17364d,#285b81);color:#fff;padding:34px 38px;margin-bottom:17px;box-shadow:0 9px 20px #18375020}.guide-hero:after{content:"";position:absolute;right:10%;top:-145px;width:300px;height:300px;border-radius:50%;border:1px solid #ffffff24;box-shadow:0 0 0 36px #ffffff08,0 0 0 72px #ffffff06}.guide-hero>*{position:relative;z-index:1}.guide-hero .eyebrow{color:#bdd4e5}.guide-hero h1{font:700 34px/1.1 var(--head);margin:7px 0}.guide-hero p{max-width:760px;color:#d7e5ef;font-size:12px;line-height:1.65;margin:0}.guide-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:17px}.guide-meta span{border:1px solid #ffffff35;border-radius:20px;padding:5px 9px;color:#e3eef6;font-size:8px;font-weight:700;letter-spacing:.06em}.guide-alert{display:flex;align-items:flex-start;gap:11px;border:1px solid #e6d5a8;background:#fff9e9;color:#7f6124;padding:13px 15px;border-radius:8px;margin-bottom:16px}.guide-alert i{margin-top:2px}.guide-alert p{font-size:10px;line-height:1.6;margin:0}.guide-alert b{color:#6e5118}.guide-layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px;align-items:start}.guide-toc{position:sticky;top:14px;background:#fff;border:1px solid var(--guide-line);border-radius:9px;padding:15px}.guide-toc b{font:700 12px var(--head);color:#30495b}.guide-toc a{display:block;padding:7px 5px;color:#637685;text-decoration:none;font-size:9px;border-radius:4px}.guide-toc a:hover{background:#eef3f6;color:#234d70}.guide-content{display:grid;gap:14px;min-width:0}.guide-card{background:#fff;border:1px solid var(--guide-line);border-radius:9px;padding:21px 23px;box-shadow:0 2px 10px #18375008;scroll-margin-top:14px}.guide-card h2{font:700 20px var(--head);margin:0 0 7px;color:#20394d}.guide-card h3{font:700 13px var(--head);margin:17px 0 6px;color:#304c62}.guide-card p,.guide-card li{font-size:10px;line-height:1.75;color:#607482}.guide-card p{margin:7px 0}.guide-card ol,.guide-card ul{padding-left:20px}.guide-card li{margin:5px 0}.guide-step{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid #edf1f4}.guide-step:last-child{border-bottom:0}.guide-step>span{flex:0 0 27px;width:27px;height:27px;display:grid;place-items:center;border-radius:7px;background:#eaf1f6;color:#345d7c;font:700 9px var(--head)}.guide-step b{font-size:10px;color:#31495b}.guide-step p{margin:2px 0}.guide-step code,.guide-card code:not(pre code){background:#edf3f6;color:#385872;padding:2px 4px;border-radius:3px;font-size:9px}.code-wrap{position:relative;margin:10px 0 13px}.code-wrap pre{overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;margin:0;padding:16px 85px 16px 15px;border-radius:7px;background:#152a3b;color:#dce9f1;font:10px/1.75 ui-monospace,Consolas,monospace;tab-size:2}.copy-code{position:absolute;right:8px;top:8px;border:1px solid #ffffff35;border-radius:5px;padding:6px 8px;background:#29465d;color:#eaf2f7;font-size:8px;font-weight:700;cursor:pointer}.copy-code:hover{background:#39617d}.guide-table-wrap{overflow:auto;margin:10px 0}.guide-card table{width:100%;border-collapse:collapse;min-width:560px}.guide-card th{text-align:left;background:#eff4f7;color:#486174;font-size:8px;letter-spacing:.06em;padding:9px}.guide-card td{border-bottom:1px solid #edf0f2;padding:9px;color:#5b6e7b;font-size:9px;line-height:1.6;vertical-align:top}.guide-card td code{white-space:nowrap}.module-guide-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}.module-guide{border:1px solid #e5ebef;border-radius:7px;padding:12px}.module-guide h3{display:flex;align-items:center;gap:8px;margin:0 0 6px}.module-guide h3 i{color:#365e7e}.module-guide h3 span{color:#90a0aa;font-size:8px}.module-guide p{margin:4px 0}.module-guide small{display:block;color:#738491;font-size:8px;line-height:1.6}.guide-tag{display:inline-block;margin:2px 3px 2px 0;padding:3px 5px;background:#edf3f6;border-radius:4px;color:#486981;font:8px ui-monospace,monospace}.guide-note{border-left:3px solid #6d94b1;background:#f2f7fa;padding:10px 12px;margin:10px 0}.guide-note p{margin:0}.guide-footer{text-align:center;color:#8a98a1;font-size:8px;letter-spacing:.1em;padding:12px}.copy-toast{position:fixed;right:20px;bottom:20px;background:#18364e;color:white;padding:10px 13px;border-radius:6px;font-size:10px;box-shadow:0 7px 20px #0003;opacity:0;transform:translateY(7px);transition:.2s;pointer-events:none}.copy-toast.on{opacity:1;transform:none}
+    @media(max-width:850px){.guide-shell{padding:15px}.guide-layout{grid-template-columns:1fr}.guide-toc{position:static;display:flex;flex-wrap:wrap;gap:2px 5px}.guide-toc b{width:100%;margin-bottom:3px}.guide-toc a{padding:6px}.guide-hero{padding:26px 24px}.guide-hero h1{font-size:29px}}
+    @media(max-width:560px){.guide-shell{padding:11px}.guide-top{align-items:flex-start}.guide-actions{flex-wrap:wrap;justify-content:flex-end}.guide-actions a{font-size:8px;padding:7px}.guide-hero{padding:22px 18px}.guide-hero h1{font-size:25px}.guide-hero p{font-size:10px}.guide-card{padding:16px 14px}.guide-card h2{font-size:18px}.module-guide-grid{grid-template-columns:1fr}.code-wrap pre{padding:45px 11px 12px;font-size:9px}.copy-code{top:7px}.guide-toc a{font-size:8px}}
+  </style>
+</head>
+<body>
+<div class="guide-shell">
+  <header class="guide-top"><a class="guide-brand" href="index.html#api"><span>MFS</span> DEVELOPER DOCUMENTATION</a><div class="guide-actions"><span class="guide-session" id="guideSession" hidden><i class="fas fa-user-circle"></i><span id="guideUserName"></span></span><button class="guide-logout" id="guideLogout" type="button" hidden><i class="fas fa-sign-out-alt"></i> Log out</button><a href="index.html#api"><i class="fas fa-arrow-left"></i> API CENTER</a></div></header>
+  <section class="guide-hero"><div class="eyebrow">LOCAL INTEGRATION · VERSION 1</div><h1>MFS Developer API Guide</h1><p>Follow these steps to create a scoped key, connect to the local API, and read or write records across the six MFS modules. Copy the examples and replace the sample values with your integration settings.</p><div class="guide-meta"><span><i class="fas fa-database"></i> MYSQL BACKEND</span><span><i class="fas fa-key"></i> SCOPED BEARER KEYS</span><span><i class="fas fa-cubes"></i> SIX MODULES</span></div></section>
+  <div class="guide-alert"><i class="fas fa-info-circle"></i><p><b>Know the data boundary:</b> the shared API stores JSON records in MySQL. The original module screens still use their existing browser storage and are not automatically synchronized with API records. Agree on a data mapping or build an explicit sync before expecting API changes to appear in the legacy screens. The API accepts JSON as provided and does not validate module-specific business rules.</p></div>
+  <div class="guide-layout">
+    <nav class="guide-toc" aria-label="Guide contents"><b>IN THIS GUIDE</b><a href="#overview">Overview</a><a href="#steps">Step-by-step setup</a><a href="#auth">Authentication</a><a href="#records">Record operations</a><a href="#modules">Module mapping</a><a href="#files">File operations</a><a href="#keys">Key management</a><a href="#errors">Errors &amp; troubleshooting</a><a href="#cors">Browser integrations</a><a href="#mysql">MySQL storage</a></nav>
+    <main class="guide-content">
+      <section class="guide-card" id="overview"><h2>At a glance</h2><div class="guide-table-wrap"><table><tbody><tr><th>Base URL</th><td><code>http://127.0.0.1:8081/api/v1</code> (use the port configured by <code>MM1_APP_PORT</code> in <code>.env</code>)</td></tr><tr><th>Authentication</th><td>Send <code>Authorization: Bearer YOUR_MFS_API_KEY</code> for module record and file routes.</td></tr><tr><th>Content</th><td>JSON requests and responses; file upload uses multipart form data.</td></tr><tr><th>Modules</th><td>central · cpa · credentials · gateways · communications · companies</td></tr><tr><th>Record IDs</th><td>UUIDs are generated when creating records, unless your request supplies an <code>id</code>.</td></tr></tbody></table></div></section>
+      <section class="guide-card" id="steps"><h2>Step-by-step setup</h2>
+        <div class="guide-step"><span>01</span><div><b>Confirm the local service is running</b><p>Open the dashboard at its configured address. Check the public health endpoint before connecting your integration.</p></div></div>
+        <div class="code-wrap"><pre><code>curl http://127.0.0.1:8081/api/v1/health</code></pre><button class="copy-code" type="button">COPY</button></div>
+        <p>A healthy response includes <code>"ok": true</code>, <code>"database": "mysql"</code>, a service name, and a version.</p>
+        <div class="guide-step"><span>02</span><div><b>Create an API key from the dashboard</b><p>Go to <b>API Center → API keys</b>. Sign in with an administrator account, enter an integration name, choose only the modules it needs, choose an expiration, then generate the key. Copy the full key immediately; it is displayed only once.</p></div></div>
+        <div class="guide-step"><span>03</span><div><b>Store the key safely</b><p>For server-side apps, keep it in an environment variable or secret manager. A key included in browser JavaScript can be read by users who access that page. Use a trusted backend proxy for public-facing applications.</p></div></div>
+        <div class="guide-step"><span>04</span><div><b>Set the base URL and send the bearer header</b><p>Use the address shown in API Center and include the key on each protected request.</p></div></div>
+        <div class="code-wrap"><pre><code>curl "http://127.0.0.1:8081/api/v1/modules/central/collections/accounts" \
+  -H "Authorization: Bearer $MFS_API_KEY" \
+  -H "Accept: application/json"</code></pre><button class="copy-code" type="button">COPY</button></div>
+        <div class="guide-step"><span>05</span><div><b>Choose a module collection</b><p>Use one of the module IDs below, then select a collection label that your integration will consistently use. The API does not enforce a fixed collection list.</p></div></div>
+        <div class="guide-step"><span>06</span><div><b>Agree on the data mapping</b><p>Use stable IDs for relationships between companies, gateways, accounts, people, and files. Keep the names and types consistent between the source app and MFS integration.</p></div></div>
+        <div class="guide-step"><span>07</span><div><b>Connect related files and handle errors</b><p>Upload files with their module and record ID, save the returned file ID, and use the status table below to decide whether to correct a request or check service/key configuration.</p></div></div>
+      </section>
+      <section class="guide-card" id="auth"><h2>Authentication and reusable JavaScript client</h2><p>Record and file routes accept either an administrator/user browser session or a scoped API key. External integrations should use a bearer key. API keys cannot log into the dashboard, change a user password, or administer other keys.</p>
+        <div class="code-wrap"><pre><code>const MFS_BASE_URL = process.env.MFS_BASE_URL ?? "http://127.0.0.1:8081/api/v1";
+const MFS_API_KEY = process.env.MFS_API_KEY;
+
+async function mfsRequest(path, options = {}) {
+  const response = await fetch(`${MFS_BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${MFS_API_KEY}`,
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...options.headers,
+    },
+  });
+  const body = await response.json();
+  if (!response.ok) {
+    throw new Error(`MFS ${response.status}: ${body.error ?? "Request failed"}`);
+  }
+  return body;
+}</code></pre><button class="copy-code" type="button">COPY</button></div>
+        <p>The API keys page records the key prefix, selected modules, creator, expiration, last-used time, and revocation status. It never returns the full secret after initial creation.</p>
+      </section>
+      <section class="guide-card" id="records"><h2>Read and write records</h2><p>Each item is stored as one JSON object under a module and collection. Listing returns <code>{"items":[...]}</code>. Reading a single record returns <code>id</code>, <code>data</code>, <code>createdAt</code>, and <code>updatedAt</code>. Create/update/delete changes are written to the audit log. An update replaces the entire payload, so send all fields you want to keep.</p>
+        <div class="guide-table-wrap"><table><thead><tr><th>Action</th><th>Method</th><th>Path</th></tr></thead><tbody><tr><td>Module information</td><td>GET</td><td><code>/modules/{module}</code></td></tr><tr><td>List records</td><td>GET</td><td><code>/modules/{module}/collections/{collection}</code></td></tr><tr><td>Read record</td><td>GET</td><td><code>/modules/{module}/collections/{collection}/{id}</code></td></tr><tr><td>Create record</td><td>POST</td><td><code>/modules/{module}/collections/{collection}</code></td></tr><tr><td>Replace record</td><td>POST</td><td><code>/modules/{module}/collections/{collection}/{id}</code></td></tr><tr><td>Delete record</td><td>DELETE</td><td><code>/modules/{module}/collections/{collection}/{id}</code></td></tr></tbody></table></div>
+        <div class="code-wrap"><pre><code>const collection = "/modules/companies/collections/companies";
+
+// Create
+const created = await mfsRequest(collection, {
+  method: "POST",
+  body: JSON.stringify({ name: "Example Company", status: "Active", country: "KH" }),
+});
+
+// Read one
+const record = await mfsRequest(`${collection}/${created.id}`);
+
+// Replace the complete JSON payload
+await mfsRequest(`${collection}/${created.id}`, {
+  method: "POST",
+  body: JSON.stringify({ name: "Example Company", status: "Reviewed", country: "KH" }),
+});
+
+// Delete
+await mfsRequest(`${collection}/${created.id}`, { method: "DELETE" });</code></pre><button class="copy-code" type="button">COPY</button></div>
+      </section>
+      <section class="guide-card" id="modules"><h2>Module-by-module mapping</h2><p>The module screens use different business records. These notes come from each system’s workflows and current data shapes; collection names below are recommended integration labels, not fixed server-side schemas.</p><div class="module-guide-grid">
+        <article class="module-guide"><h3><i class="fas fa-database"></i> Central Database <span>MM1-01 · central</span></h3><p>Financial registers, people, companies, gateways, merchant and operating accounts, references, currency rates, systems, uploads, and snapshots.</p><small>Recommended collections</small><span class="guide-tag">people</span><span class="guide-tag">companies</span><span class="guide-tag">gateways</span><span class="guide-tag">merchant-accounts</span><span class="guide-tag">accounts</span><span class="guide-tag">rates</span><span class="guide-tag">references</span><small>Legacy account registers include mac, mca, pc, skac, and skap; agree whether to preserve or normalize those names.</small></article>
+        <article class="module-guide"><h3><i class="fas fa-university"></i> CPA Control System <span>MM1-02 · cpa</span></h3><p>Bank/payment accounts, balances and status history, people and agent assignments, salary/commission statements, uploads, snapshots, and audit activity.</p><small>Suggested collections: accounts, people, agents, pay-statements, uploads, snapshots, audit.</small><small>Possible account fields: bank, accountName, accountNumber, balance, status, project, holder, personId, history, updatedAt.</small></article>
+        <article class="module-guide"><h3><i class="fas fa-key"></i> Account Access Credentials <span>MM1-03 · credentials</span></h3><p>Linked accounts and access entries, access type/status, staff permissions, documents, memos, and change history.</p><small>Legacy buckets include accounts, access, users, settings, hist, log, docs, docdata, and memos. Treat credential values as sensitive and tightly scope access.</small></article>
+        <article class="module-guide"><h3><i class="fas fa-exchange-alt"></i> Payment Gateways <span>MM1-04 · gateways</span></h3><p>Gateway configuration, merchants, locations, CPA mapping rules, contracts/rates, memos, and files.</p><small>Recommended collections: gateways, merchants, locations, rules, contracts, rates, memos, documents. Link merchant records using stable gateway IDs.</small></article>
+        <article class="module-guide"><h3><i class="fas fa-comments"></i> Communication Channel <span>MM1-05 · communications</span></h3><p>Channel/contact records with type, address, project, purpose, owner, linked service, status, sheet/group number, notes, and date added.</p><small>Suggested collections: channels, users, settings, log.</small></article>
+        <article class="module-guide"><h3><i class="fas fa-building"></i> Company Database <span>MM1-06 · companies</span></h3><p>Company profiles, ownership/contact details, registrations, linked accounts/merchant records, files, memos, and history.</p><small>Suggested collections: companies, users, history, log, documents, memos. Preserve company IDs in related records.</small></article>
+      </div><div class="guide-note"><p><b>Important:</b> for example, <code>/modules/cpa/collections/accounts</code> creates a MySQL JSON collection for this API. It does not read or update the CPA screen’s current browser storage. Build explicit synchronization if both interfaces must show the same data.</p></div></section>
+      <section class="guide-card" id="files"><h2>Upload, list, and download files</h2><p>Uploads accept multipart form fields <code>file</code>, <code>module</code>, and optional <code>recordId</code>. Maximum upload size is 25 MB. API key module scopes apply to uploads, metadata listing, and downloads.</p>
+        <div class="code-wrap"><pre><code>const form = new FormData();
+form.append("file", fileInput.files[0]);
+form.append("module", "companies");
+form.append("recordId", companyId);
+
+const response = await fetch(`${MFS_BASE_URL}/files`, {
+  method: "POST",
+  headers: { Authorization: `Bearer ${MFS_API_KEY}` },
+  body: form,
+});
+const uploadedFile = await response.json();
+// Save uploadedFile.id in the related record.</code></pre><button class="copy-code" type="button">COPY</button></div>
+        <p>Routes: <code>GET /files?module=companies&amp;recordId={id}</code> lists metadata; <code>GET /files/{fileId}</code> returns the file content.</p>
+      </section>
+      <section class="guide-card" id="keys"><h2>API-key administration</h2><p>These routes require an administrator’s signed-in browser session. API keys themselves cannot manage keys.</p><div class="guide-table-wrap"><table><thead><tr><th>Method</th><th>Path</th><th>Use</th></tr></thead><tbody><tr><td>GET</td><td><code>/admin/api-keys</code></td><td>List metadata and status; secrets are never returned.</td></tr><tr><td>POST</td><td><code>/admin/api-keys</code></td><td>Create a key; full <code>apiKey</code> appears once.</td></tr><tr><td>PATCH</td><td><code>/admin/api-keys/{id}</code></td><td>Change name, module scopes, and optionally expiration.</td></tr><tr><td>DELETE</td><td><code>/admin/api-keys/{id}</code></td><td>Revoke key access immediately.</td></tr></tbody></table></div><div class="code-wrap"><pre><code>{
+  "name": "Finance reporting integration",
+  "modules": ["central", "companies"],
+  "expiresInDays": 90
+}
+
+// Use null for no expiration.
+// During PATCH, omit expiresInDays to retain the existing expiry.</code></pre><button class="copy-code" type="button">COPY</button></div><p>Keys are hashed in MySQL. The API Center displays each key’s prefix, module scopes, creator, expiry, last use, and revocation status.</p></section>
+      <section class="guide-card" id="errors"><h2>Errors and troubleshooting</h2><div class="guide-table-wrap"><table><thead><tr><th>Status</th><th>Meaning</th><th>What to do</th></tr></thead><tbody><tr><td>400</td><td>Invalid JSON or request fields</td><td>Check the JSON syntax, required name/module fields, and multipart names.</td></tr><tr><td>401</td><td>Key missing, expired, or revoked</td><td>Check the secret configuration; ask an administrator to issue a replacement if needed.</td></tr><tr><td>403</td><td>Module is outside key scope or administrator browser session is required</td><td>Request the required module scope; manage keys in the signed-in dashboard.</td></tr><tr><td>404</td><td>Route, module, or record not found</td><td>Check the URL path, module ID, collection, and record ID.</td></tr><tr><td>503</td><td>Service or MySQL unavailable</td><td>Check that the MFS local server and MySQL service are running.</td></tr></tbody></table></div></section>
+      <section class="guide-card" id="cors"><h2>Browser integrations and CORS</h2><p>Server-to-server integrations do not need CORS. A browser app hosted on a separate local development origin must be on the API’s allowlist. The default list includes <code>http://localhost:3000</code> and <code>http://127.0.0.1:3000</code>.</p><p>To use another trusted local development origin, set <code>MM1_CORS_ORIGINS</code> in <code>.env</code> to a comma-separated list, then restart the MFS server. Do not put a long-lived API secret in public browser code; use a backend relay for user-facing apps.</p></section>
+      <section class="guide-card" id="mysql"><h2>MySQL and local storage</h2><p><code>records</code> stores JSON grouped by module and collection. <code>files</code> stores metadata while content is kept in the local files folder. <code>users</code> holds salted PBKDF2 password hashes. <code>api_keys</code> holds key hashes, scopes, and lifecycle metadata. <code>audit_log</code> records API changes and key administration; <code>settings</code> stores local service settings.</p><p>The local service initializes its InnoDB tables on startup. MySQL 8.0+ is recommended. The current JSON API does not impose foreign-key relationships or module-specific validation; the integrating application should validate its input and preserve consistent identifiers.</p></section>
+      <footer class="guide-footer">MFS · DEVELOPER API DOCUMENTATION · VERSION 1</footer>
+    </main>
+  </div>
+</div>
+<div id="copyToast" class="copy-toast" role="status" aria-live="polite">Code copied</div>
+<script>
+let toastTimer;
+async function refreshGuideSession() {
+  try {
+    const response = await fetch('/api/v1/session', { credentials: 'same-origin', cache: 'no-store' });
+    const session = await response.json();
+    const signedIn = Boolean(session.authenticated && session.user);
+    document.getElementById('guideSession').hidden = !signedIn;
+    document.getElementById('guideLogout').hidden = !signedIn;
+    document.getElementById('guideUserName').textContent = signedIn ? session.user.username : '';
+  } catch {
+    document.getElementById('guideSession').hidden = true;
+    document.getElementById('guideLogout').hidden = true;
+  }
+}
+refreshGuideSession();
+window.addEventListener('focus', refreshGuideSession);
+setInterval(refreshGuideSession, 30000);
+document.getElementById('guideLogout').addEventListener('click', async () => {
+  const button = document.getElementById('guideLogout'); button.disabled = true;
+  try {
+    const response = await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    if (!response.ok) throw new Error('Could not sign out');
+    window.location.href = 'index.html#home';
+  } catch (error) {
+    button.disabled = false; button.title = error.message;
+  }
+});
+document.querySelectorAll('.copy-code').forEach((button) => button.addEventListener('click', async () => {
+  const code = button.parentElement.querySelector('code').innerText;
+  try { await navigator.clipboard.writeText(code); button.textContent = 'COPIED'; }
+  catch { const area = document.createElement('textarea'); area.value = code; document.body.append(area); area.select(); document.execCommand('copy'); area.remove(); button.textContent = 'COPIED'; }
+  const toast = document.getElementById('copyToast'); toast.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('on'), 1600);
+  setTimeout(() => { button.textContent = 'COPY'; }, 1800);
+}));
+</script>
+<script src="font-accessibility.js"></script>
+<script src="syntax-highlighter.js"></script>
+</body>
+</html>
+
+
