@@ -1,0 +1,694 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MM2-04 · Inventory Control</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600&display=swap">
+<style>
+:root{--paper:#F2F4F6;--surface:#FFFFFF;--ink:#17212C;--muted:#5E6B78;--faint:#8A96A3;--line:#DCE1E6;--line2:#EBEEF1;--steel:#23507A;--steel-d:#1A3D5E;--steel-l:#E6EEF5;--on-steel:#FFFFFF;--side:#132230;--side-2:#1C3043;--side-ink:#C8D4DF;--side-line:#2B435A;--red:#B42318;--red-l:#FDECEA;--amber:#B54708;--amber-l:#FEF3E2;--green:#067647;--green-l:#E7F6EC;--band:#EEF2F5;--grand:#DDE8F2;--shadow:0 8px 30px rgba(15,30,45,.22);--head:"Barlow Semi Condensed","Bahnschrift","Arial Narrow",sans-serif;--body:"Segoe UI","Inter",system-ui,-apple-system,Arial,sans-serif;--mono:ui-monospace,"SFMono-Regular",Consolas,Menlo,monospace}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--paper:#0E151C;--surface:#162029;--ink:#E6ECF1;--muted:#9AA8B5;--faint:#6F7E8C;--line:#2A3947;--line2:#223039;--steel:#6FA3D6;--steel-d:#8DB8E3;--steel-l:#1B3248;--on-steel:#0E151C;--side:#0A1118;--side-2:#14212C;--side-ink:#AEBBC8;--side-line:#243543;--red:#F07A6C;--red-l:#3A1A16;--amber:#E3A948;--amber-l:#33270F;--green:#5CC98A;--green-l:#15301F;--band:#1B2630;--grand:#1F3A52;--shadow:0 8px 30px rgba(0,0,0,.5)}}
+:root[data-theme="dark"]{--paper:#0E151C;--surface:#162029;--ink:#E6ECF1;--muted:#9AA8B5;--faint:#6F7E8C;--line:#2A3947;--line2:#223039;--steel:#6FA3D6;--steel-d:#8DB8E3;--steel-l:#1B3248;--on-steel:#0E151C;--side:#0A1118;--side-2:#14212C;--side-ink:#AEBBC8;--side-line:#243543;--red:#F07A6C;--red-l:#3A1A16;--amber:#E3A948;--amber-l:#33270F;--green:#5CC98A;--green-l:#15301F;--band:#1B2630;--grand:#1F3A52;--shadow:0 8px 30px rgba(0,0,0,.5)}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--paper);color:var(--ink);font:14px/1.45 var(--body);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--head);font-weight:600;margin:0;letter-spacing:.01em}
+h1{font-size:24px}h2{font-size:18px}h3{font-size:15px}
+:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
+.hidden{display:none!important}
+.mono{font-family:var(--mono);font-size:12.5px}
+.muted{color:var(--muted)}.faint{color:var(--faint)}
+.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:600;min-width:0}
+.i{width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:8px 10px;font-weight:400;font-size:14px;min-width:0}
+textarea.i{min-height:64px;resize:vertical}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:7px 12px;cursor:pointer;font-weight:600;font-size:13px;white-space:nowrap}
+.btn:hover{border-color:var(--steel)}
+.btn.pri{background:var(--steel);border-color:var(--steel);color:var(--on-steel)}
+.btn.pri:hover{background:var(--steel-d);border-color:var(--steel-d)}
+.btn.danger{color:var(--red);border-color:var(--red)}
+.btn.sm{padding:4px 9px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:default}
+.err{color:var(--red);font-size:13px;min-height:18px}
+#app{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh}
+aside{background:var(--side);color:var(--side-ink);display:flex;flex-direction:column;position:sticky;top:0;align-self:start;height:100vh;max-height:100vh;overflow:auto}
+.brand{padding:18px 18px 14px;border-bottom:1px solid var(--side-line)}
+.brand b{display:block;font:600 19px var(--head);color:#fff}
+.brand small{color:#8397AA}
+nav{padding:10px 8px;display:flex;flex-direction:column;gap:2px;flex:1}
+.ng{font:600 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:#6F8499;padding:12px 10px 4px}
+nav button{all:unset;box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;color:var(--side-ink);font-size:13.5px}
+nav button:hover{background:var(--side-2)}
+nav button[aria-current="page"]{background:var(--steel);color:var(--on-steel);font-weight:600}
+nav .ct{font:11px var(--mono);opacity:.8}
+.side-foot{padding:14px 18px;border-top:1px solid var(--side-line);font-size:12.5px}
+.side-foot .btns{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.side-foot .btn{background:transparent;color:var(--side-ink);border-color:var(--side-line)}
+main{padding:22px clamp(16px,3vw,36px) 48px;min-width:0}
+.topbar{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;margin-bottom:16px}
+.topbar .sub{color:var(--muted);font-size:13px}
+.sync{margin-left:auto;font:12px var(--mono);color:var(--muted)}
+@media (max-width:860px){#app{grid-template-columns:1fr}aside{position:static;max-height:none;height:auto}nav{flex-direction:row;overflow-x:auto;padding:8px;flex:none}.ng{display:none}nav button{white-space:nowrap}}
+.scope{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:12px}
+.toolbar .f{min-width:120px}
+.toolbar .sp{flex:1}
+.sumstrip{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.chip{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 14px;min-width:120px}
+.chip span{display:block;font:600 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.chip b{font:600 22px var(--head);font-variant-numeric:tabular-nums}
+.chip.bad b{color:var(--red)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:6px;min-height:96px}
+.card .k{font:600 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.card .v{font:600 28px var(--head);font-variant-numeric:tabular-nums}
+.card .m{font-size:12.5px;color:var(--muted)}
+@media(max-width:1000px){.cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.cards{grid-template-columns:1fr}}
+.xgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media(max-width:900px){.xgrid{grid-template-columns:1fr}}
+.xcard{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;min-width:0}
+.xcard h3{margin:0 0 10px;font:600 16px var(--head)}
+.tbox{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:auto;max-height:calc(100vh - 260px)}
+table.t{border-collapse:collapse;width:100%;min-width:760px;font-size:13px}
+table.t th{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);background:var(--band);white-space:nowrap;position:sticky;top:0;z-index:3}
+table.t td{padding:8px 10px;border-bottom:1px solid var(--line2);vertical-align:top}
+table.t td.n,table.t th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.row{cursor:pointer}
+tr.row:hover td{background:var(--steel-l)}
+.pill{display:inline-flex;align-items:center;gap:5px;font:600 11.5px var(--body);padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.g{color:var(--green);background:var(--green-l)}
+.pill.a{color:var(--amber);background:var(--amber-l)}
+.pill.r{color:var(--red);background:var(--red-l)}
+.pill.x{color:var(--muted);background:var(--band)}
+.code{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--steel)}
+.empty{padding:36px 16px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--ink);font:600 20px var(--head);margin-bottom:6px}
+.defbox{background:var(--steel-l);border-left:3px solid var(--steel);border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.5}
+.note{font-size:12.5px;color:var(--muted);margin-top:10px}
+.addrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.addrow .i{flex:1 1 180px;width:auto}
+.ov{position:fixed;inset:0;background:rgba(10,18,26,.55);display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow:auto;z-index:50}
+.modal{background:var(--surface);border-radius:10px;width:100%;max-width:760px;box-shadow:var(--shadow);margin:auto 0}
+.modal.wide{max-width:960px}
+.modal header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.modal header .faint{font-size:13px}
+.modal .x{all:unset;cursor:pointer;font-size:22px;line-height:1;padding:2px 8px;color:var(--muted)}
+.modal .body{padding:16px 18px;display:grid;gap:16px}
+.modal footer{display:flex;flex-wrap:wrap;gap:8px;padding:12px 18px;border-top:1px solid var(--line);align-items:center}
+.modal footer .sp{flex:1}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kv div>span:first-child{display:block;font:600 10.5px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.shots{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.shots img{height:96px;max-width:150px;object-fit:cover;border-radius:4px;border:1px solid var(--line);cursor:zoom-in;background:var(--band)}
+.rs{border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:var(--paper)}
+.rs .meta{font:600 11.5px var(--mono);color:var(--muted);margin-bottom:4px}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:8px;font-size:13px;z-index:80}
+.light{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:90;padding:16px}
+.light img{max-width:100%;max-height:100%;border-radius:4px}
+#login{min-height:100vh;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
+.login-art{background:var(--side);color:#fff;padding:48px clamp(24px,5vw,64px);display:flex;flex-direction:column;justify-content:space-between;gap:32px}
+.login-art h1{font-size:clamp(28px,4vw,40px);color:#fff;margin-top:14px;line-height:1.1}
+.login-art p{color:#A9B9C9;max-width:44ch;margin:14px 0 0}
+.login-art .eb{color:#8397AA;font-size:13px}
+.codes{display:flex;flex-wrap:wrap;gap:8px}
+.codes span{font:600 12px var(--mono);letter-spacing:.06em;border:1px solid #2B435A;color:#C8D4DF;padding:4px 9px;border-radius:4px}
+.login-form{display:flex;align-items:center;justify-content:center;padding:32px 16px}
+.login-form form{width:100%;max-width:340px;display:flex;flex-direction:column;gap:14px}
+.hint{font-size:12px;color:var(--muted)}
+@media (max-width:760px){#login{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="login">
+  <div class="login-art">
+    <div>
+      <div class="eb">IR Group · PSS Department</div>
+      <h1>MM2-04 · Inventory Control</h1>
+      <p>Every stock item has an Inv# and a photo. Every move between Stock 1 (BO), Stock 2 (BO for departments), Stock 3 (TW) and transfers out is requested, approved and recorded.</p>
+    </div>
+    <div class="codes"><span>STOCK ITEMS</span><span>TRANSFERS</span><span>PHOTO REQUESTS</span><span>DASHBOARD</span></div>
+  </div>
+  <div class="login-form">
+    <form id="loginForm" autocomplete="on">
+      <h2>Sign in</h2>
+      <label class="f" for="lu">Username<input class="i" id="lu" autocomplete="username" required></label>
+      <label class="f" for="lp">Password<input class="i" id="lp" type="password" autocomplete="current-password" required></label>
+      <div class="err" id="loginErr" role="alert"></div>
+      <button class="btn pri" id="loginBtn" type="submit" style="justify-content:center;padding:10px" disabled>Connecting…</button>
+      <p class="hint" style="margin:0">Ask your Admin for an account. Sign-in locks the page; it is not bank-grade security.</p>
+      <p class="hint" style="margin:0">Version 0.1 · 21 Oct 2026</p>
+    </form>
+  </div>
+</div>
+<div id="app" class="hidden">
+  <aside>
+    <div class="brand"><b>MM2-04 · Inventory Control</b><small>IR Group · PSS Department</small></div>
+    <nav id="nav" aria-label="Inventory Control"></nav>
+    <div class="side-foot"><div id="who"></div><div class="btns"><button class="btn sm" id="btnPw" type="button">Password</button><button class="btn sm" id="btnOut" type="button">Sign out</button></div></div>
+  </aside>
+  <main><div class="topbar"><h1 id="pageTitle"></h1><span class="sub" id="pageSub"></span><span class="sync" id="todayTxt"></span></div><section id="view"><div class="empty">Loading…</div></section></main>
+</div>
+<div id="modalRoot"></div><div id="toastRoot"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const pad=n=>String(n).padStart(2,'0');
+const todayStr=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+const fmtD=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||'');return m?`${+m[3]} ${MON[+m[2]-1]} ${m[1]}`:''};
+const fmtDT=iso=>{if(!iso)return '';const d=new Date(iso);if(isNaN(d))return '';return `${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())}`};
+const toLocalInput=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const rid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const opt=(v,l,sel)=>`<option value="${esc(v)}" ${sel?'selected':''}>${esc(l)}</option>`;
+function toast(t){const r=$('#toastRoot');r.innerHTML=`<div class="toast" role="status">${esc(t)}</div>`;clearTimeout(toast.t);toast.t=setTimeout(()=>r.innerHTML='',3000)}
+const store={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
+
+let db=null,dl=null,ME=null;
+/* ---------- access (same positions model as the other sub-modules) ---------- */
+const MENUS=[["dash","Dashboard"],["alerts","Alerts"],["inv","Stock items"],["tr","Transfers & requests"],["pr","Photo requests"]];
+const ACTS=[['edit','Add, edit and request'],['approve','Approve or reject transfers'],['delete','Delete records'],['export','Excel export']];
+const posDefs=()=>{const L=((D.settings&&D.settings.positions)||{}).list||{},all=MENUS.map(m=>m[0]);
+  const def={Admin:{menus:all,acts:ACTS.map(a=>a[0])},Editor:{menus:all,acts:['edit','delete','export']},Viewer:{menus:all,acts:[]}};
+  const o={};Object.keys(def).forEach(k=>o[k]=k!=='Admin'&&L[k]?{menus:L[k].menus||[],acts:L[k].acts||[]}:def[k]);
+  Object.keys(L).forEach(k=>{if(!def[k])o[k]={menus:L[k].menus||[],acts:L[k].acts||[]}});return o};
+const posNames=()=>Object.keys(posDefs());
+const rl=r=>r==='Admin'?'Master Admin':r;
+const can=p=>{if(!ME)return false;if(p==='view')return true;if(ME.role==='Admin')return true;if(p==='admin')return false;const q=posDefs()[ME.role];if(!q)return false;return p.startsWith('m:')?q.menus.includes(p.slice(2)):q.acts.includes(p)};
+const menuOk=k=>k==='users'||k==='access'||k==='lists'?can('admin'):can('m:'+k);
+
+const D={settings:{},items:{},transfers:{},photoReqs:{},log:{},users:{}};
+const READY={};
+const UI={tab:'dash',q:'',loc:'',cat:'',status:'',trSt:'',prSt:'',keep:null};
+const LOCS=[['S1','Stock 1 · BO'],['S2','Stock 2 · BO for departments'],['S3','Stock 3 · TW'],['OUT','Transferred out']];
+const STOCK_LOCS=LOCS.filter(x=>x[0]!=='OUT');
+const locLab=k=>(LOCS.find(x=>x[0]===k)||[])[1]||k;
+const DEFCATS=['IT equipment','Furniture','Office supplies','Tools','Other'];
+const DEFDEPTS=['Dept 11 (Eleven)'];
+const lists=()=>{const x=D.settings.lists||{};return {cats:x.cats&&x.cats.length?x.cats:DEFCATS,depts:x.depts&&x.depts.length?x.depts:DEFDEPTS}};
+const TITLES={dash:['Dashboard','Where every stock item is, and what is waiting'],alerts:['Alerts','Monitoring and tracking: what needs a check or an approval today'],inv:['Stock items','Each item has an Inv# and a photo'],tr:['Transfers & requests','Every move of an item is requested, approved and recorded'],pr:['Photo requests','Ask the holder for a photo, and record it when it arrives'],lists:['Lists','Categories and departments used in the forms'],access:['Access control','Positions: what each person can open and do'],users:['Users','Master Admin: everything. Editor: add and request. Viewer: view only.']};
+
+/* ---------- model ---------- */
+const itemList=()=>Object.entries(D.items).map(([id,i])=>({...i,id}));
+const statusOf=i=>i.condition&&i.condition!=='OK'?i.condition:i.location==='OUT'?'Transferred out':i.holderName?'With staff':'In stock';
+const whereOf=i=>locLab(i.location)+(i.location==='OUT'&&i.holderDept?' · '+i.holderDept:'')+(i.holderName?' · '+i.holderName:'');
+const nextInv=()=>{let m=0;Object.values(D.items).forEach(i=>{const n=+String(i.invNo||'').replace(/\D/g,'');if(n>m)m=n});return 'INV-'+String(m+1).padStart(4,'0')};
+const pendingTr=()=>Object.values(D.transfers).filter(t=>t.status==='Requested').length;
+const openPr=()=>Object.values(D.photoReqs).filter(p=>p.status==='Requested').length;
+
+/* ---------- audit + photos ---------- */
+async function logAct(action,target,detail){try{await db.collection('log').doc(rid('l')).set({at:new Date().toISOString(),by:ME?ME.u:'',name:ME?ME.name:'',action,target,detail:detail||''})}catch(e){}}
+async function shrink(file){
+  const bmp=await createImageBitmap(file);
+  let w=bmp.width,h=bmp.height;const max=1400;if(Math.max(w,h)>max){const k=max/Math.max(w,h);w=Math.round(w*k);h=Math.round(h*k)}
+  for(let q=.8,scale=1;;){
+    const c=document.createElement('canvas');c.width=Math.round(w*scale);c.height=Math.round(h*scale);
+    const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(bmp,0,0,c.width,c.height);
+    const u=c.toDataURL('image/jpeg',q);
+    if(u.length<190000||(q<=.45&&scale<=.5))return u;
+    if(q>.5)q-=.1;else scale*=.8;
+  }
+}
+async function savePhoto(f){const data=await shrink(f);const sid=rid('s');await db.doc('shots/'+sid).set({name:f.name,data,at:new Date().toISOString()});return sid}
+async function loadShotsInto(sel,ids){
+  const el=$(sel);if(!el)return;
+  if(!ids||!ids.length){el.innerHTML='<span class="faint">No photos yet.</span>';return}
+  const out=[];for(const id of ids){try{const s=await db.doc('shots/'+id).get();if(s.exists)out.push(s.data())}catch(e){}}
+  el.innerHTML=out.length?out.map(s=>`<img alt="${esc(s.name||'Photo')}" src="${s.data}">`).join(''):'<span class="faint">Photos could not be loaded.</span>';
+  el.querySelectorAll('img').forEach(im=>im.onclick=()=>lightbox(im.src));
+}
+function lightbox(src){const d=document.createElement('div');d.className='light';d.innerHTML=`<img alt="Photo" src="${src}">`;d.onclick=()=>d.remove();document.body.appendChild(d)}
+
+/* ---------- modal ---------- */
+function openModal(title,sub,body,footer,wide){
+  $('#modalRoot').innerHTML=`<div class="ov" id="ov"><div class="modal${wide?' wide':''}" role="dialog" aria-modal="true" aria-label="${esc(title)}"><header><div><h2>${esc(title)}</h2>${sub?`<div class="faint">${sub}</div>`:''}</div><button class="x" type="button" id="mx" aria-label="Close">×</button></header><div class="body">${body}</div>${footer?`<footer>${footer}</footer>`:''}</div></div>`;
+  $('#mx').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal()});
+  document.onkeydown=e=>{if(e.key==='Escape'){if($('.light'))$('.light').remove();else closeModal()}};
+}
+const closeModal=()=>{$('#modalRoot').innerHTML='';document.onkeydown=null;if(ME)draw()};
+
+/* ---------- item modal (detail) ---------- */
+function itemModal(id){
+  const it=D.items[id];if(!it)return;const w=can('edit');
+  const hist=Object.entries(D.transfers).map(([tid,t])=>({...t,id:tid})).filter(t=>t.itemId===id).sort((a,b)=>(b.requestedAt||'').localeCompare(a.requestedAt||''));
+  const prs=Object.entries(D.photoReqs).map(([pid,p])=>({...p,id:pid})).filter(p=>p.itemId===id).sort((a,b)=>(b.at||'').localeCompare(a.at||''));
+  openModal(`${esc(it.invNo)} · ${esc(it.name)}`,`${esc(it.category||'')} · ${esc(statusOf(it))}`,
+  `<div class="kv"><div><span>Inv#</span><b class="code">${esc(it.invNo)}</b></div><div><span>Location</span>${esc(locLab(it.location))}</div><div><span>Holder</span>${esc(it.holderName||'—')}</div><div><span>Department</span>${esc(it.holderDept||'—')}</div><div><span>Condition</span>${esc(it.condition||'OK')}</div><div><span>Serial / label</span>${esc(it.serial||'—')}</div><div><span>Last updated</span>${esc(fmtDT(it.updatedAt||it.createdAt))} <span class="faint">${esc(it.updatedBy||'')}</span></div></div>
+  ${it.description?`<div class="note" style="margin-top:0">${esc(it.description)}</div>`:''}
+  <div><h3>Photos</h3><div class="shots" id="itSh"></div></div>
+  <div><h3>Transfers and requests</h3><div class="tbox" style="margin-top:8px;max-height:260px"><table class="t" style="min-width:560px"><thead><tr><th>Requested</th><th>From</th><th>To</th><th>Status</th></tr></thead><tbody>${hist.length?hist.map(t=>`<tr class="row" data-trn="${esc(t.id)}"><td>${esc(fmtDT(t.requestedAt))}</td><td>${esc(locLab(t.fromLoc))}</td><td>${esc(locLab(t.toLoc))}${t.toDept?' · '+esc(t.toDept):''}${t.toName?' · '+esc(t.toName):''}</td><td>${trPill(t.status)}</td></tr>`).join(''):'<tr><td colspan="4" class="empty">No transfers yet.</td></tr>'}</tbody></table></div></div>
+  <div><h3>Photo requests</h3><div class="tbox" style="margin-top:8px;max-height:200px"><table class="t" style="min-width:520px"><thead><tr><th>Asked</th><th>From</th><th>Status</th></tr></thead><tbody>${prs.length?prs.map(p=>`<tr><td>${esc(fmtDT(p.at))}</td><td>${esc(p.toName||'—')}</td><td>${p.status==='Received'?'<span class="pill g">Received</span>':'<span class="pill a">Waiting</span>'}</td></tr>`).join(''):'<tr><td colspan="3" class="empty">None.</td></tr>'}</tbody></table></div></div>`,
+  `<button class="btn" id="mClose">Close</button><span class="sp"></span>${w?'<button class="btn" id="itPr">Ask holder for a photo</button><button class="btn" id="itTr">Request transfer</button><button class="btn" id="itEd">Edit</button>':''}${can('delete')?'<button class="btn danger" id="itDel">Delete</button>':''}`);
+  $('#mClose').onclick=closeModal;
+  loadShotsInto('#itSh',it.photoIds||[]);
+  if(w){$('#itEd').onclick=()=>itemForm(id);$('#itTr').onclick=()=>transferModal(id);$('#itPr').onclick=()=>photoReqModal(id)}
+  document.querySelectorAll('#modalRoot [data-trn]').forEach(el=>el.onclick=()=>trModal(el.dataset.trn));
+  const del=$('#itDel');if(del)del.onclick=async()=>{if(del.dataset.s!=='1'){del.dataset.s='1';del.textContent='Click again to delete';return}
+    try{await db.doc('items/'+id).delete();await logAct('Item deleted',it.invNo,it.name);closeModal();toast('Deleted.')}catch(e){toast('Could not delete.')}};
+}
+const trPill=s=>s==='Completed'?'<span class="pill g">Completed</span>':s==='Rejected'?'<span class="pill r">Rejected</span>':'<span class="pill a">Waiting approval</span>';
+
+/* ---------- item form (add / edit) ---------- */
+function itemForm(id){
+  const isNew=!id;const it=isNew?{location:'S1',condition:'OK',photoIds:[]}:{...D.items[id]};
+  if(!isNew&&!D.items[id])return;
+  const L=lists();
+  openModal(isNew?'Add stock item':'Edit item',isNew?'The Inv# is created automatically':esc(it.invNo),
+  `<div class="grid2">
+    <label class="f">Name<input class="i" id="i_name" value="${esc(it.name||'')}"></label>
+    <label class="f">Category<select class="i" id="i_cat">${L.cats.map(c=>opt(c,c,it.category===c)).join('')}</select></label>
+    <label class="f">Stock location<select class="i" id="i_loc">${STOCK_LOCS.map(x=>opt(x[0],x[1],it.location===x[0])).join('')}</select></label>
+    <label class="f">Condition<select class="i" id="i_cond">${['OK','Damaged','Lost'].map(c=>opt(c,c,(it.condition||'OK')===c)).join('')}</select></label>
+    <label class="f">Serial or label number<input class="i" id="i_ser" value="${esc(it.serial||'')}"></label>
+    <label class="f">Holder (person, if issued)<input class="i" id="i_hn" value="${esc(it.holderName||'')}"></label>
+    <label class="f">Holder department<input class="i" id="i_hd" list="dlDept" value="${esc(it.holderDept||'')}"></label>
+    <label class="f" style="grid-column:1/-1">Description<textarea class="i" id="i_desc">${esc(it.description||'')}</textarea></label>
+  </div>
+  <div><h3>Photos${isNew?' (at least one)':''}</h3><div class="shots" id="i_sh"></div>
+  <label class="f" style="margin-top:8px">Add photos<input class="i" type="file" id="i_files" accept="image/*" multiple></label><div class="shots" id="i_prev"></div></div>
+  <datalist id="dlDept">${L.depts.map(d=>`<option value="${esc(d)}">`).join('')}</datalist>
+  <div class="err" id="iErr" role="alert"></div>`,
+  `<button class="btn" id="mClose">Cancel</button><button class="btn pri" id="iSave">Save</button>`);
+  $('#mClose').onclick=closeModal;
+  loadShotsInto('#i_sh',it.photoIds||[]);
+  let files=[];
+  $('#i_files').onchange=e=>{files=[...e.target.files];const p=$('#i_prev');p.innerHTML='';files.forEach(f=>{const im=document.createElement('img');im.alt=f.name;im.src=URL.createObjectURL(f);p.appendChild(im)})};
+  $('#iSave').onclick=async()=>{
+    const err=$('#iErr');err.textContent='';
+    const v={name:$('#i_name').value.trim(),category:$('#i_cat').value,location:$('#i_loc').value,condition:$('#i_cond').value,serial:$('#i_ser').value.trim(),holderName:$('#i_hn').value.trim(),holderDept:$('#i_hd').value.trim(),description:$('#i_desc').value.trim()};
+    if(!v.name){err.textContent='Enter the item name.';return}
+    if(!((it.photoIds||[]).length+files.length)){err.textContent='Add at least one photo.';return}
+    const b=$('#iSave');b.disabled=true;err.textContent='Saving…';
+    try{
+      const ids=[...(it.photoIds||[])];
+      for(const f of files)ids.push(await savePhoto(f));
+      const invNo=isNew?nextInv():it.invNo;
+      const key=isNew?'items/'+rid('i'):'items/'+id;
+      const doc={...it,...v,invNo,photoIds:ids,updatedAt:new Date().toISOString(),updatedBy:ME.name};
+      if(isNew){doc.createdAt=new Date().toISOString();doc.createdBy=ME.name}
+      delete doc.id;
+      await db.doc(key).set(doc);
+      await logAct(isNew?'Item added':'Item changed',invNo,v.name);closeModal();toast('Saved.');
+    }catch(e){b.disabled=false;err.textContent='Could not save. You may only have edit access.'}
+  };
+}
+
+/* ---------- transfer request ---------- */
+function transferModal(itemId){
+  const it=D.items[itemId];if(!it)return;const L=lists();
+  openModal('Request a transfer',`${esc(it.invNo)} · ${esc(it.name)}`,
+  `<div class="kv"><div><span>Now at</span>${esc(whereOf(it))}</div><div><span>Status</span>${esc(statusOf(it))}</div></div>
+  <div class="grid2">
+   <label class="f">Move to<select class="i" id="t_to">${LOCS.map(x=>opt(x[0],x[1],x[0]===it.location)).join('')}</select></label>
+   <label class="f">Department (required for Transferred out)<input class="i" id="t_dept" list="dlDept"></label>
+   <label class="f">Person receiving (staff, if any)<input class="i" id="t_name"></label>
+   <label class="f">Reason<input class="i" id="t_reason"></label>
+  </div>
+  <datalist id="dlDept">${L.depts.map(d=>`<option value="${esc(d)}">`).join('')}</datalist>
+  <div><h3>Photo (at least one)</h3><label class="f" style="margin-top:6px"><input class="i" type="file" id="t_files" accept="image/*" multiple></label><div class="shots" id="t_prev"></div></div>
+  <div class="err" id="tErr" role="alert"></div>`,
+  `<button class="btn" id="mClose">Cancel</button><button class="btn pri" id="tSave">Send request</button>`);
+  $('#mClose').onclick=closeModal;
+  let files=[];
+  $('#t_files').onchange=e=>{files=[...e.target.files];const p=$('#t_prev');p.innerHTML='';files.forEach(f=>{const im=document.createElement('img');im.alt=f.name;im.src=URL.createObjectURL(f);p.appendChild(im)})};
+  $('#tSave').onclick=async()=>{
+    const err=$('#tErr');err.textContent='';
+    const toLoc=$('#t_to').value,toDept=$('#t_dept').value.trim(),toName=$('#t_name').value.trim(),reason=$('#t_reason').value.trim();
+    if(toLoc==='OUT'&&!toDept){err.textContent='Enter the department the item goes to.';return}
+    if(toLoc===it.location&&!toName&&!toDept){err.textContent='Choose a different location, or name the person receiving it.';return}
+    if(!files.length){err.textContent='Add a photo of the item for this transfer.';return}
+    const b=$('#tSave');b.disabled=true;err.textContent='Sending…';
+    try{
+      const shotIds=[];for(const f of files)shotIds.push(await savePhoto(f));
+      const tid=rid('t');
+      const doc={itemId,invNo:it.invNo,itemName:it.name,fromLoc:it.location,fromHolder:it.holderName||'',toLoc,toDept,toName,reason,status:'Requested',shotIds,requestedBy:ME.u,requestedByName:ME.name,requestedAt:new Date().toISOString()};
+      await db.doc('transfers/'+tid).set(doc);
+      await logAct('Transfer requested',it.invNo,`${locLab(it.location)} > ${locLab(toLoc)}${toDept?' · '+toDept:''}${toName?' · '+toName:''}`);
+      closeModal();toast('Request sent for approval.');
+    }catch(e){b.disabled=false;err.textContent='Could not send. You may only have edit access.'}
+  };
+}
+
+/* ---------- transfer detail (approve / reject) ---------- */
+function trModal(tid){
+  const t=D.transfers[tid];if(!t)return;const it=D.items[t.itemId];const w=can('approve')&&t.status==='Requested';
+  openModal(`Transfer · ${esc(t.invNo)}`,`${esc(t.itemName||'')} · requested ${esc(fmtDT(t.requestedAt))} by ${esc(t.requestedByName||'')}`,
+  `<div class="kv"><div><span>From</span>${esc(locLab(t.fromLoc))}${t.fromHolder?' · '+esc(t.fromHolder):''}</div><div><span>To</span>${esc(locLab(t.toLoc))}</div><div><span>Department</span>${esc(t.toDept||'—')}</div><div><span>Person receiving</span>${esc(t.toName||'—')}</div><div><span>Status</span>${trPill(t.status)}</div></div>
+  <div class="note" style="margin-top:0">Reason: ${esc(t.reason||'—')}${t.rejectReason?` · Rejected: ${esc(t.rejectReason)}`:''}${t.approvedByName?` · Approved by ${esc(t.approvedByName)} ${esc(fmtDT(t.approvedAt))}`:''}</div>
+  <div><h3>Photos</h3><div class="shots" id="trSh"></div></div>
+  ${w?`<div class="grid2"><label class="f">Reason for rejecting (if rejected)<input class="i" id="rj"></label></div><div class="err" id="trErr" role="alert"></div>`:''}`,
+  `<button class="btn" id="mClose">Close</button><span class="sp"></span>${w?'<button class="btn danger" id="trNo">Reject</button><button class="btn pri" id="trYes">Approve and move the item</button>':''}`);
+  $('#mClose').onclick=closeModal;
+  loadShotsInto('#trSh',t.shotIds||[]);
+  if(!w)return;
+  $('#trNo').onclick=async()=>{const r=$('#rj').value.trim();if(!r){$('#trErr').textContent='Write the reason for rejecting.';return}
+    try{await db.doc('transfers/'+tid).update({status:'Rejected',rejectReason:r,approvedBy:ME.u,approvedByName:ME.name,approvedAt:new Date().toISOString()});await logAct('Transfer rejected',t.invNo,r);closeModal();toast('Rejected.')}catch(e){$('#trErr').textContent='Could not save.'}};
+  $('#trYes').onclick=async()=>{
+    if(!it){$('#trErr').textContent='The item is no longer in the list.';return}
+    try{
+      await db.doc('items/'+t.itemId).update({location:t.toLoc,holderName:t.toName||'',holderDept:t.toDept||'',updatedAt:new Date().toISOString(),updatedBy:ME.name});
+      await db.doc('transfers/'+tid).update({status:'Completed',approvedBy:ME.u,approvedByName:ME.name,approvedAt:new Date().toISOString()});
+      await logAct('Transfer approved',t.invNo,`${locLab(t.fromLoc)} > ${locLab(t.toLoc)}${t.toDept?' · '+t.toDept:''}${t.toName?' · '+t.toName:''}`);
+      closeModal();toast('Transfer completed.');
+    }catch(e){$('#trErr').textContent='Could not save. Try again.'}
+  };
+}
+
+/* ---------- photo request ---------- */
+function photoReqModal(itemId){
+  const it=D.items[itemId];if(!it)return;
+  openModal('Ask the holder for a photo',`${esc(it.invNo)} · ${esc(it.name)}`,
+  `<div class="grid2">
+    <label class="f">Person to send the photo<input class="i" id="pr_name" value="${esc(it.holderName||'')}"></label>
+    <label class="f">Department<input class="i" id="pr_dept" value="${esc(it.holderDept||'')}"></label>
+    <label class="f" style="grid-column:1/-1">Note (what to show in the photo)<input class="i" id="pr_note" placeholder="For example: the item and its label"></label>
+  </div><div class="err" id="prErr" role="alert"></div>
+  <div class="note" style="margin-top:0">The request stays open until someone uploads the photo under Photo requests.</div>`,
+  `<button class="btn" id="mClose">Cancel</button><button class="btn pri" id="prSave">Send request</button>`);
+  $('#mClose').onclick=closeModal;
+  $('#prSave').onclick=async()=>{
+    const name=$('#pr_name').value.trim(),err=$('#prErr');
+    if(!name){err.textContent='Enter the person who should send the photo.';return}
+    try{await db.doc('photoReqs/'+rid('p')).set({itemId,invNo:it.invNo,itemName:it.name,toName:name,toDept:$('#pr_dept').value.trim(),note:$('#pr_note').value.trim(),status:'Requested',requestedBy:ME.u,requestedByName:ME.name,at:new Date().toISOString()});
+      await logAct('Photo requested',it.invNo,name);closeModal();toast('Photo request sent.')}catch(e){err.textContent='Could not save.'}
+  };
+}
+function photoRecvModal(pid){
+  const p=D.photoReqs[pid];if(!p)return;const it=D.items[p.itemId];
+  if(!can('edit')){toast('Your position cannot record photos.');return}
+  openModal('Record the photo',`${esc(p.invNo)} · ${esc(p.itemName||'')} · asked ${esc(p.toName||'')}`,
+  `<div class="note" style="margin-top:0">${esc(p.note||'No note')}</div>
+  <label class="f">Photo (at least one)<input class="i" type="file" id="rv_files" accept="image/*" multiple></label>
+  <div class="shots" id="rv_prev"></div><div class="err" id="rvErr" role="alert"></div>`,
+  `<button class="btn" id="mClose">Cancel</button><button class="btn pri" id="rvSave">Save photo</button>`);
+  $('#mClose').onclick=closeModal;
+  let files=[];$('#rv_files').onchange=e=>{files=[...e.target.files];const pv=$('#rv_prev');pv.innerHTML='';files.forEach(f=>{const im=document.createElement('img');im.alt=f.name;im.src=URL.createObjectURL(f);pv.appendChild(im)})};
+  $('#rvSave').onclick=async()=>{
+    if(!files.length){$('#rvErr').textContent='Choose the photo first.';return}
+    if(!it){$('#rvErr').textContent='The item is no longer in the list.';return}
+    try{const ids=[];for(const f of files)ids.push(await savePhoto(f));
+      await db.doc('items/'+p.itemId).update({photoIds:[...(it.photoIds||[]),...ids],updatedAt:new Date().toISOString(),updatedBy:ME.name});
+      await db.doc('photoReqs/'+pid).update({status:'Received',receivedAt:new Date().toISOString(),receivedBy:ME.name,shotIds:ids});
+      await logAct('Photo received',p.invNo,p.toName||'');closeModal();toast('Photo recorded.')}catch(e){$('#rvErr').textContent='Could not save. Try again.'}
+  };
+}
+
+/* ---------- views ---------- */
+function dashView(){
+  const items=itemList(),cnt=s=>items.filter(i=>statusOf(i)===s).length;
+  const cards=`<div class="cards">
+    ${alertCard()}
+    <div class="card"><span class="k">Items tracked</span><span class="v">${items.length}</span><span class="m">Each with an Inv#</span></div>
+    <div class="card"><span class="k">In stock</span><span class="v">${cnt('In stock')}</span><span class="m">Not issued to anyone</span></div>
+    <div class="card"><span class="k">With staff</span><span class="v">${cnt('With staff')}</span><span class="m">Issued to a person</span></div>
+    <div class="card"><span class="k">Transferred out</span><span class="v">${cnt('Transferred out')}</span><span class="m">Moved to another department</span></div>
+    <div class="card"><span class="k">Damaged or lost</span><span class="v">${cnt('Damaged')+cnt('Lost')}</span><span class="m">Needs follow up</span></div>
+    <div class="card"><span class="k">Transfers waiting</span><span class="v">${pendingTr()}</span><span class="m">Need approval</span></div>
+    <div class="card"><span class="k">Photo requests open</span><span class="v">${openPr()}</span><span class="m">Waiting for a photo</span></div>
+  </div>`;
+  const byLoc=LOCS.map(x=>({l:x[1],n:items.filter(i=>i.location===x[0]).length,h:items.filter(i=>i.location===x[0]&&i.holderName).length}));
+  const depts=[...new Set(items.filter(i=>i.holderDept).map(i=>i.holderDept))].sort();
+  const recent=Object.entries(D.transfers).map(([id,t])=>({...t,id})).sort((a,b)=>(b.requestedAt||'').localeCompare(a.requestedAt||'')).slice(0,10);
+  return `${cards}<div class="xgrid">
+   <div class="xcard"><h3>Where the items are</h3><div class="tbox" style="border:0"><table class="t" style="min-width:0"><thead><tr><th>Location</th><th class="n">Items</th><th class="n">With a holder</th></tr></thead><tbody>${byLoc.map(r=>`<tr><td>${esc(r.l)}</td><td class="n">${r.n}</td><td class="n">${r.h}</td></tr>`).join('')}</tbody></table></div></div>
+   <div class="xcard"><h3>Items with staff, by department</h3><div class="tbox" style="border:0"><table class="t" style="min-width:0"><thead><tr><th>Department</th><th class="n">Items</th></tr></thead><tbody>${depts.length?depts.map(d=>`<tr><td>${esc(d)}</td><td class="n">${items.filter(i=>i.holderDept===d).length}</td></tr>`).join(''):'<tr><td colspan="2" class="empty">No items issued yet.</td></tr>'}</tbody></table></div></div>
+   <div class="xcard" style="grid-column:1/-1"><h3>Latest transfers and requests</h3>${recent.length?`<div class="tbox" style="border:0"><table class="t" style="min-width:760px"><thead><tr><th>Requested</th><th>Inv#</th><th>Item</th><th>Move</th><th>Status</th></tr></thead><tbody>${recent.map(t=>`<tr class="row" data-trn="${esc(t.id)}"><td>${esc(fmtDT(t.requestedAt))}</td><td class="code">${esc(t.invNo)}</td><td>${esc(t.itemName||'')}</td><td>${esc(locLab(t.fromLoc))} &gt; ${esc(locLab(t.toLoc))}${t.toDept?' · '+esc(t.toDept):''}${t.toName?' · '+esc(t.toName):''}</td><td>${trPill(t.status)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty"><b>No transfers yet</b>Open a stock item and choose Request transfer.</div>'}</div>
+  </div>`;
+}
+function invView(){
+  const L=lists();const q=UI.q.toLowerCase();
+  const rows=itemList().sort((a,b)=>(a.invNo||'').localeCompare(b.invNo||'')).filter(i=>(!UI.loc||i.location===UI.loc)&&(!UI.cat||i.category===UI.cat)&&(!UI.status||statusOf(i)===UI.status)&&(!q||[i.invNo,i.name,i.serial,i.holderName,i.holderDept,i.description].join(' ').toLowerCase().includes(q)));
+  const body=rows.length?rows.map(i=>`<tr class="row" tabindex="0" data-item="${esc(i.id)}"><td class="code">${esc(i.invNo)}</td><td><span data-th="${esc((i.photoIds||[])[0]||'')}"><span class="faint">No photo</span></span></td><td><b>${esc(i.name)}</b><div class="faint">${esc(i.serial||'')}</div></td><td>${esc(i.category||'')}</td><td>${esc(locLab(i.location))}</td><td>${esc(i.holderName||'—')}</td><td>${esc(i.holderDept||'—')}</td><td>${statusOf(i)==='In stock'?'<span class="pill g">In stock</span>':statusOf(i)==='With staff'?'<span class="pill a">With staff</span>':statusOf(i)==='Transferred out'?'<span class="pill x">Transferred out</span>':`<span class="pill r">${esc(statusOf(i))}</span>`}</td><td>${esc(fmtDT(i.updatedAt||i.createdAt))}</td></tr>`).join(''):'<tr><td colspan="9" class="empty"><b>No stock items yet</b>Add an item with its photo. The Inv# is created for you.</td></tr>';
+  return `<div class="toolbar"><label class="f" style="flex:1;min-width:200px">Search<input class="i" id="fq" type="search" value="${esc(UI.q)}" placeholder="Inv#, name, serial, holder…"></label>
+  <label class="f">Location<select class="i" id="fl"><option value="">All</option>${LOCS.map(x=>opt(x[0],x[1],UI.loc===x[0])).join('')}</select></label>
+  <label class="f">Category<select class="i" id="fc"><option value="">All</option>${L.cats.map(c=>opt(c,c,UI.cat===c)).join('')}</select></label>
+  <label class="f">Status<select class="i" id="fs"><option value="">All</option>${['In stock','With staff','Transferred out','Damaged','Lost'].map(s=>opt(s,s,UI.status===s)).join('')}</select></label>
+  <span class="sp"></span>${can('export')?'<button class="btn" id="xInv">Export Excel</button>':''}${can('edit')?'<button class="btn pri" id="addInv">Add stock item</button>':''}</div>
+  <div class="tbox"><table class="t" style="min-width:1100px"><thead><tr><th>Inv#</th><th>Photo</th><th>Item</th><th>Category</th><th>Location</th><th>Holder</th><th>Department</th><th>Status</th><th>Last updated</th></tr></thead><tbody>${body}</tbody></table></div>
+  <div class="note">Click an item to see its photos, transfers and requests. Every move needs a photo and an approval.</div>`;
+}
+function trView(){
+  const all=Object.entries(D.transfers).map(([id,t])=>({...t,id})).sort((a,b)=>(b.requestedAt||'').localeCompare(a.requestedAt||''));
+  const l=all.filter(t=>!UI.trSt||t.status===UI.trSt);
+  return `<div class="sumstrip"><div class="chip ${pendingTr()?'bad':''}"><span>Waiting approval</span><b>${pendingTr()}</b></div><div class="chip"><span>Completed</span><b>${all.filter(t=>t.status==='Completed').length}</b></div><div class="chip"><span>Rejected</span><b>${all.filter(t=>t.status==='Rejected').length}</b></div></div>
+  <div class="toolbar"><label class="f">Status<select class="i" id="fst"><option value="">All</option>${['Requested','Completed','Rejected'].map(s=>opt(s,s,UI.trSt===s)).join('')}</select></label></div>
+  <div class="tbox"><table class="t" style="min-width:1000px"><thead><tr><th>Requested</th><th>Inv#</th><th>Item</th><th>From</th><th>To</th><th>Reason</th><th>Requested by</th><th>Photos</th><th>Status</th></tr></thead><tbody>${l.length?l.map(t=>`<tr class="row" tabindex="0" data-trn="${esc(t.id)}"><td>${esc(fmtDT(t.requestedAt))}</td><td class="code">${esc(t.invNo)}</td><td>${esc(t.itemName||'')}</td><td>${esc(locLab(t.fromLoc))}${t.fromHolder?'<div class="faint">'+esc(t.fromHolder)+'</div>':''}</td><td>${esc(locLab(t.toLoc))}${t.toDept?'<div class="faint">'+esc(t.toDept)+'</div>':''}${t.toName?'<div class="faint">'+esc(t.toName)+'</div>':''}</td><td>${esc(t.reason||'')}</td><td>${esc(t.requestedByName||'')}</td><td>${(t.shotIds||[]).length}</td><td>${trPill(t.status)}</td></tr>`).join(''):'<tr><td colspan="9" class="empty"><b>No transfers</b>Open a stock item and choose Request transfer.</td></tr>'}</tbody></table></div>`;
+}
+function prView(){
+  const l=Object.entries(D.photoReqs).map(([id,p])=>({...p,id})).sort((a,b)=>(b.at||'').localeCompare(a.at||'')).filter(p=>!UI.prSt||p.status===UI.prSt);
+  return `<div class="sumstrip"><div class="chip ${openPr()?'bad':''}"><span>Waiting for photo</span><b>${openPr()}</b></div></div>
+  <div class="toolbar"><label class="f">Status<select class="i" id="fpr"><option value="">All</option><option ${UI.prSt==='Requested'?'selected':''}>Requested</option><option ${UI.prSt==='Received'?'selected':''}>Received</option></select></label></div>
+  <div class="tbox"><table class="t" style="min-width:900px"><thead><tr><th>Asked</th><th>Inv#</th><th>Item</th><th>Person</th><th>Department</th><th>Note</th><th>Asked by</th><th>Status</th><th></th></tr></thead><tbody>${l.length?l.map(p=>`<tr><td>${esc(fmtDT(p.at))}</td><td class="code">${esc(p.invNo)}</td><td>${esc(p.itemName||'')}</td><td>${esc(p.toName||'')}</td><td>${esc(p.toDept||'')}</td><td>${esc(p.note||'')}</td><td>${esc(p.requestedByName||'')}</td><td>${p.status==='Received'?`<span class="pill g">Received ${esc(fmtDT(p.receivedAt))}</span>`:'<span class="pill a">Waiting</span>'}</td><td>${p.status==='Requested'&&can('edit')?`<button class="btn sm" data-recv="${esc(p.id)}">Record photo</button>`:''}</td></tr>`).join(''):'<tr><td colspan="9" class="empty"><b>No photo requests</b>Open a stock item and choose Ask holder for a photo.</td></tr>'}</tbody></table></div>`;
+}
+function listsView(){
+  if(!can('admin'))return '<div class="empty">Only a Master Admin can manage lists.</div>';
+  const L=lists();
+  const box=(key,title,hint,arr)=>`<div class="xcard"><h3>${esc(title)}</h3><div class="faint" style="font-size:12px;margin-bottom:10px">${esc(hint)}</div>
+   <div class="tbox" style="max-height:none"><table class="t" style="min-width:0"><thead><tr><th>Choice</th><th></th></tr></thead><tbody>${arr.map(v=>`<tr><td>${esc(v)}</td><td style="text-align:right"><button class="btn sm danger" data-ldel="${key}" data-v="${esc(v)}">Delete</button></td></tr>`).join('')}</tbody></table></div>
+   <div class="addrow"><input class="i" id="ln_${key}" placeholder="Add a new choice…" maxlength="60"><button class="btn pri" data-ladd="${key}">Add</button></div></div>`;
+  return `<div class="defbox"><b>Lists.</b> Categories and departments used in the item and transfer forms. Only the Master Admin can change them.</div>
+  <div class="xgrid">${box('cats','Categories','Used when adding a stock item.',L.cats)}${box('depts','Departments','Suggested when recording a holder or a transfer out. You can still type another department.',L.depts)}</div><div class="err" id="lErr" role="alert"></div>`;
+}
+function accessView(){
+  if(!can('admin'))return '<div class="empty">Only a Master Admin can manage access.</div>';
+  const defs=posDefs(),names=Object.keys(defs),builtin=['Admin','Editor','Viewer'],n2=names.length+1;
+  const cnt=n=>Object.values(D.users).filter(u=>u.role===n).length;
+  const row=(label,type,key)=>`<tr><td>${esc(label)}</td>${names.map(n=>{const lk=n==='Admin',on=lk||(type==='m'?defs[n].menus:defs[n].acts).includes(key);return `<td style="text-align:center"><input type="checkbox" class="ac" data-n="${esc(n)}" data-t="${type}" data-k="${esc(key)}" ${on?'checked':''} ${lk?'disabled':''} aria-label="${esc(rl(n))}: ${esc(label)}"></td>`}).join('')}</tr>`;
+  return `<div class="defbox"><b>How it works:</b> tick what each position can open and do, then press <b>Save access</b>. Give a position to a person in <b>Users</b>.</div>
+  <div class="tbox"><table class="t" style="min-width:${180+110*names.length}px"><thead><tr><th>Permission</th>${names.map(n=>`<th style="text-align:center">${esc(rl(n))}<div class="faint">${cnt(n)} user${cnt(n)===1?'':'s'}</div>${builtin.includes(n)?'':`<a href="#" data-delpos="${esc(n)}">Remove</a>`}</th>`).join('')}</tr></thead><tbody>
+  <tr><td colspan="${n2}"><b>Menus they can open</b></td></tr>${MENUS.map(m=>row(m[1],'m',m[0])).join('')}
+  <tr><td colspan="${n2}"><b>What they can do</b></td></tr>${ACTS.map(a=>row(a[1],'a',a[0])).join('')}</tbody></table></div>
+  <div class="addrow" style="margin-top:12px"><input class="i" id="posNew" placeholder="New position, for example Store keeper" maxlength="30"><button class="btn" id="posAdd">+ Add position</button></div>
+  <div class="toolbar" style="margin-top:12px"><span class="err" id="acErr" role="alert"></span><span class="sp"></span><button class="btn pri" id="acSave">Save access</button></div>`;
+}
+function usersView(){
+  if(!can('admin'))return '<div class="empty">Only a Master Admin can manage users.</div>';
+  const rows=Object.entries(D.users).map(([id,u])=>({...u,id})).sort((a,b)=>a.u.localeCompare(b.u));
+  return `<div class="toolbar"><span class="sp"></span><button class="btn pri" id="btnAddU" type="button">+ Add user</button></div><div class="tbox"><table class="t" style="min-width:600px"><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Status</th><th>Last sign-in</th></tr></thead><tbody>${rows.map(r=>`<tr class="row" tabindex="0" data-u="${esc(r.id)}"><td class="mono">${esc(r.u)}</td><td>${esc(r.name)}</td><td>${esc(rl(r.role))}</td><td>${r.active===false?'<span class="pill x">Disabled</span>':'<span class="pill g">Active</span>'}</td><td>${r.lastLogin?esc(fmtDT(r.lastLogin)):'<span class="faint">Never</span>'}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
+/* ---------- draw ---------- */
+function tabsHtml(){
+  const T=[['g','Stock'],['dash','Dashboard'],['alerts','Alerts',alertList().length||''],['inv','Stock items'],['tr','Transfers & requests',pendingTr()||''],['pr','Photo requests',openPr()||''],...(can('admin')?[['g','Tools'],['lists','Lists'],['access','Access control'],['users','Users']]:[])];
+  return T.filter(x=>x[0]==='g'||menuOk(x[0])).map(([k,l,c])=>k==='g'?`<div class="ng">${l}</div>`:`<button type="button" data-tab="${k}" ${UI.tab===k?'aria-current="page"':''}><span>${l}</span>${c?`<span class="ct">${c}</span>`:''}</button>`).join('');
+}
+
+/* ---------- alerts: monitoring, tracking and alerting ---------- */
+const ALERT={tr:2,pr:3,stock:90};
+const daysSince=iso=>{const t=new Date(iso||0).getTime();return isNaN(t)?0:(Date.now()-t)/86400000};
+function alertList(){
+  const out=[];
+  Object.entries(D.transfers).forEach(([id,t])=>{
+    if(t.status!=='Requested')return;const d=daysSince(t.requestedAt);
+    if(d>=ALERT.tr)out.push({sev:d>=ALERT.tr*2?'r':'a',kind:'Transfer waiting approval',inv:t.invNo,name:t.itemName||'',detail:`Waiting ${Math.floor(d)} days · to ${locLab(t.toLoc)}${t.toDept?' · '+t.toDept:''}`,open:`data-trn="${esc(id)}"`});
+  });
+  Object.entries(D.photoReqs).forEach(([id,p])=>{
+    if(p.status!=='Requested')return;const d=daysSince(p.at);
+    if(d>=ALERT.pr)out.push({sev:d>=ALERT.pr*2?'r':'a',kind:'Photo overdue',inv:p.invNo,name:p.itemName||'',detail:`Asked ${p.toName||'—'} ${Math.floor(d)} days ago`,open:'data-go="pr"'});
+  });
+  itemList().forEach(i=>{
+    if(i.condition==='Damaged'||i.condition==='Lost')out.push({sev:'r',kind:'Needs follow up',inv:i.invNo,name:i.name,detail:`Condition: ${i.condition}`,open:`data-item="${esc(i.id)}"`});
+    if(i.location==='OUT'&&!i.holderDept)out.push({sev:'a',kind:'Missing destination',inv:i.invNo,name:i.name,detail:'Transferred out with no department recorded',open:`data-item="${esc(i.id)}"`});
+    if(i.holderName){const d=daysSince(i.updatedAt||i.createdAt);if(d>=ALERT.stock)out.push({sev:'a',kind:'Not checked',inv:i.invNo,name:i.name,detail:`With ${i.holderName} · no update for ${Math.floor(d)} days`,open:`data-item="${esc(i.id)}"`})}
+  });
+  const rank={r:0,a:1};return out.sort((a,b)=>rank[a.sev]-rank[b.sev]);
+}
+const alertCard=()=>{const n=alertList().length;const u=alertList().filter(a=>a.sev==='r').length;
+  return `<div class="card" data-go="alerts" role="button" tabindex="0" style="cursor:pointer"><span class="k">Open alerts</span><span class="v" ${u?'style="color:var(--red)"':''}>${n}</span><span class="m">${u?u+' urgent · ':''}Click to see them</span></div>`};
+function alertsView(){
+  const L=alertList();
+  return `<div class="sumstrip"><div class="chip ${L.length?'bad':''}"><span>Open alerts</span><b>${L.length}</b></div><div class="chip"><span>Urgent</span><b>${L.filter(a=>a.sev==='r').length}</b></div><div class="chip"><span>Check</span><b>${L.filter(a=>a.sev==='a').length}</b></div></div>
+  <div class="defbox"><b>Rules.</b> Transfers waiting approval for ${ALERT.tr}+ days (urgent at ${ALERT.tr*2}+) · photo requests open for ${ALERT.pr}+ days (urgent at ${ALERT.pr*2}+) · items Damaged or Lost · items transferred out with no department · items with a holder and no update for ${ALERT.stock} days. Click a row to open it.</div>
+  <div class="tbox"><table class="t" style="min-width:820px"><thead><tr><th>Level</th><th>Alert</th><th>Inv#</th><th>Item</th><th>Detail</th></tr></thead><tbody>${L.length?L.map(a=>`<tr class="row" tabindex="0" ${a.open}><td>${a.sev==='r'?'<span class="pill r">Urgent</span>':'<span class="pill a">Check</span>'}</td><td>${esc(a.kind)}</td><td class="code">${esc(a.inv||'')}</td><td>${esc(a.name||'')}</td><td>${esc(a.detail)}</td></tr>`).join(''):'<tr><td colspan="5" class="empty"><b>No alerts</b>Everything is within the rules.</td></tr>'}</tbody></table></div>`;
+}
+function draw(){
+  if(ME&&!menuOk(UI.tab)){const f=MENUS.find(m=>menuOk(m[0]));UI.tab=f?f[0]:'none'}
+  $('#nav').innerHTML=tabsHtml();
+  $('#todayTxt').textContent=fmtD(todayStr());
+  const T=TITLES[UI.tab]||['No access','Ask the Master Admin to give your position a menu'];
+  $('#pageTitle').textContent=T[0];$('#pageSub').textContent=T[1];
+  const V={alerts:alertsView,dash:dashView,inv:invView,tr:trView,pr:prView,lists:listsView,access:accessView,users:usersView};
+  $('#view').innerHTML=V[UI.tab]?V[UI.tab]():'<div class="empty">No menu is assigned to your position. Ask the Master Admin.</div>';
+  bind();
+}
+function bind(){
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{UI.tab=b.dataset.tab;draw()});
+  document.querySelectorAll('[data-go]').forEach(el=>{const go=()=>{UI.tab=el.dataset.go;draw()};el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter')go()}});
+  document.querySelectorAll('[data-item]').forEach(el=>{const go=()=>itemModal(el.dataset.item);el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter')go()}});
+  document.querySelectorAll('[data-trn]').forEach(el=>{if(el.closest('#modalRoot'))return;const go=()=>trModal(el.dataset.trn);el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter')go()}});
+  document.querySelectorAll('[data-recv]').forEach(b=>b.onclick=()=>photoRecvModal(b.dataset.recv));
+  document.querySelectorAll('[data-th]').forEach(async el=>{if(!el.dataset.th)return;try{const s=await db.doc('shots/'+el.dataset.th).get();if(s.exists)el.innerHTML=`<img alt="" src="${s.data().data}" style="height:44px;width:60px;object-fit:cover;border-radius:4px;border:1px solid var(--line)">`}catch(e){}});
+  document.querySelectorAll('tr.row[data-u]').forEach(tr=>{tr.onclick=()=>userModal(tr.dataset.u)});
+  const on=(id,ev,fn)=>{const e=$('#'+id);if(e)e[ev]=fn};
+  on('fq','oninput',e=>{UI.q=e.target.value;UI.keep='fq';draw()});
+  on('fl','onchange',e=>{UI.loc=e.target.value;draw()});
+  on('fc','onchange',e=>{UI.cat=e.target.value;draw()});
+  on('fs','onchange',e=>{UI.status=e.target.value;draw()});
+  on('fst','onchange',e=>{UI.trSt=e.target.value;draw()});
+  on('fpr','onchange',e=>{UI.prSt=e.target.value;draw()});
+  on('addInv','onclick',()=>itemForm(null));
+  on('btnAddU','onclick',()=>userModal(null));
+  on('xInv','onclick',()=>saveX([{name:'Stock items',rows:[['Inv#','Item','Category','Location','Holder','Department','Status','Serial','Photos'],...itemList().sort((a,b)=>(a.invNo||'').localeCompare(b.invNo||'')).map(i=>[i.invNo,i.name,i.category||'',locLab(i.location),i.holderName||'',i.holderDept||'',statusOf(i),i.serial||'',(i.photoIds||[]).length])]}],`Stock_items_${todayStr()}.xlsx`));
+  document.querySelectorAll('[data-ladd]').forEach(b=>b.onclick=async()=>{
+    const key=b.dataset.ladd,v=$('#ln_'+key).value.trim(),err=$('#lErr');err.textContent='';
+    const L=lists()[key];if(!v){err.textContent='Type the new choice first.';return}
+    if(L.some(x=>x.toLowerCase()===v.toLowerCase())){err.textContent='That choice already exists.';return}
+    await saveLists(key,[...L,v]);toast('Added.')});
+  document.querySelectorAll('[data-ldel]').forEach(b=>b.onclick=async()=>{
+    const key=b.dataset.ldel,v=b.dataset.v,err=$('#lErr');err.textContent='';
+    if(key==='cats'&&Object.values(D.items).some(i=>i.category===v)){err.textContent='"'+v+'" is used by stock items. Change those items first.';return}
+    if(!confirm('Delete "'+v+'"?'))return;
+    await saveLists(key,lists()[key].filter(x=>x!==v));toast('Deleted.')});
+  document.querySelectorAll('.ac').forEach(()=>{});
+  const acSave=$('#acSave');if(acSave)bindAccess();
+  const up=document.querySelectorAll('[data-delpos]');up.forEach(a=>a.onclick=async e=>{e.preventDefault();const n=a.dataset.delpos,err=$('#acErr');
+    if(Object.values(D.users).some(u=>u.role===n)){err.textContent=n+' still has users. Move them first.';return}
+    if(!confirm('Remove position '+n+'?'))return;const l=readAccess();delete l[n];await putAccess(l,'Position removed: '+n)});
+}
+function readAccess(){
+  const o={};posNames().filter(n=>n!=='Admin').forEach(n=>o[n]={menus:[],acts:[]});
+  document.querySelectorAll('input.ac').forEach(c=>{const q=o[c.dataset.n];if(q&&c.checked)(c.dataset.t==='m'?q.menus:q.acts).push(c.dataset.k)});return o}
+async function putAccess(list,msg){try{await db.doc('settings/positions').set({list,updatedAt:new Date().toISOString(),updatedBy:ME.name});await logAct('Access control','',msg);toast('Saved.')}catch(e){const er=$('#acErr');if(er)er.textContent='Could not save.'}}
+function bindAccess(){
+  const err=$('#acErr');
+  $('#acSave').onclick=()=>putAccess(readAccess(),'Access saved');
+  $('#posAdd').onclick=async()=>{const v=$('#posNew').value.trim();
+    if(!v){err.textContent='Type the position name.';return}
+    if(posNames().some(n=>n.toLowerCase()===v.toLowerCase())||/^master admin$/i.test(v)){err.textContent='That position already exists.';return}
+    const l=readAccess();l[v]={menus:MENUS.map(m=>m[0]),acts:[]};await putAccess(l,'Position added: '+v);$('#posNew').value=''};
+}
+async function saveLists(key,arr){
+  const cur=D.settings.lists||{};const doc={cats:lists().cats,depts:lists().depts,...cur,updatedAt:new Date().toISOString(),updatedBy:ME.name};doc[key]=arr;
+  await db.doc('settings/lists').set(doc);
+}
+async function saveX(sheets,filename){if(!can('export')){toast('Your position cannot export to Excel.');return}
+  if(!window.XLSX||!dl){toast('Download is not available here.');return}
+  const wb=XLSX.utils.book_new();
+  sheets.forEach(s=>{const ws=XLSX.utils.aoa_to_sheet(s.rows);XLSX.utils.book_append_sheet(wb,ws,s.name)});
+  try{const buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});await dl.save({filename,data:new Blob([buf])});toast('File ready.')}catch(e){if(!e||e.code!=='declined')toast('Could not save the file.')}
+}
+function userModal(id){
+  const isNew=!id;const r=isNew?{u:'',name:'',role:'Editor',active:true}:D.users[id];
+  openModal(isNew?'Add user':'Edit user','',`<label class="f">Username<input class="i" id="u_u" value="${esc(r.u)}" ${isNew?'':'disabled'} autocomplete="off"></label>
+   <label class="f">Full name<input class="i" id="u_n" value="${esc(r.name)}"></label>
+   <label class="f">Role<select class="i" id="u_r">${posNames().map(x=>`<option value="${x}" ${x===r.role?'selected':''}>${esc(rl(x))}</option>`).join('')}</select></label>
+   <label class="f">Status<select class="i" id="u_a"><option value="1" ${r.active!==false?'selected':''}>Active</option><option value="0" ${r.active===false?'selected':''}>Disabled</option></select></label>
+   <label class="f">${isNew?'Temporary password':'Reset password (leave blank to keep)'}<input class="i" id="u_p" type="text" autocomplete="off"></label><div class="err" id="mErr" role="alert"></div>`,
+   `<button class="btn" id="mCancel">Cancel</button><button class="btn pri" id="mSave">Save</button>`);
+  $('#mCancel').onclick=closeModal;
+  $('#mSave').onclick=async()=>{
+    const err=$('#mErr');const u=(isNew?$('#u_u').value:r.u).trim().toLowerCase(),name=$('#u_n').value.trim(),role=$('#u_r').value,active=$('#u_a').value==='1',pw=$('#u_p').value;
+    if(!/^[a-z0-9._-]{3,30}$/.test(u)){err.textContent='Username: 3 to 30 letters, numbers, dot, dash or underscore.';return}
+    if(!name){err.textContent='Enter a name.';return}
+    if(isNew&&D.users[u]){err.textContent='That username exists.';return}
+    if(isNew&&pw.length<6){err.textContent='Temporary password needs 6+ characters.';return}
+    if(!isNew&&u===ME.u&&!active){err.textContent='You cannot disable yourself.';return}
+    const doc={...(isNew?{lastLogin:null,mustChange:true}:JSON.parse(JSON.stringify(r))),u,name,role,active};delete doc.id;
+    if(pw){doc.salt=newSalt();doc.hash=await hashPw(doc.salt,pw);doc.mustChange=true}
+    try{await db.doc('users/'+u).set(doc);await logAct(isNew?'Add user':'Edit user',u,`${name}, ${rl(role)}`);closeModal();toast('Saved.')}catch(e){err.textContent='Could not save.'}
+  };
+}
+function refresh(){
+  if(!ME||Object.keys(READY).length<6)return;
+  if(!$('#ov'))draw();
+}
+
+/* ---------- auth (same as the other sub-modules) ---------- */
+async function sha(x){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(x));return [...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,'0')).join('')}
+const hashPw=(salt,pw)=>sha(salt+':'+pw);
+const newSalt=()=>[...crypto.getRandomValues(new Uint8Array(12))].map(x=>x.toString(16).padStart(2,'0')).join('');
+async function bootstrapAdmin(){
+  if(!db||!READY.users||Object.keys(D.users).length||bootstrapAdmin.done)return;bootstrapAdmin.done=true;
+  try{const salt=newSalt();await db.doc('users/admin').set({u:'admin',name:'Administrator',role:'Admin',salt,hash:await hashPw(salt,'admin123'),mustChange:true,active:true,lastLogin:null})}catch(e){}
+}
+async function doLogin(ev){
+  ev.preventDefault();const u=$('#lu').value.trim().toLowerCase(),p=$('#lp').value;const err=$('#loginErr');err.textContent='';
+  const rec=D.users[u];
+  if(!rec||rec.active===false||await hashPw(rec.salt,p)!==rec.hash){err.textContent='Wrong username or password.';return}
+  ME={u,name:rec.name,role:rec.role};store.set('inv_user',u);logAct('Sign in','','');
+  try{await db.doc('users/'+u).update({lastLogin:new Date().toISOString()})}catch(e){}
+  enterApp();
+  if(rec.mustChange)passwordModal(true);
+}
+function enterApp(){
+  $('#login').classList.add('hidden');$('#app').classList.remove('hidden');
+  $('#who').innerHTML=`<b style="color:#fff">${esc(ME.name)}</b><br><small>${esc(rl(ME.role))} · ${esc(ME.u)}</small>`;
+  draw();
+}
+function logout(){logAct('Sign out','','');ME=null;store.del('inv_user');$('#app').classList.add('hidden');$('#login').classList.remove('hidden');$('#lp').value='';closeModal()}
+function checkSession(){
+  if(ME){const rec=D.users[ME.u];if(!rec||rec.active===false){logout();return}ME.role=rec.role;ME.name=rec.name;return}
+  const u=store.get('inv_user');if(u&&D.users[u]&&D.users[u].active!==false&&!D.users[u].mustChange){ME={u,name:D.users[u].name,role:D.users[u].role};enterApp()}
+}
+function passwordModal(force){
+  openModal(force?'Choose a new password':'Change password','',`${force?'':'<label class="f">Current password<input class="i" id="pw0" type="password" autocomplete="current-password"></label>'}
+    <label class="f">New password (at least 6 characters)<input class="i" id="pw1" type="password" autocomplete="new-password"></label>
+    <label class="f">Repeat new password<input class="i" id="pw2" type="password" autocomplete="new-password"></label><div class="err" id="pwErr" role="alert"></div>`,
+    `${force?'':'<button class="btn" id="pwCancel">Cancel</button>'}<span class="sp"></span><button class="btn pri" id="pwSave">Save password</button>`);
+  if(!force)$('#pwCancel').onclick=closeModal;
+  $('#pwSave').onclick=async()=>{
+    const err=$('#pwErr');const p1=$('#pw1').value,p2=$('#pw2').value;const rec=D.users[ME.u];
+    if(!force&&await hashPw(rec.salt,$('#pw0').value)!==rec.hash){err.textContent='Current password is wrong.';return}
+    if(p1.length<6){err.textContent='Use at least 6 characters.';return}
+    if(p1!==p2){err.textContent='The two passwords do not match.';return}
+    if(p1==='admin123'){err.textContent='Choose a different password.';return}
+    const salt=newSalt();
+    try{await db.doc('users/'+ME.u).update({salt,hash:await hashPw(salt,p1),mustChange:false});await logAct('Change password','','');closeModal();toast('Password changed.')}catch(e){err.textContent='Could not save. Try again.'}
+  };
+}
+
+
+/* ---- standalone sample store (in-memory; resets on reload) ---- */
+const SAMPLE={"items": {"sample_item_01": {"category": "IT equipment", "condition": "OK", "createdAt": "2026-10-01T02:00:00.000Z", "createdBy": "DUMMY seed", "description": "DUMMY DATA", "holderDept": "", "holderName": "", "invNo": "INV-0001", "location": "S1", "name": "DUMMY Laptop 01", "photoIds": [], "serial": "DUMMY-SN-0001", "updatedAt": "2026-10-01T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_item_02": {"category": "Furniture", "condition": "OK", "createdAt": "2026-10-01T02:00:00.000Z", "createdBy": "DUMMY seed", "description": "DUMMY DATA", "holderDept": "DUMMY Dept 11", "holderName": "DUMMY Staff A", "invNo": "INV-0002", "location": "S2", "name": "DUMMY Desk 02", "photoIds": [], "serial": "DUMMY-SN-0002", "updatedAt": "2026-10-12T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_item_03": {"category": "IT equipment", "condition": "Damaged", "createdAt": "2026-10-01T02:00:00.000Z", "createdBy": "DUMMY seed", "description": "DUMMY DATA", "holderDept": "", "holderName": "", "invNo": "INV-0003", "location": "S3", "name": "DUMMY Printer 03", "photoIds": [], "serial": "DUMMY-SN-0003", "updatedAt": "2026-10-14T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_item_04": {"category": "Tools", "condition": "OK", "createdAt": "2026-10-01T02:00:00.000Z", "createdBy": "DUMMY seed", "description": "DUMMY DATA", "holderDept": "DUMMY Dept 11", "holderName": "DUMMY Staff B", "invNo": "INV-0004", "location": "OUT", "name": "DUMMY Toolkit 04", "photoIds": [], "serial": "DUMMY-SN-0004", "updatedAt": "2026-10-15T04:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_item_05": {"category": "Furniture", "condition": "OK", "createdAt": "2026-10-02T02:00:00.000Z", "createdBy": "DUMMY seed", "description": "DUMMY DATA", "holderDept": "", "holderName": "", "invNo": "INV-0005", "location": "S1", "name": "DUMMY Chair 05", "photoIds": [], "serial": "DUMMY-SN-0005", "updatedAt": "2026-10-02T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_item_06": {"category": "IT equipment", "condition": "Lost", "createdAt": "2026-10-02T02:00:00.000Z", "createdBy": "DUMMY seed", "description": "DUMMY DATA", "holderDept": "DUMMY Dept 11", "holderName": "DUMMY Staff C", "invNo": "INV-0006", "location": "S2", "name": "DUMMY Phone 06", "photoIds": [], "serial": "DUMMY-SN-0006", "updatedAt": "2026-10-18T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_item_07": {"category": "Office supplies", "condition": "OK", "createdAt": "2026-10-03T02:00:00.000Z", "createdBy": "DUMMY seed", "description": "DUMMY DATA", "holderDept": "", "holderName": "", "invNo": "INV-0007", "location": "S1", "name": "DUMMY Stapler Set 07", "photoIds": [], "serial": "", "updatedAt": "2026-10-03T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_item_08": {"category": "Tools", "condition": "OK", "createdAt": "2026-10-03T02:00:00.000Z", "createdBy": "DUMMY seed", "description": "DUMMY DATA", "holderDept": "", "holderName": "", "invNo": "INV-0008", "location": "S3", "name": "DUMMY Ladder 08", "photoIds": [], "serial": "DUMMY-SN-0008", "updatedAt": "2026-10-03T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_item_09": {"category": "IT equipment", "condition": "OK", "createdAt": "2026-10-04T02:00:00.000Z", "createdBy": "DUMMY seed", "description": "DUMMY DATA", "holderDept": "DUMMY Dept 22", "holderName": "DUMMY Staff D", "invNo": "INV-0009", "location": "S2", "name": "DUMMY Monitor 09", "photoIds": [], "serial": "DUMMY-SN-0009", "updatedAt": "2026-10-04T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_item_10": {"category": "Furniture", "condition": "OK", "createdAt": "2026-10-04T02:00:00.000Z", "createdBy": "DUMMY seed", "description": "DUMMY DATA", "holderDept": "DUMMY Dept 22", "holderName": "", "invNo": "INV-0010", "location": "OUT", "name": "DUMMY Cabinet 10", "photoIds": [], "serial": "DUMMY-SN-0010", "updatedAt": "2026-10-17T02:00:00.000Z", "updatedBy": "DUMMY seed"}}, "transfers": {"sample_tr_01": {"approvedAt": "2026-10-15T04:00:00.000Z", "approvedBy": "admin", "approvedByName": "DUMMY seed", "fromHolder": "", "fromLoc": "S1", "invNo": "INV-0004", "itemId": "sample_item_04", "itemName": "DUMMY Toolkit 04", "reason": "DUMMY reason", "requestedAt": "2026-10-15T02:00:00.000Z", "requestedBy": "admin", "requestedByName": "DUMMY seed", "shotIds": [], "status": "Completed", "toDept": "DUMMY Dept 11", "toLoc": "OUT", "toName": "DUMMY Staff B"}, "sample_tr_02": {"fromHolder": "", "fromLoc": "S1", "invNo": "INV-0005", "itemId": "sample_item_05", "itemName": "DUMMY Chair 05", "reason": "DUMMY reason", "requestedAt": "2026-10-22T02:00:00.000Z", "requestedBy": "admin", "requestedByName": "DUMMY seed", "shotIds": [], "status": "Requested", "toDept": "DUMMY Dept 11", "toLoc": "S2", "toName": "DUMMY Staff A"}, "sample_tr_03": {"approvedAt": "2026-10-19T02:00:00.000Z", "approvedBy": "admin", "approvedByName": "DUMMY seed", "fromHolder": "DUMMY Staff C", "fromLoc": "S2", "invNo": "INV-0006", "itemId": "sample_item_06", "itemName": "DUMMY Phone 06", "reason": "DUMMY reason", "rejectReason": "DUMMY reject reason", "requestedAt": "2026-10-18T02:00:00.000Z", "requestedBy": "admin", "requestedByName": "DUMMY seed", "shotIds": [], "status": "Rejected", "toDept": "", "toLoc": "S3", "toName": ""}, "sample_tr_04": {"approvedAt": "2026-10-17T02:00:00.000Z", "approvedBy": "admin", "approvedByName": "DUMMY seed", "fromHolder": "", "fromLoc": "S1", "invNo": "INV-0010", "itemId": "sample_item_10", "itemName": "DUMMY Cabinet 10", "reason": "DUMMY reason", "requestedAt": "2026-10-16T02:00:00.000Z", "requestedBy": "admin", "requestedByName": "DUMMY seed", "shotIds": [], "status": "Completed", "toDept": "DUMMY Dept 22", "toLoc": "OUT", "toName": ""}, "sample_tr_05": {"fromHolder": "DUMMY Staff D", "fromLoc": "S2", "invNo": "INV-0009", "itemId": "sample_item_09", "itemName": "DUMMY Monitor 09", "reason": "DUMMY reason", "requestedAt": "2026-10-23T01:00:00.000Z", "requestedBy": "admin", "requestedByName": "DUMMY seed", "shotIds": [], "status": "Requested", "toDept": "DUMMY Dept 22", "toLoc": "OUT", "toName": ""}}, "photoReqs": {"sample_pr_01": {"at": "2026-10-21T02:00:00.000Z", "invNo": "INV-0003", "itemId": "sample_item_03", "itemName": "DUMMY Printer 03", "note": "Show the printer and its label", "requestedBy": "admin", "requestedByName": "DUMMY seed", "shotIds": [], "status": "Requested", "toDept": "DUMMY Dept 11", "toName": "DUMMY Staff D"}, "sample_pr_02": {"at": "2026-10-22T02:00:00.000Z", "invNo": "INV-0006", "itemId": "sample_item_06", "itemName": "DUMMY Phone 06", "note": "Show the back label", "requestedBy": "admin", "requestedByName": "DUMMY seed", "shotIds": [], "status": "Requested", "toDept": "DUMMY Dept 11", "toName": "DUMMY Staff C"}, "sample_pr_03": {"at": "2026-10-10T02:00:00.000Z", "invNo": "INV-0002", "itemId": "sample_item_02", "itemName": "DUMMY Desk 02", "note": "Show the desk and its label", "receivedAt": "2026-10-11T02:00:00.000Z", "receivedBy": "DUMMY seed", "requestedBy": "admin", "requestedByName": "DUMMY seed", "shotIds": [], "status": "Received", "toDept": "DUMMY Dept 11", "toName": "DUMMY Staff A"}, "sample_pr_04": {"at": "2026-10-14T02:00:00.000Z", "invNo": "INV-0004", "itemId": "sample_item_04", "itemName": "DUMMY Toolkit 04", "note": "Show the toolkit", "receivedAt": "2026-10-14T06:00:00.000Z", "receivedBy": "DUMMY seed", "requestedBy": "admin", "requestedByName": "DUMMY seed", "shotIds": [], "status": "Received", "toDept": "DUMMY Dept 11", "toName": "DUMMY Staff B"}}, "settings": {"lists": {"cats": ["IT equipment", "Furniture", "Office supplies", "Tools", "Other"], "depts": ["DUMMY Dept 11", "DUMMY Dept 22"], "updatedAt": "2026-10-23T06:00:00.000Z", "updatedBy": "DUMMY seed"}}, "users": {}, "log": {}};
+function makeLocal(seed){
+  const store={};Object.keys(seed).forEach(c=>{store[c]={};Object.keys(seed[c]).forEach(k=>store[c][k]=JSON.parse(JSON.stringify(seed[c][k])))});
+  const subs={};
+  const segs=p=>String(p).split('/').filter(Boolean);
+  const snapFor=(c,opts)=>{let entries=Object.entries(store[c]||{});
+    if(opts&&opts.order){entries.sort((a,b)=>{const x=a[1][opts.order.f],y=b[1][opts.order.f];return (x<y?-1:x>y?1:0)*(opts.order.desc?-1:1)})}
+    if(opts&&opts.limit)entries=entries.slice(0,opts.limit);
+    return{docs:entries.map(([id,v])=>({id,data:()=>JSON.parse(JSON.stringify(v)),exists:true}))}};
+  const notify=c=>(subs[c]||[]).forEach(f=>f());
+  const mkQuery=(c,opts)=>({
+    orderBy:(f,d)=>mkQuery(c,Object.assign({},opts,{order:{f,desc:d==='desc'}})),
+    limit:n=>mkQuery(c,Object.assign({},opts,{limit:n})),
+    get:async()=>snapFor(c,opts),
+    onSnapshot:(cb,err)=>{const f=()=>cb(snapFor(c,opts));(subs[c]=subs[c]||[]).push(f);Promise.resolve().then(f);return()=>{subs[c]=(subs[c]||[]).filter(x=>x!==f)}}
+  });
+  const mkDoc=p=>{const s=segs(p);const c=s.slice(0,-1).join('/'),id=s[s.length-1];
+    return{id,path:p,
+      get:async()=>({exists:!!(store[c]&&store[c][id]),id,data:()=>store[c]&&store[c][id]?JSON.parse(JSON.stringify(store[c][id])):undefined}),
+      set:async d=>{store[c]=store[c]||{};store[c][id]=JSON.parse(JSON.stringify(d));notify(c)},
+      update:async d=>{store[c]=store[c]||{};store[c][id]=Object.assign({},store[c][id]||{},JSON.parse(JSON.stringify(d)));notify(c)},
+      delete:async()=>{if(store[c])delete store[c][id];notify(c)},
+      onSnapshot:(cb)=>{const f=()=>cb({exists:!!(store[c]&&store[c][id]),data:()=>store[c]&&store[c][id]});(subs[c]=subs[c]||[]).push(f);Promise.resolve().then(f);return()=>{}}};};
+  return{
+    collection:c=>Object.assign(mkQuery(c,{}),{doc:id=>mkDoc(c+'/'+id)}),
+    doc:p=>mkDoc(p)
+  };
+}
+/* ---------- boot ---------- */
+async function boot(){
+  try{db=await window.claude.use('db');dl=await window.claude.use('downloads')}catch(e){}
+  if(!db){db=makeLocal(SAMPLE)}
+  let t;
+  const sub=(c,q)=>(q||db.collection(c)).onSnapshot(s=>{
+    const o={};s.docs.forEach(d=>o[d.id]=d.data());D[c]=o;READY[c]=1;
+    if(c==='users'){bootstrapAdmin();checkSession();const b=$('#loginBtn');if(!b.dataset.ready){b.disabled=false;b.textContent='Sign in';b.dataset.ready=1}}
+    clearTimeout(t);t=setTimeout(refresh,50)},()=>{READY[c]=1;if(c==='users'){$('#loginErr').textContent='Could not read the database.'}});
+  sub('items');sub('transfers');sub('photoReqs');sub('settings');sub('users');sub('log',db.collection('log').orderBy('at','desc').limit(200));
+  $('#loginForm').addEventListener('submit',doLogin);
+  $('#btnPw').onclick=()=>passwordModal(false);$('#btnOut').onclick=logout;
+}
+boot();
+})();
+</script>
+</body>
+</html>
+
+</body></html>

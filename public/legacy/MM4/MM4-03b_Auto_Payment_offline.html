@@ -1,0 +1,1178 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>MM4-03b · Auto payment</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600&display=swap">
+<style>
+
+/* Layout: dark navy sidebar + paper work area, same family as CPA Control. Grouped ledgers read like the Excel sheets (band, rows, sub-total, grand total). */
+:root{
+  --paper:#F2F4F6;--surface:#FFFFFF;--ink:#17212C;--muted:#5E6B78;--faint:#8A96A3;--line:#DCE1E6;--line2:#EBEEF1;
+  --steel:#23507A;--steel-d:#1A3D5E;--steel-l:#E6EEF5;--on-steel:#FFFFFF;
+  --side:#132230;--side-2:#1C3043;--side-ink:#C8D4DF;--side-line:#2B435A;
+  --red:#B42318;--red-l:#FDECEA;--amber:#B54708;--amber-l:#FEF3E2;--green:#067647;--green-l:#E7F6EC;
+  --band:#EEF2F5;--grand:#DDE8F2;--shadow:0 8px 30px rgba(15,30,45,.22);
+  --head:"Barlow Semi Condensed","Bahnschrift","DIN Alternate","Roboto Condensed","Arial Narrow",sans-serif;
+  --body:"Segoe UI","Inter",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular",Consolas,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#0E151C;--surface:#162029;--ink:#E6ECF1;--muted:#9AA8B5;--faint:#6F7E8C;--line:#2A3947;--line2:#223039;
+    --steel:#6FA3D6;--steel-d:#8DB8E3;--steel-l:#1B3248;--on-steel:#0E151C;
+    --side:#0A1118;--side-2:#14212C;--side-ink:#AEBBC8;--side-line:#243543;
+    --red:#F07A6C;--red-l:#3A1A16;--amber:#E3A948;--amber-l:#33270F;--green:#5CC98A;--green-l:#15301F;
+    --band:#1B2630;--grand:#1F3A52;--shadow:0 8px 30px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#0E151C;--surface:#162029;--ink:#E6ECF1;--muted:#9AA8B5;--faint:#6F7E8C;--line:#2A3947;--line2:#223039;
+  --steel:#6FA3D6;--steel-d:#8DB8E3;--steel-l:#1B3248;--on-steel:#0E151C;
+  --side:#0A1118;--side-2:#14212C;--side-ink:#AEBBC8;--side-line:#243543;
+  --red:#F07A6C;--red-l:#3A1A16;--amber:#E3A948;--amber-l:#33270F;--green:#5CC98A;--green-l:#15301F;
+  --band:#1B2630;--grand:#1F3A52;--shadow:0 8px 30px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--paper);color:var(--ink);font:14px/1.45 var(--body);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--head);font-weight:600;margin:0;letter-spacing:.01em;text-wrap:balance}
+h1{font-size:24px}h2{font-size:18px}h3{font-size:15px}
+:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
+.hidden{display:none!important}
+.mono{font-family:var(--mono);font-size:12.5px}
+.muted{color:var(--muted)}.faint{color:var(--faint)}
+small{font-size:11.5px}
+
+/* controls */
+.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:600;min-width:0}
+.i{width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:8px 10px;font-weight:400;font-size:14px;min-width:0}
+.i:disabled{background:var(--paper);color:var(--muted)}
+textarea.i{min-height:64px;resize:vertical}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:7px 12px;cursor:pointer;font-weight:600;font-size:13px}
+.btn:hover{border-color:var(--steel)}
+.btn.pri{background:var(--steel);border-color:var(--steel);color:var(--on-steel)}
+.btn.pri:hover{background:var(--steel-d);border-color:var(--steel-d)}
+.btn.danger{color:var(--red);border-color:var(--red)}
+.btn.sm{padding:4px 9px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:default}
+.err{color:var(--red);font-size:13px;min-height:18px}
+.hint{font-size:12px;color:var(--muted)}
+
+/* app shell */
+#app{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh}
+aside{background:var(--side);color:var(--side-ink);display:flex;flex-direction:column;position:sticky;top:env(safe-area-inset-top,0px);align-self:start;height:100vh;max-height:100vh;overflow:auto}
+.brand{padding:18px 18px 14px;border-bottom:1px solid var(--side-line)}
+.brand b{display:block;font:600 19px var(--head);color:#fff}
+.brand small{color:#8397AA}
+nav{padding:10px 8px;display:flex;flex-direction:column;gap:2px;flex:1}
+.ng{font:600 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:#6F8499;padding:12px 10px 4px}
+nav button{all:unset;box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;color:var(--side-ink);font-size:13.5px}
+nav a.navlink{box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;color:var(--side-ink);font-size:13.5px;text-decoration:none}
+nav a.navlink:hover{background:var(--side-2)}
+nav a.navlink:focus-visible{outline:2px solid #8DB8E3}
+nav button:hover{background:var(--side-2)}
+nav button:focus-visible{outline:2px solid #8DB8E3}
+nav button[aria-current="page"]{background:var(--steel);color:var(--on-steel);font-weight:600}
+nav .ct{font:11px var(--mono);opacity:.7}
+.side-foot{padding:14px 18px;border-top:1px solid var(--side-line);font-size:12.5px}
+.side-foot .btns{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.side-foot .btn{background:transparent;color:var(--side-ink);border-color:var(--side-line)}
+main{padding:22px clamp(16px,3vw,36px) 48px;min-width:0}
+.topbar{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;margin-bottom:16px}
+.topbar .sub{color:var(--muted);font-size:13px}
+.sync{margin-left:auto;font:12px var(--mono);color:var(--muted)}
+@media (max-width:860px){
+  #app{grid-template-columns:1fr}
+  aside{position:static;max-height:none;height:auto}
+  nav{flex-direction:row;overflow-x:auto;padding:8px;flex:none}
+  .ng{display:none}
+  nav button{white-space:nowrap}
+  .side-foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 16px}
+  .side-foot .btns{margin-top:0}
+}
+
+/* toolbar + summary */
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:12px}
+.toolbar .f{min-width:120px}
+.toolbar .grow{flex:1 1 220px}
+.toolbar .sp{flex:1}
+.xkpis{display:grid;grid-template-columns:repeat(5,1fr);background:var(--surface);border:1px solid var(--line);border-radius:8px;margin-bottom:14px;overflow:hidden}
+.xkpi{padding:12px 16px;border-right:1px solid var(--line);min-width:0}.xkpi:last-child{border-right:0}
+.xkpi span{display:block;font-size:12px;color:var(--muted)}.xkpi b{display:block;font:600 24px var(--head);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis}.xkpi small{font-size:12px;color:var(--muted)}
+.xgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.xcard{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;min-width:0}
+.xcard .xch{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 12px;margin-bottom:10px}.xcard .xch h3{margin:0;font:600 16px var(--head)}.xcard .xch span{font-size:12px;color:var(--muted)}
+@media(max-width:900px){.xkpis{grid-template-columns:repeat(2,1fr)}.xkpi{border-bottom:1px solid var(--line)}.xgrid{grid-template-columns:1fr}}
+.sumstrip{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.chip{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 14px;min-width:120px}
+.chip span{display:block;font:600 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.chip b{font:600 22px var(--head);font-variant-numeric:tabular-nums}
+.chip.big b{font-size:28px;color:var(--steel)}
+
+/* tables */
+.tbox{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:auto;max-height:calc(100vh - 230px)}
+.pager{display:flex;align-items:center;gap:8px;justify-content:flex-end;margin:8px 0;font-size:13px;color:var(--muted)}
+.pager .btn[disabled]{opacity:.4;cursor:default}
+table.t{border-collapse:collapse;width:100%;min-width:760px;font-size:13px}
+table.t th{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);background:var(--band);white-space:nowrap;position:sticky;top:0;z-index:3;box-shadow:0 1px 0 var(--line)}
+table.t td{padding:8px 10px;border-bottom:1px solid var(--line2);vertical-align:top}
+table.t td.n,table.t th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.n small{display:block;color:var(--muted);font-size:10.5px}
+td.neg{color:var(--red)}
+tr.row{cursor:pointer}
+tr.row:hover td{background:var(--steel-l)}
+tr.row:focus-visible{outline:2px solid var(--steel);outline-offset:-2px}
+tr.band td{background:var(--band);font:600 13px var(--head);letter-spacing:.04em;text-transform:uppercase;color:var(--steel);padding:7px 10px;border-bottom:1px solid var(--line)}
+tr.band td span{font:11px var(--mono);color:var(--muted);text-transform:none;letter-spacing:0;margin-left:8px}
+tr.sub td{background:var(--steel-l);font-weight:600;border-bottom:1px solid var(--line)}
+tr.grand td{background:var(--grand);font:600 14px var(--head);border-bottom:0}
+td.rem{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+td.wrap{max-width:300px}
+.pill{display:inline-flex;align-items:center;gap:5px;font:600 11.5px var(--body);padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.g{color:var(--green);background:var(--green-l)}
+.pill.a{color:var(--amber);background:var(--amber-l)}
+.pill.x{color:var(--muted);background:var(--band)}
+.tag{font:600 11px var(--mono);padding:2px 7px;border-radius:4px;background:var(--band);color:var(--muted);white-space:nowrap}
+.tag.in{background:var(--green-l);color:var(--green)}.tag.out{background:var(--amber-l);color:var(--amber)}
+.bank{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.bank i{width:9px;height:9px;border-radius:2px;display:inline-block}
+.stale{color:var(--amber)}
+.empty{padding:36px 16px;text-align:center;color:var(--muted)}
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;padding:5px 10px;border:1px solid var(--line,#ccc);border-radius:8px;cursor:pointer}
+.chk input{margin:0}
+.defbox{background:var(--steel-l);border-left:3px solid var(--steel);border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.5}
+.defbox b{font-weight:700}
+.note{font-size:12.5px;color:var(--muted);margin-top:10px}
+.warn{background:var(--amber-l);color:var(--amber);border-radius:6px;padding:8px 12px;font-size:13px;margin-top:10px}
+
+/* overview */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:6px;cursor:pointer;text-align:left}
+.card:hover{border-color:var(--steel)}
+.card .k{font:600 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.card .v{font:600 28px var(--head);font-variant-numeric:tabular-nums}
+.card .m{font-size:12.5px;color:var(--muted)}
+.ok{color:var(--green)}.bad{color:var(--red)}
+.sec{display:flex;flex-direction:column;gap:10px;margin-bottom:22px}
+.mini{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(10,18,26,.55);display:flex;align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 16px 16px;overflow:auto;z-index:50}
+.modal{background:var(--surface);border-radius:10px;width:100%;max-width:760px;box-shadow:var(--shadow);margin:auto 0}
+.modal header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.modal .x{all:unset;cursor:pointer;font-size:22px;line-height:1;padding:2px 8px;color:var(--muted)}
+.modal .x:focus-visible{outline:2px solid var(--steel)}
+.mb{padding:16px 18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.mb .full{grid-column:1/-1}
+.modal footer{display:flex;flex-wrap:wrap;gap:8px;padding:12px 18px;border-top:1px solid var(--line);align-items:center}
+.modal footer .sp{flex:1}
+@media (max-width:560px){.mb{grid-template-columns:1fr}}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pc{display:inline-flex;align-items:center;gap:4px;background:var(--steel-l);color:var(--steel);border-radius:999px;padding:3px 4px 3px 10px;font-size:12.5px;font-weight:600}
+.pc button{all:unset;cursor:pointer;padding:0 6px;font-size:15px;line-height:1}
+.addrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.addrow .i{flex:1 1 140px;width:auto}
+.hist{grid-column:1/-1;border:1px solid var(--line);border-radius:6px;overflow:auto}
+.hist table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:380px}
+.hist th,.hist td{padding:5px 8px;text-align:left;border-bottom:1px solid var(--line2)}
+.hist th{font:600 10.5px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--band)}
+.hist td.n,.hist th.n{text-align:right;font-variant-numeric:tabular-nums}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:8px;font-size:13px;z-index:80;max-width:calc(100vw - 32px)}
+.ck{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-bottom:1px solid var(--line2)}
+.ck:last-child{border-bottom:0}
+.ck input{margin-top:3px;width:17px;height:17px;flex:none}
+.ck.done .tx{color:var(--muted);text-decoration:line-through}
+.ck .ar{font:600 11px var(--mono);color:var(--steel);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* login */
+#login{min-height:100vh;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
+.login-art{background:var(--side);color:#fff;padding:48px clamp(24px,5vw,64px);display:flex;flex-direction:column;justify-content:space-between;gap:32px}
+.login-art h1{font-size:clamp(28px,4vw,40px);color:#fff;margin-top:14px;line-height:1.1}
+.login-art p{color:#A9B9C9;max-width:44ch;margin:14px 0 0}
+.login-art .eb{color:#8397AA;font-size:13px}
+.codes{display:flex;flex-wrap:wrap;gap:8px}
+.codes span{font:600 12px var(--mono);letter-spacing:.06em;border:1px solid #2B435A;color:#C8D4DF;padding:4px 9px;border-radius:4px}
+.login-form{display:flex;align-items:center;justify-content:center;padding:32px 16px}
+.login-form form{width:100%;max-width:340px;display:flex;flex-direction:column;gap:14px}
+@media (max-width:760px){#login{grid-template-columns:1fr}.login-art{padding:28px 16px;gap:18px}}
+
+
+/* Fund Transfer additions */
+.sumstrip .chip.bad b{color:var(--red)}
+.pill.r{color:var(--red);background:var(--red-l)}
+.days{font:600 18px var(--head);color:var(--red);font-variant-numeric:tabular-nums}
+.empty b{display:block;color:var(--ink);font:600 20px var(--head);margin-bottom:6px}
+.empty .acts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.grp{margin-bottom:18px}
+.grp>header{display:flex;gap:10px;align-items:baseline;margin-bottom:6px}
+.grp>header .c{font:600 11.5px var(--mono);color:var(--red)}
+.cell{display:inline-block;min-width:78px;text-align:center;border-radius:4px;padding:3px 6px;font:600 12px var(--mono);cursor:pointer;border:0}
+.cell.ok{background:var(--green-l);color:var(--green)}.cell.late{background:var(--red-l);color:var(--red)}
+.cell.warn{background:var(--amber-l);color:var(--amber)}.cell.none{background:var(--band);color:var(--muted)}
+.modal .body{padding:16px 18px;display:grid;gap:16px}
+.modal h2{font-size:18px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kv div>span:first-child{display:block;font:600 10.5px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.tl{display:grid;gap:12px}
+.rs{border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--paper)}
+.rs .meta{font:600 11.5px var(--mono);color:var(--muted);margin-bottom:6px}
+.rs p{margin:0;white-space:pre-wrap}
+.shots{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.shots img{height:84px;max-width:140px;object-fit:cover;border-radius:4px;border:1px solid var(--line);cursor:zoom-in;background:var(--band)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.lock{font:600 12px var(--mono);color:var(--muted);border:1px dashed var(--line);border-radius:5px;padding:8px 10px}
+.light{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:90;padding:16px}
+.light img{max-width:100%;max-height:100%;border-radius:4px}
+td.act{white-space:nowrap}
+</style>
+<div id="login">
+  <div class="login-art">
+    <div>
+      <div class="eb">IR Group · PSS Department</div>
+      <h1>MM4-03b · Auto payment</h1>
+      <p>P2P tracking and stats: Merchant (MCA), CP (CPA) and Main (MAC) accounts.</p>
+    </div>
+    <div class="codes"><span>TRANSFERS</span><span>STATS</span><span>ACCOUNTS</span></div>
+  </div>
+  <div class="login-form">
+    <form id="loginForm" autocomplete="on">
+      <h2>Sign in</h2>
+      <label class="f" for="lu">Username<input class="i" id="lu" autocomplete="username" required></label>
+      <label class="f" for="lp">Password<input class="i" id="lp" type="password" autocomplete="current-password" required></label>
+      <div class="err" id="loginErr" role="alert"></div>
+      <button class="btn pri" id="loginBtn" type="submit" style="justify-content:center;padding:10px" disabled>Connecting…</button>
+      <p class="hint" style="margin:0">Ask your Admin for an account. Sign-in locks the page; it is not bank-grade security.</p>
+      <p class="hint" style="margin:0">Version 0.1 · 14 Oct 2026</p>
+    </form>
+  </div>
+</div>
+<div id="app" class="hidden">
+  <aside>
+    <div class="brand"><b>MM4-03b · Auto payment</b><small>IR Group · PSS Department</small></div>
+    <nav id="nav" aria-label="Fund Transfers"></nav>
+    <div class="side-foot"><div id="who"></div><div class="btns"><button class="btn sm" id="btnPw" type="button">Password</button><button class="btn sm" id="btnOut" type="button">Sign out</button></div></div>
+  </aside>
+  <main><div class="topbar"><h1 id="pageTitle"></h1><span class="sub" id="pageSub"></span><span class="sync" id="todayTxt"></span></div><section id="view"><div class="empty">Loading…</div></section></main>
+</div>
+<div id="modalRoot"></div><div id="toastRoot"></div>
+<script type="application/json" id="offlineSeed">{"users": {"admin": {"u": "admin", "name": "Administrator", "role": "Admin", "salt": "6c0bea84b33e0d1a01230056", "hash": "bec6e2649051e78086511b128cb73dea411b4f19bcf0951dea9a3e5486fe84a7", "mustChange": true, "active": true, "lastLogin": null}}, "source": {"snap": {"accounts": {"cdb_mac_001": {"accNo": "9100-0001-254", "bank": "ACLEDA", "code": "MAC-KH-001", "grp": "MAC", "name": "Sok Dara", "project": "KH", "status": "Active"}, "cdb_mac_002": {"accNo": "9100-0002-149", "bank": "ACLEDA", "code": "MAC-KH-002", "grp": "MAC", "name": "Chan Sreyneang", "project": "KH", "status": "Moved"}, "cdb_mac_003": {"accNo": "9100-0003-174", "bank": "Sathapana", "code": "MAC-KH-003_C", "grp": "MAC", "name": "Kim Vannak, Srey Pov", "project": "KH", "status": "Closed"}, "cdb_mac_004": {"accNo": "9100-0004-940", "bank": "Sathapana", "code": "MAC-KH-004_C", "grp": "MAC", "name": "Ly Sophea", "project": "KH", "status": "Closed"}, "cdb_mac_005": {"accNo": "9100-0005-474", "bank": "ABA", "code": "MAC-KH-005", "grp": "MAC", "name": "Heng Rithy", "project": "KH", "status": "Active"}, "cdb_mac_006": {"accNo": "9100-0006-619", "bank": "Wing", "code": "MAC-KH-006", "grp": "MAC", "name": "Pich Maly, Chea Vanny", "project": "KH", "status": "Moved"}, "cdb_mac_007": {"accNo": "9100-0007-188", "bank": "Wing", "code": "MAC-KH-007", "grp": "MAC", "name": "Mao Veasna", "project": "KH", "status": "Active"}, "cdb_mac_008": {"accNo": "9100-0008-171", "bank": "ABA", "code": "MAC-PHP-008", "grp": "MAC", "name": "Tep Chanthou", "project": "PHP", "status": "Active"}, "cdb_mac_009": {"accNo": "9100-0009-664", "bank": "Sathapana", "code": "MAC-PHP-009", "grp": "MAC", "name": "Srey Pov, Kim Vannak", "project": "PHP", "status": "Active"}, "cdb_mac_010": {"accNo": "9100-0010-946", "bank": "ACLEDA", "code": "MAC-PHP-010", "grp": "MAC", "name": "Nguon Samnang", "project": "PHP", "status": "Active"}, "cdb_mac_011": {"accNo": "9100-0011-679", "bank": "Sathapana", "code": "MAC-011_C", "grp": "MAC", "name": "Yim Sokha", "project": "IJ Bingo", "status": "Closed"}, "cdb_mac_012": {"accNo": "9100-0012-226", "bank": "Wing", "code": "MAC-KH-012_C", "grp": "MAC", "name": "Chea Vanny, Pich Maly", "project": "KH", "status": "Closed"}, "cdb_mca_001": {"accNo": "9200-0001-328", "bank": "", "code": "MCA-KH-001_C", "grp": "MCA", "name": "PayDemo Angkor CO", "project": "KH", "status": "Closed"}, "cdb_mca_002": {"accNo": "9200-0002-696", "bank": "", "code": "MCA-KH-002", "grp": "MCA", "name": "PayDemo Angkor CI", "project": "KH", "status": "Active"}, "cdb_mca_003": {"accNo": "9200-0003-163", "bank": "", "code": "MCA-KH-003_C", "grp": "MCA", "name": "SamplePay Mekong CI", "project": "KH", "status": "Closed"}, "cdb_mca_004": {"accNo": "", "bank": "", "code": "MCA-KH-004_C", "grp": "MCA", "name": "SamplePay Mekong CO", "project": "KH", "status": "Closed"}, "cdb_mca_005": {"accNo": "9200-0005-506", "bank": "", "code": "MCA-KH-005", "grp": "MCA", "name": "Bayon Wallet CI", "project": "KH", "status": "Active"}, "cdb_mca_006": {"accNo": "9200-0006-326", "bank": "", "code": "MCA-KH-006", "grp": "MCA", "name": "Bayon Wallet CO", "project": "KH", "status": "Active"}, "cdb_mca_007": {"accNo": "9200-0007-979", "bank": "", "code": "MCA-KH-007", "grp": "MCA", "name": "Riverside Media CI", "project": "KH", "status": "Active"}, "cdb_mca_008": {"accNo": "", "bank": "", "code": "MCA-KH-008", "grp": "MCA", "name": "Riverside Media CO", "project": "KH", "status": "Active"}, "cdb_mca_009": {"accNo": "9200-0009-529", "bank": "", "code": "MCA-KH-009_C", "grp": "MCA", "name": "Lotus Auto collection", "project": "KH", "status": "Closed"}, "cdb_mca_010": {"accNo": "9200-0010-220", "bank": "", "code": "MCA-KH-010", "grp": "MCA", "name": "TestGate Royal CI", "project": "KH", "status": "Active"}, "cdb_mca_011": {"accNo": "9200-0011-673", "bank": "", "code": "MCA-KH-011", "grp": "MCA", "name": "TestGate Royal CO", "project": "KH", "status": "Active"}, "cdb_mca_012": {"accNo": "", "bank": "", "code": "MCA-VN-012", "grp": "MCA", "name": "SB Demo Pay", "project": "VN", "status": "Active"}, "cdb_mca_013": {"accNo": "9200-0013-695", "bank": "", "code": "MCA-VN-013", "grp": "MCA", "name": "Silk Pay", "project": "VN", "status": "Active"}, "cdb_mca_014": {"accNo": "9200-0014-292", "bank": "", "code": "MCA-VN-014", "grp": "MCA", "name": "Phnom Pay", "project": "VN", "status": "Active"}, "cdb_mca_015": {"accNo": "9200-0015-660", "bank": "", "code": "MCA-PHP-015", "grp": "MCA", "name": "GoldDemo Gcash", "project": "PHP", "status": "Active"}, "cdb_mca_016": {"accNo": "", "bank": "", "code": "MCA-PHP-016", "grp": "MCA", "name": "GoldDemo Maya", "project": "PHP", "status": "Active"}, "cdb_mca_017": {"accNo": "9200-0017-733", "bank": "", "code": "MCA-PHP-017", "grp": "MCA", "name": "GoldDemo OGC", "project": "PHP", "status": "Active"}, "cdb_mca_018": {"accNo": "9200-0018-796", "bank": "", "code": "MCA-PHP-018", "grp": "MCA", "name": "Agency Profit Sharing (Demo)", "project": "PHP", "status": "Active"}, "cdb_mca_019": {"accNo": "9200-0019-895", "bank": "", "code": "MCA-PHP-019", "grp": "MCA", "name": "Auto Demo-Wing", "project": "PHP", "status": "Active"}, "cdb_mca_020": {"accNo": "", "bank": "", "code": "MCA-020_C", "grp": "MCA", "name": "Coastal Pay CO", "project": "IJ Bingo", "status": "Closed"}, "cdb_mca_021": {"accNo": "9200-0021-421", "bank": "", "code": "MCA-021_C", "grp": "MCA", "name": "Coastal Pay CI", "project": "IJ Bingo", "status": "Closed"}, "cdb_mca_022": {"accNo": "9200-0022-564", "bank": "", "code": "MCA-022", "grp": "MCA", "name": "Delta Pay Trading CI", "project": "IJ Bingo", "status": "Active"}, "cdb_mca_023": {"accNo": "9200-0023-354", "bank": "", "code": "MCA-023", "grp": "MCA", "name": "Delta Pay Trading CO", "project": "IJ Bingo", "status": "Active"}, "cdb_mca_024": {"accNo": "", "bank": "", "code": "MCA-024", "grp": "MCA", "name": "Orbit Auto CI", "project": "IJ Bingo", "status": "Active"}, "cdb_mca_025": {"accNo": "9200-0025-349", "bank": "", "code": "MCA-025", "grp": "MCA", "name": "Orbit Auto CO", "project": "IJ Bingo", "status": "Active"}, "cdb_pc_001": {"accNo": "9500-0001-951", "bank": "ABA", "code": "PC-KH-001", "grp": "PC", "name": "Sam Bopha", "project": "KH", "status": "Active"}, "cdb_pc_002": {"accNo": "9500-0002-369", "bank": "Wing", "code": "PC-KH-002", "grp": "PC", "name": "Lim Kosal", "project": "KH", "status": "Active"}, "cdb_pc_003": {"accNo": "9500-0003-249", "bank": "ABA", "code": "PC-KH-003", "grp": "PC", "name": "Ouk Dina", "project": "KH", "status": "Active"}, "cdb_pc_004": {"accNo": "9500-0004-478", "bank": "ABA", "code": "PC-KH-004", "grp": "PC", "name": "Vong Sovann", "project": "KH", "status": "Active"}, "cdb_pc_005": {"accNo": "9500-0005-426", "bank": "Sathapana", "code": "PC-KH-005", "grp": "PC", "name": "Roeun Piseth", "project": "KH", "status": "Active"}, "cdb_pc_006": {"accNo": "9500-0006-807", "bank": "", "code": "PC-PHP-006", "grp": "PC", "name": "Chea Rattana", "project": "PHP", "status": "Active"}, "cdb_pc_007": {"accNo": "9500-0007-732", "bank": "Techcombank", "code": "PC-VN-007", "grp": "PC", "name": "Seng Bunthoeun", "project": "VN", "status": "Active"}, "cdb_skac_001": {"accNo": "9300-0001-407", "bank": "ACLEDA", "code": "SKA_C-KH-001", "grp": "SKA_C", "name": "Angkor Demo Trading Co., Ltd.", "project": "KH", "status": "Active"}, "cdb_skac_002": {"accNo": "9300-0002-996", "bank": "ACLEDA", "code": "SKA_C-KH-002", "grp": "SKA_C", "name": "Mekong Sample Foods Co., Ltd.", "project": "KH", "status": "Active"}, "cdb_skac_003": {"accNo": "9300-0003-559", "bank": "ACLEDA", "code": "SKA_C-KH-003", "grp": "SKA_C", "name": "Demo Bayon Logistics PLC", "project": "B7", "status": "Active"}, "cdb_skac_004": {"accNo": "9300-0004-174", "bank": "ACLEDA", "code": "SKA_C-KH-004", "grp": "SKA_C", "name": "Riverside Dummy Media Co., Ltd.", "project": "KH", "status": "Active"}, "cdb_skac_005": {"accNo": "9300-0005-528", "bank": "ABA", "code": "SKA_C-KH-005", "grp": "SKA_C", "name": "Sample Lotus Tech Co., Ltd.", "project": "PHP/IJ", "status": "Active"}, "cdb_skac_006": {"accNo": "9300-0006-450", "bank": "Wing", "code": "SKA_C-KH-006", "grp": "SKA_C", "name": "Dummy Royal Retail Co., Ltd.", "project": "KH", "status": "Active"}, "cdb_skac_007": {"accNo": "9300-0007-600", "bank": "KB PRASIC Bank", "code": "SKA_C-KH-007", "grp": "SKA_C", "name": "Test Silk Road Co., Ltd.", "project": "B7", "status": "Active"}, "cdb_skac_008": {"accNo": "9300-0008-784", "bank": "CPUBLIC BANK", "code": "SKA_C-KH-008", "grp": "SKA_C", "name": "Demo Phnom Consulting Co., Ltd.", "project": "KH", "status": "Active"}, "cdb_skac_009": {"accNo": "9300-0009-671", "bank": "CPB", "code": "SKA_C-KH-009", "grp": "SKA_C", "name": "Sample Coastal Travel Co., Ltd.", "project": "PHP/IJ", "status": "Active"}, "cdb_skac_010": {"accNo": "9300-0010-996", "bank": "CPB", "code": "SKA_C-KH-010", "grp": "SKA_C", "name": "Dummy Delta Pay PLC", "project": "IJ Bingo", "status": "Active"}, "cdb_skac_011": {"accNo": "9300-0011-448", "bank": "ACLEDA", "code": "SKA_C-B7-011", "grp": "SKA_C", "name": "Demo Green Farm Co., Ltd.", "project": "KH", "status": "Active"}, "cdb_skac_012": {"accNo": "9300-0012-708", "bank": "ACLEDA", "code": "SKA_C-IJ-PHP-012", "grp": "SKA_C", "name": "Sample Orbit Games Co., Ltd.", "project": "PHP/IJ", "status": "Active"}, "cdb_skac_013": {"accNo": "9300-0013-916", "bank": "CIMB", "code": "SKA_C-IJ-PHP-013", "grp": "SKA_C", "name": "Angkor Demo Trading Co., Ltd.", "project": "KH", "status": "Active"}, "cdb_skap_001": {"accNo": "9400-0001-960", "bank": "Wing", "code": "SKA_P-KH-001", "grp": "SKA_P", "name": "Chan Sreyneang · Angkor Demo Trading", "project": "KH", "status": "Active"}, "cdb_skap_002": {"accNo": "9400-0002-376", "bank": "Sathapana", "code": "SKA_P-KH-002", "grp": "SKA_P", "name": "Kim Vannak · Angkor Demo Trading", "project": "KH", "status": "Active"}, "cdb_skap_003": {"accNo": "9400-0003-780", "bank": "Wing", "code": "SKA_P-KH-003", "grp": "SKA_P", "name": "Ly Sophea · Angkor Demo Trading", "project": "KH", "status": "Active"}, "cdb_skap_004": {"accNo": "9400-0004-848", "bank": "Sathapana", "code": "SKA_P-KH-004", "grp": "SKA_P", "name": "Pich Maly · Mekong Sample Foods", "project": "KH", "status": "Active"}, "cdb_skap_005": {"accNo": "9400-0005-818", "bank": "Sathapana", "code": "SKA_P-KH-005_C", "grp": "SKA_P", "name": "Mao Veasna · Mekong Sample Foods", "project": "KH", "status": "Closed"}, "cdb_skap_006": {"accNo": "9400-0006-417", "bank": "", "code": "SKA_P-KH-006_C", "grp": "SKA_P", "name": "Srey Pov · Demo Bayon Logistics", "project": "B7", "status": "Closed"}, "cdb_skap_007": {"accNo": "9400-0007-762", "bank": "Sathapana", "code": "SKA_P-KH-007_C", "grp": "SKA_P", "name": "Nguon Samnang · Demo Bayon Logistics", "project": "B7", "status": "Closed"}, "cdb_skap_008": {"accNo": "9400-0008-797", "bank": "Canadia", "code": "SKA_P-KH-008", "grp": "SKA_P", "name": "Chea Vanny · Riverside Dummy Media", "project": "KH", "status": "Active"}, "cdb_skap_009": {"accNo": "9400-0009-391", "bank": "Canadia", "code": "SKA_P-KH-009", "grp": "SKA_P", "name": "Sam Bopha · Riverside Dummy Media", "project": "KH", "status": "Active"}, "cdb_skap_010": {"accNo": "9400-0010-784", "bank": "Sathapana", "code": "SKA_P-KH-010", "grp": "SKA_P", "name": "Ouk Dina · Sample Lotus Tech", "project": "PHP/IJ", "status": "Active"}, "cdb_skap_011": {"accNo": "9400-0011-572", "bank": "Wing", "code": "SKA_P-KH-011", "grp": "SKA_P", "name": "Vong Sovann · Sample Lotus Tech", "project": "PHP/IJ", "status": "Active"}, "cdb_skap_012": {"accNo": "9400-0012-725", "bank": "ACLEDA", "code": "SKA_P-KH-012", "grp": "SKA_P", "name": "Roeun Piseth · Sample Lotus Tech", "project": "PHP/IJ", "status": "Active"}, "cdb_skap_013": {"accNo": "9400-0013-160", "bank": "Sathapana", "code": "SKA_P-KH-013", "grp": "SKA_P", "name": "Seng Bunthoeun · Dummy Royal Retail", "project": "KH", "status": "Active"}, "cdb_skap_014": {"accNo": "9400-0014-394", "bank": "Wing", "code": "SKA_P-KH-014", "grp": "SKA_P", "name": "Kao Sreymom · Dummy Royal Retail", "project": "KH", "status": "Active"}, "cdb_skap_015": {"accNo": "9400-0015-353", "bank": "Wing", "code": "SKA_P-KH-015", "grp": "SKA_P", "name": "Chan Sreyneang · Test Silk Road", "project": "B7", "status": "Active"}, "cdb_skap_016": {"accNo": "9400-0016-992", "bank": "Wing", "code": "SKA_P-KH-016", "grp": "SKA_P", "name": "Kim Vannak · Test Silk Road", "project": "B7", "status": "Active"}, "cdb_skap_017": {"accNo": "9400-0017-270", "bank": "Wing", "code": "SKA_P-KH-017", "grp": "SKA_P", "name": "Heng Rithy · Demo Phnom Consulting", "project": "KH", "status": "Active"}, "cdb_skap_018": {"accNo": "9400-0018-662", "bank": "Wing", "code": "SKA_P-KH-018", "grp": "SKA_P", "name": "Pich Maly · Demo Phnom Consulting", "project": "KH", "status": "Active"}, "cdb_skap_019": {"accNo": "9400-0019-240", "bank": "Wing", "code": "SKA_P-KH-019", "grp": "SKA_P", "name": "Tep Chanthou · Sample Coastal Travel", "project": "PHP/IJ", "status": "Active"}, "cdb_skap_020": {"accNo": "9400-0020-984", "bank": "Wing", "code": "SKA_P-KH-020", "grp": "SKA_P", "name": "Srey Pov · Sample Coastal Travel", "project": "PHP/IJ", "status": "Active"}, "cdb_skap_021": {"accNo": "9400-0021-663", "bank": "Wing", "code": "SKA_P-B7-021_C", "grp": "SKA_P", "name": "Nguon Samnang · Sample Coastal Travel", "project": "PHP/IJ", "status": "Closed"}, "cdb_skap_022": {"accNo": "9400-0022-525", "bank": "Sathapana", "code": "SKA_P-B7-022", "grp": "SKA_P", "name": "Chea Vanny · Dummy Delta Pay", "project": "IJ Bingo", "status": "Active"}, "cdb_skap_023": {"accNo": "9400-0023-799", "bank": "Wing", "code": "SKA_P-IJ-PHP-023", "grp": "SKA_P", "name": "Sam Bopha · Dummy Delta Pay", "project": "IJ Bingo", "status": "Active"}, "cdb_skap_024": {"accNo": "9400-0024-489", "bank": "Sathapana", "code": "SKA_P-IJ-PHP-024_C", "grp": "SKA_P", "name": "Ouk Dina · Demo Green Farm", "project": "KH", "status": "Closed"}, "cdb_skap_025": {"accNo": "9400-0025-254", "bank": "Sathapana", "code": "SKA_P-IJ-PHP-025", "grp": "SKA_P", "name": "Vong Sovann · Demo Green Farm", "project": "KH", "status": "Active"}, "cdb_skap_026": {"accNo": "9400-0026-254", "bank": "Sathapana", "code": "SKA_P-IJ-PHP-026", "grp": "SKA_P", "name": "Chea Rattana · Sample Orbit Games", "project": "PHP/IJ", "status": "Active"}, "cdb_skap_027": {"accNo": "9400-0027-338", "bank": "Wing", "code": "SKA_P-IJ-PHP-027", "grp": "SKA_P", "name": "Seng Bunthoeun · Sample Orbit Games", "project": "PHP/IJ", "status": "Active"}}, "at": "2026-10-23T00:00:00.000Z", "cpa": {"ac_cpa001": {"accNo": "9C01-919166", "bank": "Wing", "code": "CPA-001", "grp": "Wing", "holder": "TW-OP", "name": "SOK DARA", "project": "Taiwan", "status": "Stop Use"}, "ac_cpa002": {"accNo": "9C02-299126", "bank": "ABA", "code": "CPA-002", "grp": "ABA", "holder": "TW-OP", "name": "CHAN SREYNEANG", "project": "Taiwan-B777", "status": "Stop Use"}, "ac_cpa003": {"accNo": "9C03-743782", "bank": "ACLEDA", "code": "CPA-003", "grp": "ACLEDA", "holder": "PSS-KH", "name": "KIM VANNAK", "project": "Combined", "status": "Active"}, "ac_cpa004": {"accNo": "9C04-195074", "bank": "PiPAY", "code": "CPA-004", "grp": "PiPAY", "holder": "PSS-KH2", "name": "LY SOPHEA", "project": "Taiwan", "status": "Active"}, "ac_cpa005": {"accNo": "9C05-143914", "bank": "Wing", "code": "CPA-005", "grp": "Wing", "holder": "TW-OP", "name": "HENG RITHY", "project": "Taiwan-B777", "status": "Sign Out"}, "ac_cpa006": {"accNo": "9C06-574999", "bank": "ABA", "code": "CPA-006", "grp": "ABA", "holder": "TW-OP", "name": "PICH MALY", "project": "Combined", "status": "Never Used"}, "ac_cpa007": {"accNo": "9C07-753397", "bank": "ACLEDA", "code": "CPA-007", "grp": "ACLEDA", "holder": "PSS-KH", "name": "MAO VEASNA", "project": "Taiwan", "status": "Unable to Log In"}, "ac_cpa008": {"accNo": "9C08-137384", "bank": "Wing", "code": "CPA-008", "grp": "Wing", "holder": "PSS-KH2", "name": "TEP CHANTHOU", "project": "Taiwan-B777", "status": "Active"}, "ac_cpa009": {"accNo": "9C09-915905", "bank": "Wing", "code": "CPA-009", "grp": "Wing", "holder": "TW-OP", "name": "SREY POV", "project": "Combined", "status": "Active"}, "ac_cpa010": {"accNo": "9C10-304809", "bank": "ABA", "code": "CPA-010", "grp": "ABA", "holder": "TW-OP", "name": "NGUON SAMNANG", "project": "Taiwan", "status": "Stop Use"}, "ac_cpa011": {"accNo": "9C11-104816", "bank": "ACLEDA", "code": "CPA-011", "grp": "ACLEDA", "holder": "PSS-KH", "name": "YIM SOKHA", "project": "Taiwan-B777", "status": "Sign Out"}, "ac_cpa012": {"accNo": "9C12-526538", "bank": "PiPAY", "code": "CPA-012", "grp": "PiPAY", "holder": "PSS-KH2", "name": "CHEA VANNY", "project": "Combined", "status": "Unable to Log In"}, "ac_cpa013": {"accNo": "9C13-842192", "bank": "Wing", "code": "CPA-013", "grp": "Wing", "holder": "TW-OP", "name": "SAM BOPHA", "project": "Taiwan", "status": "Sign Out"}, "ac_cpa014": {"accNo": "9C14-403080", "bank": "ABA", "code": "CPA-014", "grp": "ABA", "holder": "TW-OP", "name": "LIM KOSAL", "project": "Taiwan-B777", "status": "Active"}, "ac_cpa015": {"accNo": "9C15-519849", "bank": "Wing", "code": "CPA-015", "grp": "Wing", "holder": "PSS-KH", "name": "OUK DINA", "project": "Combined", "status": "Active"}, "ac_cpa016": {"accNo": "9C16-117710", "bank": "PiPAY", "code": "CPA-016", "grp": "PiPAY", "holder": "PSS-KH2", "name": "VONG SOVANN", "project": "Taiwan", "status": "Active"}, "ac_cpa017": {"accNo": "9C17-154864", "bank": "Wing", "code": "CPA-017", "grp": "Wing", "holder": "TW-OP", "name": "ROEUN PISETH", "project": "Taiwan-B777", "status": "Unable to Log In"}, "ac_cpa018": {"accNo": "9C18-540183", "bank": "ABA", "code": "CPA-018", "grp": "ABA", "holder": "TW-OP", "name": "CHEA RATTANA", "project": "Combined", "status": "Stop Use"}, "ac_cpa019": {"accNo": "9C19-807693", "bank": "ACLEDA", "code": "CPA-019", "grp": "ACLEDA", "holder": "PSS-KH", "name": "SENG BUNTHOEUN", "project": "Taiwan", "status": "Active"}, "ac_cpa020": {"accNo": "9C20-115885", "bank": "PiPAY", "code": "CPA-020", "grp": "PiPAY", "holder": "PSS-KH2", "name": "KAO SREYMOM", "project": "Taiwan-B777", "status": "Active"}, "ac_cpa021": {"accNo": "9C21-358356", "bank": "Wing", "code": "CPA-021", "grp": "Wing", "holder": "TW-OP", "name": "SOK DARA", "project": "Combined", "status": "Blocked"}, "ac_cpa022": {"accNo": "9C22-610471", "bank": "Wing", "code": "CPA-022", "grp": "Wing", "holder": "TW-OP", "name": "CHAN SREYNEANG", "project": "Taiwan", "status": "Active"}, "ac_cpa023": {"accNo": "9C23-633584", "bank": "ACLEDA", "code": "CPA-023", "grp": "ACLEDA", "holder": "PSS-KH", "name": "KIM VANNAK", "project": "Taiwan-B777", "status": "Active"}, "ac_cpa024": {"accNo": "9C24-539595", "bank": "PiPAY", "code": "CPA-024", "grp": "PiPAY", "holder": "PSS-KH2", "name": "LY SOPHEA", "project": "Combined", "status": "Active"}, "ac_cpa025": {"accNo": "9C25-323205", "bank": "Wing", "code": "CPA-025", "grp": "Wing", "holder": "TW-OP", "name": "HENG RITHY", "project": "Taiwan", "status": "Unable to Log In"}, "ac_cpa026": {"accNo": "9C26-942438", "bank": "ABA", "code": "CPA-026", "grp": "ABA", "holder": "TW-OP", "name": "PICH MALY", "project": "Taiwan-B777", "status": "Active"}, "ac_cpa027": {"accNo": "9C27-120584", "bank": "ACLEDA", "code": "CPA-027", "grp": "ACLEDA", "holder": "PSS-KH", "name": "MAO VEASNA", "project": "Combined", "status": "Never Used"}, "ac_cpa028": {"accNo": "9C28-731262", "bank": "PiPAY", "code": "CPA-028", "grp": "PiPAY", "holder": "PSS-KH2", "name": "TEP CHANTHOU", "project": "Taiwan", "status": "Active"}, "ac_cpa029": {"accNo": "9C29-253468", "bank": "Wing", "code": "CPA-029", "grp": "Wing", "holder": "TW-OP", "name": "SREY POV", "project": "Taiwan-B777", "status": "Unable to Log In"}, "ac_cpa030": {"accNo": "9C30-739980", "bank": "ABA", "code": "CPA-030", "grp": "ABA", "holder": "TW-OP", "name": "NGUON SAMNANG", "project": "Combined", "status": "Active"}, "ac_cpa031": {"accNo": "9C31-177889", "bank": "ACLEDA", "code": "CPA-031", "grp": "ACLEDA", "holder": "PSS-KH", "name": "YIM SOKHA", "project": "Taiwan", "status": "To Check"}, "ac_cpa032": {"accNo": "9C32-116262", "bank": "PiPAY", "code": "CPA-032", "grp": "PiPAY", "holder": "PSS-KH2", "name": "CHEA VANNY", "project": "Taiwan-B777", "status": "Active"}, "ac_cpa033": {"accNo": "9C33-752370", "bank": "Wing", "code": "CPA-033", "grp": "Wing", "holder": "TW-OP", "name": "SAM BOPHA", "project": "Combined", "status": "Never Used"}, "ac_cpa034": {"accNo": "9C34-972791", "bank": "ABA", "code": "CPA-034", "grp": "ABA", "holder": "TW-OP", "name": "LIM KOSAL", "project": "Taiwan", "status": "Stop Use"}, "ac_cpa035": {"accNo": "9C35-504852", "bank": "ACLEDA", "code": "CPA-035", "grp": "ACLEDA", "holder": "PSS-KH", "name": "OUK DINA", "project": "Taiwan-B777", "status": "Never Used"}, "ac_cpa036": {"accNo": "9C36-339477", "bank": "Wing", "code": "CPA-036", "grp": "Wing", "holder": "PSS-KH2", "name": "VONG SOVANN", "project": "Combined", "status": "Active"}, "ac_cpa037": {"accNo": "9C37-299020", "bank": "Wing", "code": "CPA-037", "grp": "Wing", "holder": "TW-OP", "name": "ROEUN PISETH", "project": "Taiwan", "status": "Never Used"}, "ac_cpa038": {"accNo": "9C38-306139", "bank": "ABA", "code": "CPA-038", "grp": "ABA", "holder": "TW-OP", "name": "CHEA RATTANA", "project": "Taiwan-B777", "status": "Active"}, "ac_cpa039": {"accNo": "9C39-732851", "bank": "ACLEDA", "code": "CPA-039", "grp": "ACLEDA", "holder": "PSS-KH", "name": "SENG BUNTHOEUN", "project": "Combined", "status": "Unable to Log In"}, "ac_cpa040": {"accNo": "9C40-140576", "bank": "PiPAY", "code": "CPA-040", "grp": "PiPAY", "holder": "PSS-KH2", "name": "KAO SREYMOM", "project": "Taiwan", "status": "Active"}}, "source": "Central Database"}}, "accounts": {"cdb_mac_012": {"accNo": "9100-0012-226", "bank": "Wing", "cdbId": "mac_012", "cdbProject": "KH", "code": "MAC-KH-012_C", "name": "Chea Vanny, Pich Maly", "status": "Closed", "type": "MAC", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mac_011": {"accNo": "9100-0011-679", "bank": "Sathapana", "cdbId": "mac_011", "cdbProject": "IJ Bingo", "code": "MAC-011_C", "name": "Yim Sokha", "status": "Closed", "type": "MAC", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_018": {"accNo": "9400-0018-662", "bank": "Wing", "cdbId": "skap_018", "cdbProject": "KH", "code": "SKA_P-KH-018", "name": "Pich Maly · Demo Phnom Consulting", "status": "Active", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mac_004": {"accNo": "9100-0004-940", "bank": "Sathapana", "cdbId": "mac_004", "cdbProject": "KH", "code": "MAC-KH-004_C", "name": "Ly Sophea", "status": "Closed", "type": "MAC", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_008": {"accNo": "", "bank": "", "cdbId": "mca_008", "cdbProject": "KH", "code": "MCA-KH-008", "name": "Riverside Media CO", "status": "Active", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skac_006": {"accNo": "9300-0006-450", "bank": "Wing", "cdbId": "skac_006", "cdbProject": "KH", "code": "SKA_C-KH-006", "name": "Dummy Royal Retail Co., Ltd.", "status": "Active", "type": "SKA_C", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_022": {"accNo": "9400-0022-525", "bank": "Sathapana", "cdbId": "skap_022", "cdbProject": "IJ Bingo", "code": "SKA_P-B7-022", "name": "Chea Vanny · Dummy Delta Pay", "status": "Active", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_017": {"accNo": "9200-0017-733", "bank": "", "cdbId": "mca_017", "cdbProject": "PHP", "code": "MCA-PHP-017", "name": "GoldDemo OGC", "status": "Active", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_001": {"accNo": "9200-0001-328", "bank": "", "cdbId": "mca_001", "cdbProject": "KH", "code": "MCA-KH-001_C", "name": "PayDemo Angkor CO", "status": "Closed", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_011": {"accNo": "9200-0011-673", "bank": "", "cdbId": "mca_011", "cdbProject": "KH", "code": "MCA-KH-011", "name": "TestGate Royal CO", "status": "Active", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_020": {"accNo": "", "bank": "", "cdbId": "mca_020", "cdbProject": "IJ Bingo", "code": "MCA-020_C", "name": "Coastal Pay CO", "status": "Closed", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_016": {"accNo": "9400-0016-992", "bank": "Wing", "cdbId": "skap_016", "cdbProject": "B7", "code": "SKA_P-KH-016", "name": "Kim Vannak · Test Silk Road", "status": "Active", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "adm_riversideci": {"accNo": "", "bank": "", "code": "", "name": "Riverside Media (CI)", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skac_009": {"accNo": "9300-0009-671", "bank": "CPB", "cdbId": "skac_009", "cdbProject": "PHP/IJ", "code": "SKA_C-KH-009", "name": "Sample Coastal Travel Co., Ltd.", "status": "Active", "type": "SKA_C", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_024": {"accNo": "", "bank": "", "cdbId": "mca_024", "cdbProject": "IJ Bingo", "code": "MCA-024", "name": "Orbit Auto CI", "status": "Active", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_004": {"accNo": "9400-0004-848", "bank": "Sathapana", "cdbId": "skap_004", "cdbProject": "KH", "code": "SKA_P-KH-004", "name": "Pich Maly · Mekong Sample Foods", "status": "Active", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "adm_angkorco": {"accNo": "", "bank": "", "code": "", "name": "Angkor Trading (CO)", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skac_002": {"accNo": "9300-0002-996", "bank": "ACLEDA", "cdbId": "skac_002", "cdbProject": "KH", "code": "SKA_C-KH-002", "name": "Mekong Sample Foods Co., Ltd.", "status": "Active", "type": "SKA_C", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_015": {"accNo": "9200-0015-660", "bank": "", "cdbId": "mca_015", "cdbProject": "PHP", "code": "MCA-PHP-015", "name": "GoldDemo Gcash", "status": "Active", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mac_008": {"accNo": "9100-0008-171", "bank": "ABA", "cdbId": "mac_008", "cdbProject": "PHP", "code": "MAC-PHP-008", "name": "Tep Chanthou", "status": "Active", "type": "MAC", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mac_010": {"accNo": "9100-0010-946", "bank": "ACLEDA", "cdbId": "mac_010", "cdbProject": "PHP", "code": "MAC-PHP-010", "name": "Nguon Samnang", "status": "Active", "type": "MAC", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_007": {"accNo": "9200-0007-979", "bank": "", "cdbId": "mca_007", "cdbProject": "KH", "code": "MCA-KH-007", "name": "Riverside Media CI", "status": "Active", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_014": {"accNo": "9200-0014-292", "bank": "", "cdbId": "mca_014", "cdbProject": "VN", "code": "MCA-VN-014", "name": "Phnom Pay", "status": "Active", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_013": {"accNo": "9200-0013-695", "bank": "", "cdbId": "mca_013", "cdbProject": "VN", "code": "MCA-VN-013", "name": "Silk Pay", "status": "Active", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_025": {"accNo": "9400-0025-254", "bank": "Sathapana", "cdbId": "skap_025", "cdbProject": "KH", "code": "SKA_P-IJ-PHP-025", "name": "Vong Sovann · Demo Green Farm", "status": "Active", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mac_002": {"accNo": "9100-0002-149", "bank": "ACLEDA", "cdbId": "mac_002", "cdbProject": "KH", "code": "MAC-KH-002", "name": "Chan Sreyneang", "status": "Moved", "type": "MAC", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_025": {"accNo": "9200-0025-349", "bank": "", "cdbId": "mca_025", "cdbProject": "IJ Bingo", "code": "MCA-025", "name": "Orbit Auto CO", "status": "Active", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_027": {"accNo": "9400-0027-338", "bank": "Wing", "cdbId": "skap_027", "cdbProject": "PHP/IJ", "code": "SKA_P-IJ-PHP-027", "name": "Seng Bunthoeun · Sample Orbit Games", "status": "Active", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_003": {"accNo": "9200-0003-163", "bank": "", "cdbId": "mca_003", "cdbProject": "KH", "code": "MCA-KH-003_C", "name": "SamplePay Mekong CI", "status": "Closed", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "adm_mekongco": {"accNo": "", "bank": "", "code": "", "name": "Mekong Foods (CO)", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_023": {"accNo": "9200-0023-354", "bank": "", "cdbId": "mca_023", "cdbProject": "IJ Bingo", "code": "MCA-023", "name": "Delta Pay Trading CO", "status": "Active", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_009": {"accNo": "9200-0009-529", "bank": "", "cdbId": "mca_009", "cdbProject": "KH", "code": "MCA-KH-009_C", "name": "Lotus Auto collection", "status": "Closed", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_012": {"accNo": "9400-0012-725", "bank": "ACLEDA", "cdbId": "skap_012", "cdbProject": "PHP/IJ", "code": "SKA_P-KH-012", "name": "Roeun Piseth · Sample Lotus Tech", "status": "Active", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skac_004": {"accNo": "9300-0004-174", "bank": "ACLEDA", "cdbId": "skac_004", "cdbProject": "KH", "code": "SKA_C-KH-004", "name": "Riverside Dummy Media Co., Ltd.", "status": "Active", "type": "SKA_C", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skac_008": {"accNo": "9300-0008-784", "bank": "CPUBLIC BANK", "cdbId": "skac_008", "cdbProject": "KH", "code": "SKA_C-KH-008", "name": "Demo Phnom Consulting Co., Ltd.", "status": "Active", "type": "SKA_C", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_022": {"accNo": "9200-0022-564", "bank": "", "cdbId": "mca_022", "cdbProject": "IJ Bingo", "code": "MCA-022", "name": "Delta Pay Trading CI", "status": "Active", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_002": {"accNo": "9400-0002-376", "bank": "Sathapana", "cdbId": "skap_002", "cdbProject": "KH", "code": "SKA_P-KH-002", "name": "Kim Vannak · Angkor Demo Trading", "status": "Active", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "adm_bayonco": {"accNo": "", "bank": "", "code": "", "name": "Bayon Logistics (CO)", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skac_010": {"accNo": "9300-0010-996", "bank": "CPB", "cdbId": "skac_010", "cdbProject": "IJ Bingo", "code": "SKA_C-KH-010", "name": "Dummy Delta Pay PLC", "status": "Active", "type": "SKA_C", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_pc_002": {"accNo": "9500-0002-369", "bank": "Wing", "cdbId": "pc_002", "cdbProject": "KH", "code": "PC-KH-002", "name": "Lim Kosal", "status": "Active", "type": "PC", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skac_011": {"accNo": "9300-0011-448", "bank": "ACLEDA", "cdbId": "skac_011", "cdbProject": "KH", "code": "SKA_C-B7-011", "name": "Demo Green Farm Co., Ltd.", "status": "Active", "type": "SKA_C", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_017": {"accNo": "9400-0017-270", "bank": "Wing", "cdbId": "skap_017", "cdbProject": "KH", "code": "SKA_P-KH-017", "name": "Heng Rithy · Demo Phnom Consulting", "status": "Active", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mac_003": {"accNo": "9100-0003-174", "bank": "Sathapana", "cdbId": "mac_003", "cdbProject": "KH", "code": "MAC-KH-003_C", "name": "Kim Vannak, Srey Pov", "status": "Closed", "type": "MAC", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_006": {"accNo": "9400-0006-417", "bank": "", "cdbId": "skap_006", "cdbProject": "B7", "code": "SKA_P-KH-006_C", "name": "Srey Pov · Demo Bayon Logistics", "status": "Closed", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_005": {"accNo": "9400-0005-818", "bank": "Sathapana", "cdbId": "skap_005", "cdbProject": "KH", "code": "SKA_P-KH-005_C", "name": "Mao Veasna · Mekong Sample Foods", "status": "Closed", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_008": {"accNo": "9400-0008-797", "bank": "Canadia", "cdbId": "skap_008", "cdbProject": "KH", "code": "SKA_P-KH-008", "name": "Chea Vanny · Riverside Dummy Media", "status": "Active", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_020": {"accNo": "9400-0020-984", "bank": "Wing", "cdbId": "skap_020", "cdbProject": "PHP/IJ", "code": "SKA_P-KH-020", "name": "Srey Pov · Sample Coastal Travel", "status": "Active", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_021": {"accNo": "9200-0021-421", "bank": "", "cdbId": "mca_021", "cdbProject": "IJ Bingo", "code": "MCA-021_C", "name": "Coastal Pay CI", "status": "Closed", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mac_001": {"accNo": "9100-0001-254", "bank": "ACLEDA", "cdbId": "mac_001", "cdbProject": "KH", "code": "MAC-KH-001", "name": "Sok Dara", "status": "Active", "type": "MAC", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_009": {"accNo": "9400-0009-391", "bank": "Canadia", "cdbId": "skap_009", "cdbProject": "KH", "code": "SKA_P-KH-009", "name": "Sam Bopha · Riverside Dummy Media", "status": "Active", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_023": {"accNo": "9400-0023-799", "bank": "Wing", "cdbId": "skap_023", "cdbProject": "IJ Bingo", "code": "SKA_P-IJ-PHP-023", "name": "Sam Bopha · Dummy Delta Pay", "status": "Active", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_019": {"accNo": "9200-0019-895", "bank": "", "cdbId": "mca_019", "cdbProject": "PHP", "code": "MCA-PHP-019", "name": "Auto Demo-Wing", "status": "Active", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_021": {"accNo": "9400-0021-663", "bank": "Wing", "cdbId": "skap_021", "cdbProject": "PHP/IJ", "code": "SKA_P-B7-021_C", "name": "Nguon Samnang · Sample Coastal Travel", "status": "Closed", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mac_006": {"accNo": "9100-0006-619", "bank": "Wing", "cdbId": "mac_006", "cdbProject": "KH", "code": "MAC-KH-006", "name": "Pich Maly, Chea Vanny", "status": "Moved", "type": "MAC", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_019": {"accNo": "9400-0019-240", "bank": "Wing", "cdbId": "skap_019", "cdbProject": "PHP/IJ", "code": "SKA_P-KH-019", "name": "Tep Chanthou · Sample Coastal Travel", "status": "Active", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_024": {"accNo": "9400-0024-489", "bank": "Sathapana", "cdbId": "skap_024", "cdbProject": "KH", "code": "SKA_P-IJ-PHP-024_C", "name": "Ouk Dina · Demo Green Farm", "status": "Closed", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_016": {"accNo": "", "bank": "", "cdbId": "mca_016", "cdbProject": "PHP", "code": "MCA-PHP-016", "name": "GoldDemo Maya", "status": "Active", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "adm_bayonci": {"accNo": "", "bank": "", "code": "", "name": "Bayon Logistics (CI)", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_005": {"accNo": "9200-0005-506", "bank": "", "cdbId": "mca_005", "cdbProject": "KH", "code": "MCA-KH-005", "name": "Bayon Wallet CI", "status": "Active", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_002": {"accNo": "9200-0002-696", "bank": "", "cdbId": "mca_002", "cdbProject": "KH", "code": "MCA-KH-002", "name": "PayDemo Angkor CI", "status": "Active", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_pc_001": {"accNo": "9500-0001-951", "bank": "ABA", "cdbId": "pc_001", "cdbProject": "KH", "code": "PC-KH-001", "name": "Sam Bopha", "status": "Active", "type": "PC", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_003": {"accNo": "9400-0003-780", "bank": "Wing", "cdbId": "skap_003", "cdbProject": "KH", "code": "SKA_P-KH-003", "name": "Ly Sophea · Angkor Demo Trading", "status": "Active", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skac_003": {"accNo": "9300-0003-559", "bank": "ACLEDA", "cdbId": "skac_003", "cdbProject": "B7", "code": "SKA_C-KH-003", "name": "Demo Bayon Logistics PLC", "status": "Active", "type": "SKA_C", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skac_001": {"accNo": "9300-0001-407", "bank": "ACLEDA", "cdbId": "skac_001", "cdbProject": "KH", "code": "SKA_C-KH-001", "name": "Angkor Demo Trading Co., Ltd.", "status": "Active", "type": "SKA_C", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_012": {"accNo": "", "bank": "", "cdbId": "mca_012", "cdbProject": "VN", "code": "MCA-VN-012", "name": "SB Demo Pay", "status": "Active", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skac_007": {"accNo": "9300-0007-600", "bank": "KB PRASIC Bank", "cdbId": "skac_007", "cdbProject": "B7", "code": "SKA_C-KH-007", "name": "Test Silk Road Co., Ltd.", "status": "Active", "type": "SKA_C", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_011": {"accNo": "9400-0011-572", "bank": "Wing", "cdbId": "skap_011", "cdbProject": "PHP/IJ", "code": "SKA_P-KH-011", "name": "Vong Sovann · Sample Lotus Tech", "status": "Active", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_pc_006": {"accNo": "9500-0006-807", "bank": "", "cdbId": "pc_006", "cdbProject": "PHP", "code": "PC-PHP-006", "name": "Chea Rattana", "status": "Active", "type": "PC", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_pc_005": {"accNo": "9500-0005-426", "bank": "Sathapana", "cdbId": "pc_005", "cdbProject": "KH", "code": "PC-KH-005", "name": "Roeun Piseth", "status": "Active", "type": "PC", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_pc_004": {"accNo": "9500-0004-478", "bank": "ABA", "cdbId": "pc_004", "cdbProject": "KH", "code": "PC-KH-004", "name": "Vong Sovann", "status": "Active", "type": "PC", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mac_009": {"accNo": "9100-0009-664", "bank": "Sathapana", "cdbId": "mac_009", "cdbProject": "PHP", "code": "MAC-PHP-009", "name": "Srey Pov, Kim Vannak", "status": "Active", "type": "MAC", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "adm_riversideco": {"accNo": "", "bank": "", "code": "", "name": "Riverside Media (CO)", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_010": {"accNo": "9400-0010-784", "bank": "Sathapana", "cdbId": "skap_010", "cdbProject": "PHP/IJ", "code": "SKA_P-KH-010", "name": "Ouk Dina · Sample Lotus Tech", "status": "Active", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mac_007": {"accNo": "9100-0007-188", "bank": "Wing", "cdbId": "mac_007", "cdbProject": "KH", "code": "MAC-KH-007", "name": "Mao Veasna", "status": "Active", "type": "MAC", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "adm_angkorci": {"accNo": "", "bank": "", "code": "", "name": "Angkor Trading (CI)", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skac_005": {"accNo": "9300-0005-528", "bank": "ABA", "cdbId": "skac_005", "cdbProject": "PHP/IJ", "code": "SKA_C-KH-005", "name": "Sample Lotus Tech Co., Ltd.", "status": "Active", "type": "SKA_C", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mac_005": {"accNo": "9100-0005-474", "bank": "ABA", "cdbId": "mac_005", "cdbProject": "KH", "code": "MAC-KH-005", "name": "Heng Rithy", "status": "Active", "type": "MAC", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_018": {"accNo": "9200-0018-796", "bank": "", "cdbId": "mca_018", "cdbProject": "PHP", "code": "MCA-PHP-018", "name": "Agency Profit Sharing (Demo)", "status": "Active", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_004": {"accNo": "", "bank": "", "cdbId": "mca_004", "cdbProject": "KH", "code": "MCA-KH-004_C", "name": "SamplePay Mekong CO", "status": "Closed", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_013": {"accNo": "9400-0013-160", "bank": "Sathapana", "cdbId": "skap_013", "cdbProject": "KH", "code": "SKA_P-KH-013", "name": "Seng Bunthoeun · Dummy Royal Retail", "status": "Active", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_006": {"accNo": "9200-0006-326", "bank": "", "cdbId": "mca_006", "cdbProject": "KH", "code": "MCA-KH-006", "name": "Bayon Wallet CO", "status": "Active", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_pc_007": {"accNo": "9500-0007-732", "bank": "Techcombank", "cdbId": "pc_007", "cdbProject": "VN", "code": "PC-VN-007", "name": "Seng Bunthoeun", "status": "Active", "type": "PC", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_mca_010": {"accNo": "9200-0010-220", "bank": "", "cdbId": "mca_010", "cdbProject": "KH", "code": "MCA-KH-010", "name": "TestGate Royal CI", "status": "Active", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_014": {"accNo": "9400-0014-394", "bank": "Wing", "cdbId": "skap_014", "cdbProject": "KH", "code": "SKA_P-KH-014", "name": "Kao Sreymom · Dummy Royal Retail", "status": "Active", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skac_012": {"accNo": "9300-0012-708", "bank": "ACLEDA", "cdbId": "skac_012", "cdbProject": "PHP/IJ", "code": "SKA_C-IJ-PHP-012", "name": "Sample Orbit Games Co., Ltd.", "status": "Active", "type": "SKA_C", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_007": {"accNo": "9400-0007-762", "bank": "Sathapana", "cdbId": "skap_007", "cdbProject": "B7", "code": "SKA_P-KH-007_C", "name": "Nguon Samnang · Demo Bayon Logistics", "status": "Closed", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_015": {"accNo": "9400-0015-353", "bank": "Wing", "cdbId": "skap_015", "cdbProject": "B7", "code": "SKA_P-KH-015", "name": "Chan Sreyneang · Test Silk Road", "status": "Active", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_026": {"accNo": "9400-0026-254", "bank": "Sathapana", "cdbId": "skap_026", "cdbProject": "PHP/IJ", "code": "SKA_P-IJ-PHP-026", "name": "Chea Rattana · Sample Orbit Games", "status": "Active", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_pc_003": {"accNo": "9500-0003-249", "bank": "ABA", "cdbId": "pc_003", "cdbProject": "KH", "code": "PC-KH-003", "name": "Ouk Dina", "status": "Active", "type": "PC", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "adm_mekongci": {"accNo": "", "bank": "", "code": "", "name": "Mekong Foods (CI)", "type": "MCA", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skap_001": {"accNo": "9400-0001-960", "bank": "Wing", "cdbId": "skap_001", "cdbProject": "KH", "code": "SKA_P-KH-001", "name": "Chan Sreyneang · Angkor Demo Trading", "status": "Active", "type": "SKA_P", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}, "cdb_skac_013": {"accNo": "9300-0013-916", "bank": "CIMB", "cdbId": "skac_013", "cdbProject": "KH", "code": "SKA_C-IJ-PHP-013", "name": "Angkor Demo Trading Co., Ltd.", "status": "Active", "type": "SKA_C", "updatedAt": "2026-10-23T00:00:00.000Z", "updatedBy": "Dummy data"}}, "transfers": {"tr_dm_006": {"amount": 2000, "at": "2026-08-02T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_angkorci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_angkorco", "toText": ""}, "tr_dm_012": {"amount": 12000, "at": "2026-09-15T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_angkorci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_angkorco", "toText": ""}, "tr_dm_005": {"amount": 2000, "at": "2026-08-20T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_mekongci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_mekongco", "toText": ""}, "tr_dm_023": {"amount": 5000, "at": "2026-10-22T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_mekongci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_mekongco", "toText": ""}, "tr_dm_008": {"amount": 7500, "at": "2026-08-25T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_angkorci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_angkorco", "toText": ""}, "tr_dm_014": {"amount": 5000, "at": "2026-09-23T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_angkorci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_angkorco", "toText": ""}, "tr_dm_004": {"amount": 12000, "at": "2026-08-21T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_riversideci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_riversideco", "toText": ""}, "tr_dm_019": {"amount": 2000, "at": "2026-10-22T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_angkorci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_angkorco", "toText": ""}, "tr_dm_016": {"amount": 2000, "at": "2026-09-01T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_bayonci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_bayonco", "toText": ""}, "tr_dm_021": {"amount": 12000, "at": "2026-10-13T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_riversideci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_riversideco", "toText": ""}, "tr_dm_007": {"amount": 10000, "at": "2026-08-08T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_mekongci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_mekongco", "toText": ""}, "tr_dm_003": {"amount": 7500, "at": "2026-08-20T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_angkorci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_angkorco", "toText": ""}, "tr_dm_010": {"amount": 3000, "at": "2026-09-17T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_mekongci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_mekongco", "toText": ""}, "tr_dm_001": {"amount": 5000, "at": "2026-08-15T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_angkorci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_angkorco", "toText": ""}, "tr_dm_011": {"amount": 2000, "at": "2026-09-16T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_bayonci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_bayonco", "toText": ""}, "tr_dm_022": {"amount": 2000, "at": "2026-10-14T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_riversideci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_riversideco", "toText": ""}, "tr_dm_002": {"amount": 10000, "at": "2026-08-03T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_mekongci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_mekongco", "toText": ""}, "tr_dm_015": {"amount": 3000, "at": "2026-09-25T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_bayonci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_bayonco", "toText": ""}, "tr_dm_009": {"amount": 10000, "at": "2026-09-15T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_bayonci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_bayonco", "toText": ""}, "tr_dm_018": {"amount": 2000, "at": "2026-10-13T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_bayonci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_bayonco", "toText": ""}, "tr_dm_017": {"amount": 2000, "at": "2026-10-13T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_angkorci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_angkorco", "toText": ""}, "tr_dm_024": {"amount": 5000, "at": "2026-10-03T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_bayonci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_bayonco", "toText": ""}, "tr_dm_020": {"amount": 2000, "at": "2026-10-07T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_mekongci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_mekongco", "toText": ""}, "tr_dm_013": {"amount": 10000, "at": "2026-09-14T05:00:00.000Z", "by": "admin", "byName": "Dummy data", "createdAt": "2026-10-23T00:00:00.000Z", "currency": "USD", "dateOnly": true, "fromId": "adm_bayonci", "fromText": "", "ref": "", "remark": "Dummy data", "shotIds": [], "source": "Dummy data", "status": "Completed", "toId": "adm_bayonco", "toText": ""}}, "log": {}, "docs": {}, "docdata": {}, "shots": {}}</script>
+<script>
+/* OFFLINE MODE: used only when opened outside Claude (no window.claude). Data is kept in this browser (localStorage) and starts from the dummy seed. */
+(function(){
+if(window.claude&&window.claude.use)return;
+var KEY='mm403_offline_db_v1';
+var SEED=JSON.parse(document.getElementById('offlineSeed').textContent);
+var store;
+try{var raw=localStorage.getItem(KEY);store=raw?JSON.parse(raw):null}catch(e){store=null}
+if(!store)store=JSON.parse(JSON.stringify(SEED));
+var persistT=null;
+function persist(){clearTimeout(persistT);persistT=setTimeout(function(){try{localStorage.setItem(KEY,JSON.stringify(store))}catch(e){}},50)}
+var subs={};
+function clone(o){return o==null?o:JSON.parse(JSON.stringify(o))}
+function snap(c){var o=store[c]||{};return{docs:Object.keys(o).map(function(id){return{id:id,exists:true,data:function(){return clone(o[id])}}}),size:Object.keys(o).length}}
+function notify(c){(subs[c]||[]).forEach(function(f){try{f(snap(c))}catch(e){}})}
+function split(p){var i=p.indexOf('/');return[p.slice(0,i),p.slice(i+1)]}
+function applyUpd(base,upd){var o=clone(base)||{};Object.keys(upd).forEach(function(k){var v=upd[k];if(v&&typeof v==='object'&&v.__delete__===true)delete o[k];else o[k]=clone(v)});return o}
+function doc(p){var a=split(p),c=a[0],id=a[1];return{
+  get:function(){return Promise.resolve({id:id,exists:!!(store[c]&&store[c][id]),data:function(){return clone((store[c]||{})[id])}})},
+  set:function(d){store[c]=store[c]||{};store[c][id]=applyUpd({},d);persist();notify(c);return Promise.resolve()},
+  update:function(u){if(!store[c]||!store[c][id])return Promise.reject(new Error('not-found'));store[c][id]=applyUpd(store[c][id],u);persist();notify(c);return Promise.resolve()},
+  delete:function(){if(store[c])delete store[c][id];persist();notify(c);return Promise.resolve()}}}
+function query(c,field,dir,lim){function res(){var s=snap(c);if(field){s.docs.sort(function(x,y){var a=x.data()[field],b=y.data()[field];return(a>b?1:a<b?-1:0)*(dir==='desc'?-1:1)})}if(lim)s.docs=s.docs.slice(0,lim);return s}return{onSnapshot:function(cb){var f=function(){cb(res())};(subs[c]=subs[c]||[]).push(f);setTimeout(f,0);return function(){subs[c]=(subs[c]||[]).filter(function(x){return x!==f})}},
+  orderBy:function(f,d){return query(c,f,d||'asc',lim)},
+  limit:function(n){return query(c,field,dir,n)},
+  get:function(){var s=snap(c);if(field){s.docs.sort(function(x,y){var a=x.data()[field],b=y.data()[field];return(a>b?1:a<b?-1:0)*(dir==='desc'?-1:1)})}if(lim)s.docs=s.docs.slice(0,lim);return Promise.resolve(s)}}}
+var DB={doc:doc,collection:function(c){var q=query(c);q.doc=function(id){return doc(c+'/'+id)};q.add=function(d){var id='a'+Math.random().toString(36).slice(2,12);return doc(c+'/'+id).set(d).then(function(){return{id:id}})};q.onSnapshot=function(cb){(subs[c]=subs[c]||[]).push(cb);setTimeout(function(){cb(snap(c))},0);return function(){subs[c]=(subs[c]||[]).filter(function(f){return f!==cb})}};return q}};
+var DL={save:function(o){return new Promise(function(res){var u=URL.createObjectURL(o.data),a=document.createElement('a');a.href=u;a.download=o.filename||'file';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(u);a.remove();res()},100)})}};
+window.claude={use:function(n){return Promise.resolve(n==='db'?DB:n==='downloads'?DL:null)}};
+
+})();
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const pad=n=>String(n).padStart(2,'0');
+const todayStr=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+const addMonth=(ym,n)=>{let [y,m]=ym.split('-').map(Number);m+=n;y+=Math.floor((m-1)/12);m=((m-1)%12+12)%12+1;return `${y}-${pad(m)}`};
+const monthLabel=ym=>ym?`${MON[+ym.slice(5)-1]} ${ym.slice(0,4)}`:'';
+const dueOf=ym=>addMonth(ym,1)+'-05';
+const fmtD=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||'');return m?`${+m[3]} ${MON[+m[2]-1]} ${m[1]}`:''};
+const dayDiff=(a,b)=>Math.round((Date.parse(a+'T00:00:00Z')-Date.parse(b+'T00:00:00Z'))/864e5);
+const fmtDT=iso=>{if(!iso)return '';const d=new Date(iso);if(isNaN(d))return '';return `${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())}`};
+const toLocalInput=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const uniq=a=>[...new Set(a.filter(Boolean))].sort((x,y)=>x.localeCompare(y));
+const rid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function toast(t){const r=$('#toastRoot');r.innerHTML=`<div class="toast" role="status">${esc(t)}</div>`;clearTimeout(toast.t);toast.t=setTimeout(()=>r.innerHTML='',3000)}
+
+let db=null,dl=null,ME=null;
+const MENUS=[["db", "Dashboard"], ["tr", "Transfers"], ["st", "Statistics"], ["accts", "Accounts"], ["rec", "Matches source"]];
+const ACTS=[['edit','Add and edit records'],['files','Upload files and docs'],['delete','Delete records'],['export','Excel export']];
+const posDefs=()=>{const L=((D.settings&&D.settings.positions)||{}).list||{},all=(typeof MENUS!=='undefined'?MENUS:[]).map(m=>m[0]);
+  const def={Admin:{menus:all,acts:ACTS.map(a=>a[0])},Editor:{menus:all,acts:['edit','files','delete','export']},Viewer:{menus:all,acts:[]}};
+  const o={};Object.keys(def).forEach(k=>o[k]=k!=='Admin'&&L[k]?{menus:L[k].menus||[],acts:L[k].acts||[],docs:L[k].docs,dk:L[k].dk||[]}:def[k]);
+  Object.keys(L).forEach(k=>{if(!def[k])o[k]={menus:L[k].menus||[],acts:L[k].acts||[],docs:L[k].docs,dk:L[k].dk||[]}});return o};
+const posNames=()=>Object.keys(posDefs());
+const rl=r=>r==='Admin'?'Master Admin':r;
+const can=p=>{if(!ME)return false;if(p==='view')return true;if(ME.role==='Admin')return true;if(p==='admin')return false;const q=posDefs()[ME.role];if(!q)return false;return p.startsWith('m:')?q.menus.includes(p.slice(2)):q.acts.includes(p)};
+const menuOk=k=>k==='users'||k==='access'||k==='lists'?can('admin'):can('m:'+k);
+const fixT=T=>{let o=T.filter(x=>x[0]==='g'||menuOk(x[0]));if(can('admin')){if(!o.some(x=>x[0]==='users'))o.push(['g','Tools']);if(!o.some(x=>x[0]==='access'))o.push(['access','Access control'])}if(can('admin')&&!o.some(x=>x[0]==='lists'))o.push(['lists','Lists']);return o.filter((x,i,a)=>x[0]!=='g'||(a[i+1]&&a[i+1][0]!=='g'))};
+const store={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
+const D={source:{},settings:{},docs:{},accounts:{},transfers:{},log:{},users:{}};
+const READY={};
+const UI={tab:'db',dfrom:todayStr().slice(0,7)+'-01',dto:todayStr(),q:'',flow:'',proj:'',status:'',acct:'',cur:'',from:'',to:'',period:'day',avgWin:'all',statCur:'',atype:'',atq:''};
+const TYPES=['MAC','MCA','CPA','Other'];
+const TLAB={MAC:'Main (MAC)',MCA:'Merchant (MCA)',CPA:'CP (CPA)',Other:'Other'};
+const FLOWLAB={MAC:'P2P to Main (MAC)',MCA:'P2P to Merchant (MCA)',CPA:'P2P to CP (CPA)',Other:'Other transfer'};
+const FLOWLAB2={P2PPAY:'P2P to Payment',P2PTWM:'P2P to TW Marketing',PAYMCA:'Payment to MCA',PAYTWG:'Payment to TW ads Google'};
+Object.assign(FLOWLAB,FLOWLAB2);
+const FCOL={MCA:'#23507A',CPA:'#067647',MAC:'#B54708',Other:'#8A96A3',P2PPAY:'#7C5CFA',P2PTWM:'#1F9D8F',PAYMCA:'#C2255C',PAYTWG:'#C8921B'};
+const fcol=f=>FCOL[f]||'#5B6B7B';
+const FLOWKEYS=['MCA','CPA','MAC','P2PPAY','P2PTWM','PAYMCA','PAYTWG'];
+const DEFPROJ=['IR','H5','IW/IJ','KH','PHP','VN','B7','IJ Bingo','Other'];
+const projList=()=>{const x=D.settings&&D.settings.projects;const base=x&&Array.isArray(x.list)&&x.list.length?x.list:DEFPROJ;return [...new Set([...base,...Object.values(D.transfers||{}).map(t=>t.project).filter(Boolean)])]};
+const STAT=['Completed','Pending','Failed'];
+const CURS=['USD','KHR','THB','VND','PHP','CNY','Other'];
+const typeFromCode=c=>{c=String(c||'').toUpperCase();return /^MAC/.test(c)?'MAC':/^MCA/.test(c)?'MCA':/^CPA|^CP[-_ ]/.test(c)?'CPA':'Other'};
+const dKey=iso=>{const d=new Date(iso);return isNaN(d)?'':`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+const fmtAmt=(n,c)=>(+n||0).toLocaleString('en-US',{minimumFractionDigits:c==='KHR'||c==='VND'?0:2,maximumFractionDigits:c==='KHR'||c==='VND'?0:2});
+const acctRows=()=>Object.entries(D.accounts).map(([id,a])=>({...a,id}));
+const aLabel=a=>a?`${a.code||''}${a.code&&a.name?' · ':''}${a.name||''}`:'';
+const tList=()=>Object.entries(D.transfers).map(([id,t])=>{
+  const fa=D.accounts[t.fromId],ta=D.accounts[t.toId];
+  const fType=fa?(fa.type||typeFromCode(fa.code)):'Other',tType=ta?(ta.type||typeFromCode(ta.code)):'Other';
+  return {...t,id,fa,ta,fType,tType,fLab:fa?aLabel(fa):(t.fromText||'Unknown'),tLab:ta?aLabel(ta):(t.toText||'Unknown'),flow:(t.flowKey&&FLOWLAB[t.flowKey])?t.flowKey:tType,route:(t.flowKey&&FLOWLAB2[t.flowKey])?FLOWLAB2[t.flowKey]:`${fType} > ${tType}`,proj:t.project||'',day:dKey(t.at)};
+});
+function tFilt(list){
+  const q=UI.q.toLowerCase();
+  return list.filter(t=>(!UI.flow||t.flow===UI.flow)&&(!UI.proj||(UI.proj==='__none'?!t.proj:t.proj===UI.proj))&&(!UI.status||t.status===UI.status)&&(!UI.cur||t.currency===UI.cur)
+   &&(!UI.acct||t.fromId===UI.acct||t.toId===UI.acct)&&(!UI.from||t.day>=UI.from)&&(!UI.to||t.day<=UI.to)
+   &&(!q||[t.fLab,t.tLab,t.ref,t.remark,t.byName,t.amount].join(' ').toLowerCase().includes(q)));
+}
+
+/* ---------- audit ---------- */
+async function logAct(action,target,detail){try{await db.collection('log').doc(rid('l')).set({at:new Date().toISOString(),by:ME?ME.u:'',name:ME?ME.name:'',action,target,detail:detail||''})}catch(e){}}
+
+/* ---------- modal ---------- */
+function openModal(title,sub,body,footer){
+  $('#modalRoot').innerHTML=`<div class="ov" id="ov"><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><header><div><h2>${esc(title)}</h2>${sub?`<div class="faint">${sub}</div>`:''}</div><button class="x" type="button" id="mx" aria-label="Close">×</button></header><div class="body">${body}</div>${footer?`<footer>${footer}</footer>`:''}</div></div>`;
+  $('#mx').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal()});
+  document.onkeydown=e=>{if(e.key==='Escape'){if($('.light'))$('.light').remove();else closeModal()}};
+}
+const closeModal=()=>{$('#modalRoot').innerHTML='';document.onkeydown=null;UI.modal=null;if(ME&&typeof draw==='function')draw()};
+function lightbox(src){const d=document.createElement('div');d.className='light';d.innerHTML=`<img alt="Screenshot" src="${src}">`;d.onclick=()=>d.remove();document.body.appendChild(d)}
+
+/* ---------- screenshots ---------- */
+async function shrink(file){
+  const bmp=await createImageBitmap(file);
+  let w=bmp.width,h=bmp.height;const max=1400;if(Math.max(w,h)>max){const k=max/Math.max(w,h);w=Math.round(w*k);h=Math.round(h*k)}
+  for(let q=.8,scale=1;;){
+    const c=document.createElement('canvas');c.width=Math.round(w*scale);c.height=Math.round(h*scale);
+    const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(bmp,0,0,c.width,c.height);
+    const u=c.toDataURL('image/jpeg',q);
+    if(u.length<190000||(q<=.45&&scale<=.5))return u;
+    if(q>.5)q-=.1;else scale*=.8;
+  }
+}
+async function loadShots(rId,ids){
+  if(!ids||!ids.length)return [];
+  const out=[];
+  for(const id of ids){try{const s=await db.doc('shots/'+id).get();if(s.exists)out.push({id,...s.data()})}catch(e){}}
+  return out;
+}
+
+/* ---------- views ---------- */
+const TITLES={db:['Dashboard','Current month by default. Pick any date range.'],rec:['Matches source','Page accounts checked against the Central Database'],lists:['Lists','Add, rename, reorder or delete the choices in dropdowns'],access:['Access control','Positions: what each person can open and do'],none:['No access','Ask the Master Admin to give your position a menu'],tr:['Fund Transfers','P2P tracking: Merchant (MCA), CP (CPA) and Main (MAC) accounts'],st:['Statistics','Totals, averages per account, and how transfers are spread'],accts:['Accounts','The accounts used in transfers'],users:['Users','Master Admin: everything. Editor: add and change transfers. Viewer: read only.']};
+function tabsHtml(){
+  const p=Object.values(D.transfers).filter(t=>t.status==='Pending').length;
+  const T=[['g','Tracking'],['db','Dashboard'],['tr','Transfers',p?p+' pending':''],['st','Statistics'],['g','Tools'],['accts','Accounts'],['rec','Matches source',(recCalc()&&recCalc().out.length)||''],...(can('admin')?[['users','Users']]:[])];
+  return fixT(T).map(([k,l,c])=>k==='g'?`<div class="ng">${l}</div>`:`<button type="button" data-tab="${k}" ${UI.tab===k?'aria-current="page"':''}><span>${l}</span>${c?`<span class="ct">${esc(c)}</span>`:''}</button>`).join('')+'<div class="ng">Documents</div><button type="button" data-docs="1"><span>Upload docs</span></button>';
+}
+const opt=(v,l,sel)=>`<option value="${esc(v)}" ${sel?'selected':''}>${esc(l)}</option>`;
+const emptyRow=(n,none)=>`<tr><td colspan="${n}" class="empty">${none?`<b>No transfers yet</b>Add a transfer, or add the accounts first.<div class="acts">${can('edit')?'<button class="btn pri" type="button" data-go="addTr">Add a transfer</button><button class="btn" type="button" data-go="upload">Upload monthly sheet</button>':''}</div>`:'<b>Nothing matches</b>Change the filters.'}</td></tr>`;
+function trView(){
+  const all=tList(),l=tFilt(all).sort((a,b)=>(b.at||'').localeCompare(a.at||''));
+  const cnt=s=>l.filter(t=>t.status===s).length;
+  const accOpts=acctRows().sort((a,b)=>(a.code||'').localeCompare(b.code||'')).map(a=>opt(a.id,aLabel(a),UI.acct===a.id)).join('');
+  const rows=l.map(t=>{const sid=t.shotIds||[];return `<tr class="row" tabindex="0" data-t="${esc(t.id)}">
+   <td>${esc(t.dateOnly?fmtD(t.day):fmtDT(t.at))}</td><td><span class="pill" style="color:${fcol(t.flow)};background:var(--band)">${esc(t.route)}</span></td><td>${t.proj?esc(t.proj):'<span class="faint">No project</span>'}</td>
+   <td>${esc(t.fLab)}</td><td>${esc(t.tLab)}</td><td class="n"><b>${esc(fmtAmt(t.amount,t.currency))}</b></td><td>${esc(t.currency||'')}</td>
+   <td class="mono">${esc(t.ref||'')}</td><td>${t.status==='Completed'?'<span class="pill g">Completed</span>':t.status==='Failed'?'<span class="pill r">Failed</span>':'<span class="pill a">Pending</span>'}</td>
+   <td>${esc(t.remark?(t.remark.length>60?t.remark.slice(0,60)+'…':t.remark):'')}</td>
+   <td>${sid.length?`<span data-th="${esc(sid[0])}"></span><div class="faint">${sid.length} file${sid.length>1?'s':''}</div>`:'<span class="faint">None</span>'}</td>
+   <td>${esc(t.byName||'')}</td></tr>`}).join('');
+  const curs=uniq(l.map(t=>t.currency));
+  const foot=curs.map(c=>{const a=l.filter(t=>t.currency===c),d=a.filter(t=>t.status==='Completed'),p=a.filter(t=>t.status==='Pending');const sm=x=>x.reduce((z,t)=>z+(+t.amount||0),0);
+    return `<tr style="background:var(--grand);font-weight:600"><td colspan="5">TOTAL ${esc(c)} · ${a.length} transfer${a.length===1?'':'s'}</td><td class="n">${esc(fmtAmt(sm(d)+sm(p),c))}</td><td>${esc(c)}</td><td colspan="5">${p.length?`Completed ${esc(fmtAmt(sm(d),c))} · Pending ${esc(fmtAmt(sm(p),c))}`:'All completed'}${a.some(t=>t.status==='Failed')?' · Failed not counted':''}</td></tr>`}).join('');
+  const rm={};l.forEach(t=>{const k=[t.fLab,t.tLab,t.currency].join('\u0001');(rm[k]=rm[k]||{f:t.fLab,t:t.tLab,c:t.currency,n:0,s:0});rm[k].n++;rm[k].s+=+t.amount||0});
+  const rt=Object.values(rm).sort((a,b)=>a.f.localeCompare(b.f)||a.t.localeCompare(b.t));
+  const rtHtml=rt.length?`<h3 style="margin:16px 0 6px">Total by route (shown transfers)</h3><div class="tbox"><table class="t"><thead><tr><th>From</th><th>To</th><th class="n">Transfers</th><th class="n">Total</th><th>Currency</th></tr></thead><tbody>${rt.map(r=>`<tr><td>${esc(r.f)}</td><td>${esc(r.t)}</td><td class="n">${r.n}</td><td class="n"><b>${esc(fmtAmt(r.s,r.c))}</b></td><td>${esc(r.c)}</td></tr>`).join('')}</tbody></table></div>`:'';
+  return `<div class="sumstrip"><div class="chip"><span>Transfers shown</span><b>${l.length}</b></div><div class="chip"><span>Completed</span><b>${cnt('Completed')}</b></div><div class="chip ${cnt('Pending')?'bad':''}"><span>Pending</span><b>${cnt('Pending')}</b></div><div class="chip ${cnt('Failed')?'bad':''}"><span>Failed</span><b>${cnt('Failed')}</b></div></div>
+  <div class="toolbar"><label class="f" style="flex:1;min-width:180px">Search<input class="i" id="fq" type="search" value="${esc(UI.q)}" placeholder="Account, reference, remark…"></label>
+  <label class="f">Flow<select class="i" id="ff"><option value="">All</option>${FLOWKEYS.map(k=>opt(k,FLOWLAB[k],UI.flow===k)).join('')}</select></label>
+  <label class="f">Project<select class="i" id="fpj"><option value="">All</option>${projList().map(k=>opt(k,k,UI.proj===k)).join('')}${opt('__none','No project',UI.proj==='__none')}</select></label>
+  <label class="f">Status<select class="i" id="fst"><option value="">All</option>${STAT.map(k=>opt(k,k,UI.status===k)).join('')}</select></label>
+  <label class="f">Account<select class="i" id="fa"><option value="">All</option>${accOpts}</select></label>
+  <label class="f">Currency<select class="i" id="fc"><option value="">All</option>${uniq(all.map(t=>t.currency)).map(k=>opt(k,k,UI.cur===k)).join('')}</select></label>
+  <label class="f">From date<input class="i" type="date" id="fdf" value="${esc(UI.from)}"></label><label class="f">To date<input class="i" type="date" id="fdt" value="${esc(UI.to)}"></label>
+  <span class="sp"></span><button class="btn" type="button" id="xTr">Export Excel</button>${can('edit')?'<button class="btn" type="button" data-go="upload">Upload monthly sheet</button><button class="btn pri" type="button" data-go="addTr">Add transfer</button>':''}</div>
+  <div class="tbox"><table class="t" style="min-width:1350px"><thead><tr><th>Date &amp; time</th><th>Flow</th><th>Project</th><th>From</th><th>To</th><th class="n">Amount</th><th>Currency</th><th>Reference</th><th>Status</th><th>Remark</th><th>Proof</th><th>Recorded by</th></tr></thead><tbody>${l.length?rows:emptyRow(12,!all.length)}</tbody>${l.length?`<tfoot>${foot}</tfoot>`:''}</table></div>${rtHtml}
+  <div class="note">Flow shows the transfer type chosen on the transfer; if none was chosen it shows From type &gt; To type, for example MCA &gt; CPA. Project is chosen on each transfer. Click a row to see the proof or change the status.</div>`;
+}
+/* stats */
+const dparse=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(Date.UTC(y,m-1,d))};
+const dfmt=d=>`${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`;
+const dayAdd=(s,n)=>{const d=dparse(s);d.setUTCDate(d.getUTCDate()+n);return dfmt(d)};
+const dayList=(a,b)=>{const o=[];for(let x=a;x<=b&&o.length<4000;x=dayAdd(x,1))o.push(x);return o};
+const wkey=s=>{const d=dparse(s);const w=(d.getUTCDay()+6)%7;d.setUTCDate(d.getUTCDate()-w);return dfmt(d)};
+const medianOf=a=>{if(!a.length)return 0;const s=[...a].sort((x,y)=>x-y),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2};
+const kfmt=v=>v>=1e6?(v/1e6).toFixed(v>=1e7?0:1)+'M':v>=1e3?(v/1e3).toFixed(v>=1e4?0:1)+'k':v.toFixed(0);
+const BANDS=[[0,1e3,'< 1k'],[1e3,5e3,'1k–5k'],[5e3,1e4,'5k–10k'],[1e4,5e4,'10k–50k'],[5e4,1e5,'50k–100k'],[1e5,5e5,'100k–500k'],[5e5,1e6,'500k–1M'],[1e6,Infinity,'1M+']];
+function distChart(amts){
+  const cnt=BANDS.map(([a,b])=>amts.filter(x=>x>=a&&x<b).length),mx=Math.max(1,...cnt),W=560,H=210,L=8,B=28,T=22,bw=(W-L*2)/BANDS.length;
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" role="img" aria-label="Number of transfers per amount range">${BANDS.map((b,i)=>{const h=(H-B-T)*cnt[i]/mx,x=L+i*bw+bw*.12,w=bw*.76;return `<rect x="${x}" y="${H-B-h}" width="${w}" height="${Math.max(h,cnt[i]?1:0)}" fill="var(--steel)"><title>${esc(b[2])}: ${cnt[i]} transfer(s)</title></rect><text x="${x+w/2}" y="${H-B-h-5}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--ink)">${cnt[i]||''}</text><text x="${x+w/2}" y="${H-10}" text-anchor="middle" font-size="10" fill="var(--muted)">${esc(b[2])}</text>`}).join('')}</svg>`;
+}
+function concChart(amts){
+  const s=[...amts].sort((a,b)=>b-a),tot=s.reduce((a,b)=>a+b,0)||1,n=s.length,W=560,H=210,L=36,B=24,T=10,R=22,gx=i=>L+(W-L-R)*i/n,gy=v=>T+(H-T-B)*(1-v);
+  let c=0,pts=[`${gx(0)},${gy(0)}`];s.forEach((v,i)=>{c+=v;pts.push(`${gx(i+1)},${gy(c/tot)}`)});
+  const k=Math.max(1,Math.ceil(n*.1)),top=s.slice(0,k).reduce((a,b)=>a+b,0)/tot;
+  let g='';[0,.25,.5,.75,1].forEach(v=>{g+=`<line x1="${L}" x2="${W-R}" y1="${gy(v)}" y2="${gy(v)}" stroke="var(--line2)"/><text x="${L-5}" y="${gy(v)+4}" text-anchor="end" font-size="10" fill="var(--muted)">${v*100}%</text><text x="${L+(W-L-R)*v}" y="${H-8}" text-anchor="middle" font-size="10" fill="var(--muted)">${v*100}%</text>`});
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" role="img" aria-label="Cumulative share of amount, largest transfers first">${g}${n?`<polygon points="${gx(0)},${gy(0)} ${pts.join(' ')} ${gx(n)},${gy(0)}" fill="var(--steel)" opacity=".12"/><polyline points="${pts.join(' ')}" fill="none" stroke="var(--steel)" stroke-width="2"/><circle cx="${gx(k)}" cy="${gy(top)}" r="4" fill="${FCOL.MAC}"/><text x="${gx(k)+8}" y="${gy(top)+14}" font-size="11" fill="${FCOL.MAC}">Top 10% of transfers hold ${(top*100).toFixed(1)}%</text>`:''}</svg>`;
+}
+function lineChart(keys,vals,cur){
+  const W=1000,H=230,L=60,B=28,T=14,R=34,mx=Math.max(1,...vals),gx=i=>L+(W-L-R)*(keys.length>1?i/(keys.length-1):.5),gy=v=>T+(H-T-B)*(1-v/mx);
+  let g='';[0,.5,1].forEach(v=>g+=`<line x1="${L}" x2="${W-R}" y1="${gy(mx*v)}" y2="${gy(mx*v)}" stroke="var(--line2)"/><text x="${L-5}" y="${gy(mx*v)+4}" text-anchor="end" font-size="10" fill="var(--muted)">${esc(kfmt(mx*v))}</text>`);
+  const lab=k=>UI.period==='day'?`${+k.slice(8)} ${MON[+k.slice(5,7)-1]}`:monthLabel(k);
+  keys.forEach((k,i)=>{if(keys.length<=14||i%Math.ceil(keys.length/8)===0)g+=`<text x="${gx(i)}" y="${H-8}" text-anchor="middle" font-size="10" fill="var(--muted)">${esc(lab(k))}</text>`});
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" role="img" aria-label="Total transferred over time">${g}<polyline points="${vals.map((v,i)=>gx(i)+','+gy(v)).join(' ')}" fill="none" stroke="var(--steel)" stroke-width="2"/>${vals.map((v,i)=>`<circle cx="${gx(i)}" cy="${gy(v)}" r="${keys.length>31?2:3.5}" fill="var(--surface)" stroke="var(--steel)" stroke-width="1.6"><title>${esc(lab(keys[i]))}: ${esc(fmtAmt(v,cur))} ${esc(cur)}</title></circle>`).join('')}</svg>`;
+}
+function hbars(rows,cur,color){
+  const mx=Math.max(1,...rows.map(r=>r.v));
+  return rows.length?rows.map(r=>`<div style="display:grid;grid-template-columns:minmax(90px,170px) 1fr auto;gap:10px;align-items:center;margin:7px 0;font-size:13px"><span title="${esc(r.l)}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.l)}</span><span style="background:var(--band);border-radius:3px;height:14px"><span style="display:block;height:14px;border-radius:3px;width:${Math.max(1,r.v/mx*100)}%;background:${r.c||color||'var(--steel)'}"></span></span><b style="font-variant-numeric:tabular-nums">${esc(fmtAmt(r.v,cur))}</b></div>`).join(''):'<div class="faint">No completed transfers yet.</div>';
+}
+function avgData(done,win){
+  const today=todayStr(),days0=[...new Set(done.map(t=>t.day).filter(Boolean))].sort();
+  if(!days0.length)return null;
+  const mEnd=ym=>{const [y,m]=ym.split('-').map(Number);return dfmt(new Date(Date.UTC(y,m,0)))};
+  const lastD=days0[days0.length-1];
+  let from=win==='30'?dayAdd(today,-29):win==='90'?dayAdd(today,-89):days0[0].slice(0,7)+'-01',to=win==='all'?(mEnd(lastD.slice(0,7))<today?mEnd(lastD.slice(0,7)):today):today;
+  if(to<from)to=from;
+  const dl=dayList(from,to),D=dl.length,W=D/7,mc={};dl.forEach(d=>{mc[d.slice(0,7)]=(mc[d.slice(0,7)]||0)+1});
+  const M=Object.entries(mc).reduce((a,[ym,n])=>a+n/(+mEnd(ym).slice(8)),0);
+  const A={};
+  done.filter(t=>t.day>=from&&t.day<=to).forEach(t=>{
+    [[t.fLab,t.fType,'out'],[t.tLab,t.tType,'inn']].forEach(([lab,ty,k])=>{const x=A[lab]=A[lab]||{lab,ty,out:0,inn:0,od:{}};const v=+t.amount||0;x[k]+=v;if(k==='out')x.od[t.day]=(x.od[t.day]||0)+v});
+  });
+  const rows=Object.values(A).map(x=>({...x,od:undefined,peak:Math.max(0,...Object.values(x.od)),oD:x.out/D,oW:x.out/W,oM:x.out/M,iD:x.inn/D,iW:x.inn/W,iM:x.inn/M})).sort((a,b)=>b.oM-a.oM||b.iM-a.iM||a.lab.localeCompare(b.lab));
+  return {rows,from,to,D,W,M};
+}
+function stView(){
+  const all=tList();
+  const curs=uniq(all.map(t=>t.currency));
+  const cur=UI.statCur&&curs.includes(UI.statCur)?UI.statCur:(curs.includes('USD')?'USD':curs[0]||'USD');
+  const win=UI.avgWin||'all';
+  const l=all.filter(t=>t.currency===cur);
+  const done=l.filter(t=>t.status==='Completed'),pend=l.filter(t=>t.status==='Pending'),fail=l.filter(t=>t.status==='Failed');
+  const sum=a=>a.reduce((s,t)=>s+(+t.amount||0),0);
+  const amts=done.map(t=>+t.amount||0).filter(v=>v>0).sort((a,b)=>b-a);
+  const tot=amts.reduce((a,b)=>a+b,0),k10=Math.max(1,Math.ceil(amts.length*.1)),top10=tot?amts.slice(0,k10).reduce((a,b)=>a+b,0)/tot:0;
+  const keys=[];if(UI.period==='day'){for(let i=29;i>=0;i--)keys.push(dayAdd(todayStr(),-i))}else{for(let i=11;i>=0;i--)keys.push(addMonth(todayStr().slice(0,7),-i))}
+  const vals=keys.map(k=>sum(done.filter(t=>UI.period==='day'?t.day===k:t.day.slice(0,7)===k)));
+  const flows=[...FLOWKEYS,'Other'];
+  const projs=[...new Set(done.map(t=>t.proj||'__none'))].sort((a,b)=>a==='__none'?1:b==='__none'?-1:a.localeCompare(b));
+  const PCOL=['#23507A','#067647','#B54708','#7C5CFA','#1F9D8F','#C2255C','#C8921B','#0C8599'];
+  const projBars=projs.map((p,i)=>({l:p==='__none'?'No project':p,v:sum(done.filter(t=>(t.proj||'__none')===p)),c:PCOL[i%PCOL.length]})).filter(r=>r.v>0);
+  const flowBars=flows.map(f=>({l:FLOWLAB[f],v:sum(done.filter(t=>t.flow===f)),c:fcol(f)})).filter(r=>r.v>0);
+  const am={};done.forEach(t=>{const x=am[t.fLab]=am[t.fLab]||{l:t.fLab,v:0};x.v+=+t.amount||0});
+  const topSent=Object.values(am).sort((a,b)=>b.v-a.v).slice(0,8);
+  const desc=g=>{const a=g.map(t=>+t.amount||0);return {n:a.length,t:a.reduce((x,y)=>x+y,0),mean:a.length?a.reduce((x,y)=>x+y,0)/a.length:0,med:medianOf(a),mx:Math.max(0,...a)}};
+  const dRow=(lab,g,col,b)=>{const d=desc(g);return `<tr ${b?'style="font-weight:700;background:var(--grand)"':''}><td style="${col?`border-left:4px solid ${col}`:''}">${esc(lab)}</td><td class="n">${d.n}</td><td class="n">${esc(fmtAmt(d.t,cur))}</td><td class="n">${esc(fmtAmt(d.mean,cur))}</td><td class="n">${esc(fmtAmt(d.med,cur))}</td><td class="n">${esc(fmtAmt(d.mx,cur))}</td></tr>`};
+  const AV=avgData(done,win);
+  const f2=v=>fmtAmt(v,cur);
+  const avRows=AV?AV.rows.map(x=>`<tr><td><b>${esc(x.lab)}</b></td><td>${esc(x.ty)}</td><td class="n">${esc(f2(x.oD))}</td><td class="n">${esc(f2(x.oW))}</td><td class="n"><b>${esc(f2(x.oM))}</b></td><td class="n">${esc(f2(x.peak))}</td><td class="n">${esc(f2(x.iD))}</td><td class="n">${esc(f2(x.iW))}</td><td class="n"><b>${esc(f2(x.iM))}</b></td></tr>`).join(''):'';
+  const kpi=(a,b,c,d)=>`<div class="xkpi"><span>${a}</span><b>${b}</b>${c?`<small>${c}</small>`:''}</div>`;
+  return `<div class="toolbar"><label class="f">Currency<select class="i" id="sc">${(curs.length?curs:['USD']).map(k=>opt(k,k,k===cur)).join('')}</select></label>
+   <label class="f">Period<select class="i" id="sp"><option value="day" ${UI.period==='day'?'selected':''}>Last 30 days</option><option value="month" ${UI.period==='month'?'selected':''}>Last 12 months</option></select></label><span class="sp"></span><button class="btn" type="button" id="xSt">Export Excel</button></div>
+  <div class="xkpis">${kpi('Total transferred',esc(f2(tot)),`${done.length} completed transfer${done.length===1?'':'s'}`)}${kpi('Median transfer',esc(f2(medianOf(amts))))}${kpi('Mean transfer',esc(f2(amts.length?tot/amts.length:0)))}${kpi('Largest transfer',esc(f2(amts[0]||0)))}${kpi('Pending',esc(f2(sum(pend))),`${pend.length} transfer${pend.length===1?'':'s'} · Failed ${fail.length}`)}</div>
+  <div class="xgrid">
+   <div class="xcard"><div class="xch"><h3>Amount distribution</h3><span>Number of transfers per amount range</span></div>${distChart(amts)}</div>
+   <div class="xcard"><div class="xch"><h3>Amount concentration</h3><span>Cumulative share of amount, largest transfers first</span></div>${concChart(amts)}</div>
+   <div class="xcard"><div class="xch"><h3>Amount by flow</h3><span>${esc(cur)}</span></div>${hbars(flowBars,cur)}</div>
+   <div class="xcard"><div class="xch"><h3>Amount by project</h3><span>${esc(cur)}</span></div>${hbars(projBars,cur)}</div>
+   <div class="xcard" style="grid-column:1/-1"><div class="xch"><h3>Top accounts by money transferred to CO</h3><span>${esc(cur)}</span></div>${hbars(topSent,cur)}</div>
+  </div>
+  <div class="xcard" style="margin-top:14px"><div class="xch"><h3>Descriptive statistics</h3><span>Completed transfers, ${esc(cur)}</span></div><div class="tbox" style="border:0"><table class="t"><thead><tr><th>Group</th><th class="n">Transfers</th><th class="n">Total</th><th class="n">Mean</th><th class="n">Median</th><th class="n">Largest</th></tr></thead><tbody>${flows.filter(f=>done.some(t=>t.flow===f)||FLOWKEYS.includes(f)).map(f=>dRow(FLOWLAB[f],done.filter(t=>t.flow===f),FCOL[f])).join('')}${projs.map((p,i)=>dRow('Project: '+(p==='__none'?'No project':p),done.filter(t=>(t.proj||'__none')===p),PCOL[i%PCOL.length])).join('')}${dRow('All transfers',done,'',1)}</tbody></table></div></div>
+  <div class="xcard" style="margin-top:14px"><div class="xch"><h3>Total transferred over time</h3><span>${UI.period==='day'?'One point per day':'One point per month'}</span></div>${vals.some(v=>v>0)?lineChart(keys,vals,cur):`<div class="empty" style="padding:28px 10px"><b>No completed transfers in ${UI.period==='day'?'the last 30 days':'the last 12 months'}</b>Your data starts earlier. Choose "Last 12 months" above to see the months that have transfers.</div>`}</div>
+  <div class="xcard" style="margin-top:14px"><div class="xch"><h3>Average transfer per account</h3><span>Daily, weekly and monthly, completed transfers, ${esc(cur)}</span></div>
+   <div class="toolbar" style="margin:0 0 8px"><label class="f">Average over<select class="i" id="sw">${opt('all','All dates (whole months with transfers)',win==='all')}${opt('90','Last 90 days',win==='90')}${opt('30','Last 30 days',win==='30')}</select></label><span class="faint">${AV?`${esc(fmtD(AV.from))} to ${esc(fmtD(AV.to))}: ${AV.D} day${AV.D===1?'':'s'}, ${+AV.W.toFixed(1)} weeks, ${+AV.M.toFixed(1)} month${+AV.M.toFixed(1)===1?'':'s'}`:''}</span></div>
+   <div class="tbox" style="border:0"><table class="t" style="min-width:900px"><thead><tr><th rowspan="2">Account</th><th rowspan="2">Type</th><th colspan="4" style="text-align:center">Transferred to CO</th><th colspan="3" style="text-align:center">Received from CI</th></tr><tr><th class="n">Per day</th><th class="n">Per week</th><th class="n">Per month</th><th class="n">Biggest day</th><th class="n">Per day</th><th class="n">Per week</th><th class="n">Per month</th></tr></thead><tbody>${avRows||`<tr><td colspan="9" class="empty"><b>No completed transfers in this period</b></td></tr>`}</tbody></table></div>
+   <div class="note" style="margin-top:8px">"Transferred to CO" is the money a CI (Cash In) account sends to its CO (Cash Out) account. "Received from CI" is the money a CO account receives from its CI account. Use them to see how much fund usually moves, so the CO account is not short. Average = total in the period divided by the number of days, weeks (days ÷ 7) or months in it, including days with no transfer. Biggest day is the most this CI account transferred in a single day. Only Completed transfers count, one currency at a time.</div></div>
+  <div class="note">Totals count Completed transfers only, one currency at a time (no conversion). Pending and Failed are shown separately.</div>`;
+}
+/* ---------- dashboard (this app only: transfers, USD totals, accounts, routes, status) ---------- */
+function dbView(){
+  const today=todayStr(),ym=today.slice(0,7),mStart=ym+'-01';
+  const from=UI.dfrom||'',to=UI.dto||'';
+  const L=tList().filter(t=>(!from||t.day>=from)&&(!to||t.day<=to)).sort((a,b)=>(b.at||'').localeCompare(a.at||''));
+  const usd=L.filter(t=>t.currency==='USD');
+  const done=usd.filter(t=>t.status==='Completed'),pend=usd.filter(t=>t.status==='Pending'),fail=usd.filter(t=>t.status==='Failed');
+  const sum=a=>a.reduce((z,t)=>z+(+t.amount||0),0);
+  const other=L.length-usd.length;
+  const dv=sum(done);
+  const sp=s=>s==='Completed'?'<span class="pill g">Completed</span>':s==='Failed'?'<span class="pill r">Failed</span>':'<span class="pill a">Pending</span>';
+  const preset=(k,l,f,t)=>`<button class="btn sm" type="button" data-dp="${k}" data-f="${f}" data-t="${t}">${l}</button>`;
+  const presets=[preset('m0','This month',mStart,today),preset('m1','Last month',addMonth(ym,-1)+'-01',dayAdd(mStart,-1)),preset('d30','Last 30 days',dayAdd(today,-29),today),preset('ytd','This year',today.slice(0,4)+'-01-01',today),preset('all','All dates','','')].join('');
+  /* accounts: sent and received, Completed USD; counts include every status */
+  const A={};
+  usd.forEach(t=>{const c=t.status==='Completed',v=+t.amount||0;
+    [[t.fLab,t.fType,'out'],[t.tLab,t.tType,'inn']].forEach(([lab,ty,k])=>{const x=A[lab]=A[lab]||{lab,ty,out:0,inn:0,n:0};x.n++;if(c)x[k]+=v})});
+  const accs=Object.values(A).sort((a,b)=>(b.out+b.inn)-(a.out+a.inn)||b.n-a.n||a.lab.localeCompare(b.lab));
+  /* routes: From type > To type, or the payment flow */
+  const R={};
+  usd.forEach(t=>{const x=R[t.route]=R[t.route]||{r:t.route,c:fcol(t.flow),n:0,v:0};x.n++;if(t.status==='Completed')x.v+=+t.amount||0});
+  const routes=Object.values(R).sort((a,b)=>b.v-a.v||b.n-a.n||a.r.localeCompare(b.r));
+  const mxV=Math.max(1,...routes.map(r=>r.v));
+  const kp=(a,b,c)=>`<div class="xkpi"><span>${a}</span><b>${b}</b>${c?`<small>${c}</small>`:''}</div>`;
+  const lst=arr=>arr.length?`<div class="tbox" style="border:0"><table class="t" style="min-width:0"><thead><tr><th>Date &amp; time</th><th>Flow</th><th>From &gt; To</th><th class="n">Amount</th><th>Status</th></tr></thead><tbody>${arr.map(t=>`<tr class="row" tabindex="0" data-t="${esc(t.id)}"><td>${esc(t.dateOnly?fmtD(t.day):fmtDT(t.at))}</td><td><span class="pill" style="color:${fcol(t.flow)};background:var(--band)">${esc(t.route)}</span></td><td>${esc(t.fLab)} &gt; ${esc(t.tLab)}</td><td class="n"><b>${esc(fmtAmt(t.amount,t.currency))}</b> ${esc(t.currency||'')}</td><td>${sp(t.status)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="faint">None in this period.</div>';
+  setTimeout(()=>{document.querySelectorAll('#view [data-dp]').forEach(b=>b.onclick=()=>{UI.dfrom=b.dataset.f;UI.dto=b.dataset.t;draw()})},0);
+  return `<div class="toolbar"><label class="f">From<input class="i" type="date" id="dbf" value="${esc(from)}"></label><label class="f">To<input class="i" type="date" id="dbt" value="${esc(to)}"></label><span class="sp"></span>${presets}</div>
+  <div class="xkpis">${kp('Transfers',L.length,`${usd.length} in USD${other?`, ${other} other currency`:''}`)}${kp('Total value (USD)',esc(fmtAmt(dv,'USD')),'Completed only')}${kp('Completed',done.length,`of ${L.length} transfer${L.length===1?'':'s'}`)}${kp('Pending',pend.length,`${esc(fmtAmt(sum(pend),'USD'))} USD waiting`)}${kp('Failed',fail.length,`${esc(fmtAmt(sum(fail),'USD'))} USD, not counted`)}</div>
+  <div class="xgrid">
+   <div class="xcard" style="grid-column:1/-1"><div class="xch"><h3>Volume and value by route</h3><span>Completed value in USD · route is From type &gt; To type, or the payment flow</span></div>
+    ${routes.length?`<div class="tbox" style="border:0"><table class="t" style="min-width:0"><thead><tr><th>Route</th><th class="n">Transfers</th><th style="min-width:200px">Completed value (USD)</th><th class="n">Share</th></tr></thead><tbody>${routes.map(r=>`<tr><td><span style="border-left:4px solid ${r.c};padding-left:8px">${esc(r.r)}</span></td><td class="n">${r.n}</td><td><span style="display:block;background:var(--band);border-radius:3px;height:12px"><span style="display:block;height:12px;border-radius:3px;width:${r.v/mxV*100}%;background:${r.c}"></span></span><b style="font-variant-numeric:tabular-nums">${esc(fmtAmt(r.v,'USD'))}</b></td><td class="n">${dv?(r.v/dv*100).toFixed(1):'0.0'}%</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty"><b>No USD transfers in this period</b>Pick another date range above.</div>'}</div>
+   <div class="xcard" style="grid-column:1/-1"><div class="xch"><h3>Transfers by account</h3><span>Top accounts first · Sent and Received are Completed USD</span></div>
+    ${accs.length?`<div class="tbox" style="border:0"><table class="t" style="min-width:0"><thead><tr><th>Account</th><th>Type</th><th class="n">Transfers</th><th class="n">Sent (USD)</th><th class="n">Received (USD)</th><th class="n">Total (USD)</th></tr></thead><tbody>${accs.map(a=>`<tr><td><b>${esc(a.lab)}</b></td><td>${esc(TLAB[a.ty]||a.ty)}</td><td class="n">${a.n}</td><td class="n">${esc(fmtAmt(a.out,'USD'))}</td><td class="n">${esc(fmtAmt(a.inn,'USD'))}</td><td class="n"><b>${esc(fmtAmt(a.out+a.inn,'USD'))}</b></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty"><b>No USD accounts in this period</b></div>'}</div>
+   <div class="xcard"><div class="xch"><h3>Pending and failed</h3><span>${pend.length+fail.length} in total (all currencies) · click to open</span></div>${lst(L.filter(t=>t.status!=='Completed').slice(0,15))}</div>
+   <div class="xcard"><div class="xch"><h3>Latest transfers</h3><span>Newest first · last 10</span></div>${lst(L.slice(0,10))}</div>
+  </div>
+  <div class="note">Totals and account figures count USD only, Completed for value (no conversion). Other currencies appear in the lists. Change the dates above to see another period.</div>`;
+}
+function acctsView(){
+  const q=UI.atq.toLowerCase();
+  const rows=acctRows().sort((a,b)=>(a.code||'').localeCompare(b.code||'')).filter(a=>(!UI.atype||(a.type||typeFromCode(a.code))===UI.atype)&&(!q||[a.code,a.name,a.bank,a.accNo].join(' ').toLowerCase().includes(q)));
+  return `<div class="toolbar"><label class="f" style="flex:1;min-width:180px">Search<input class="i" id="aq" type="search" value="${esc(UI.atq)}" placeholder="Code, name, bank, number…"></label>
+  <label class="f">Type<select class="i" id="aty"><option value="">All</option>${TYPES.map(k=>opt(k,TLAB[k],UI.atype===k)).join('')}</select></label><span class="sp"></span>
+  ${can('edit')?'<button class="btn" type="button" data-go="import">Import from Central Database Excel</button><button class="btn pri" type="button" data-go="addAcct">Add account</button>':''}</div>
+  <div class="tbox"><table class="t"><thead><tr><th>Code</th><th>Account</th><th>Type</th><th>Bank / number</th><th>Last updated</th></tr></thead><tbody>${rows.length?rows.map(a=>`<tr class="row" tabindex="0" data-edit="${esc(a.id)}"><td class="code">${esc(a.code||'')}</td><td><b>${esc(a.name||'')}</b></td><td>${esc(a.type||typeFromCode(a.code))}</td><td>${esc(a.bank||'')}<div class="faint mono">${esc(a.accNo||'')}</div></td><td>${esc(fmtDT(a.updatedAt))} <span class="faint">${esc(a.updatedBy||'')}</span></td></tr>`).join(''):`<tr><td colspan="5" class="empty"><b>${acctRows().length?'Nothing matches':'No accounts yet'}</b>${acctRows().length?'':'Import the account list exported from the Central Database, or add accounts one by one.'}</td></tr>`}</tbody></table></div>
+  <div class="note">Type is read from the code (MAC, MCA, CPA). Accounts such as SKA or PC are Other unless you set the type.</div>`;
+}
+/* ---------- account modal ---------- */
+function acctModal(id){
+  const isNew=!id,a=isNew?{}:{...D.accounts[id]},w=can('edit');
+  const f=(k,l,ph)=>`<label class="f">${l}<input class="i" id="a_${k}" value="${esc(a[k]||'')}" ${w?'':'disabled'} ${ph?`placeholder="${ph}"`:''}></label>`;
+  openModal(isNew?'Add account':'Account',isNew?'':esc(a.code||''),
+   `<div class="grid2">${f('code','Account code','For example MCA-IR-KH-001')}${f('name','Account name')}<label class="f">Type<select class="i" id="a_type" ${w?'':'disabled'}>${TYPES.map(k=>opt(k,TLAB[k],(a.type||typeFromCode(a.code))===k)).join('')}</select></label>${f('bank','Bank')}${f('accNo','Account number')}</div><div class="err" id="aErr" role="alert"></div>${isNew?'':`<div><h3>Documents</h3><div class="faint" style="margin:2px 0 8px">Files for this account, with their type. Upload here and the account is already selected.</div><button class="btn" type="button" id="dcOpen">Documents (${Object.values(D.docs||{}).filter(d=>d.target==='accounts/'+id).length}) · upload…</button></div>
+   `}`,
+   `<button class="btn" type="button" id="mClose">${w?'Cancel':'Close'}</button>${w?'<button class="btn pri" type="button" id="aSave">Save</button>':''}`);
+  $('#mClose').onclick=closeModal;
+  {const dco=$('#dcOpen');if(dco)dco.onclick=()=>docsModal('accounts/'+id,true)}
+  if(w)$('#aSave').onclick=async()=>{
+    const v={};['code','name','type','bank','accNo'].forEach(k=>v[k]=$('#a_'+k).value.trim());
+    if(!v.name&&!v.code){$('#aErr').textContent='Enter a code or a name.';return}
+    try{await db.doc('accounts/'+(id||rid('a'))).set({...(isNew?{}:a),...v,updatedAt:new Date().toISOString(),updatedBy:ME.name});await logAct(isNew?'Account added':'Account changed',v.code||v.name,'');closeModal();toast('Saved.')}catch(e){$('#aErr').textContent='Could not save. You may only have view access.'}
+  };
+}
+/* ---------- transfer modal ---------- */
+function trModal(id){
+  const isNew=!id,w=can('edit');
+  const t=isNew?{at:new Date().toISOString(),currency:'USD',status:'Completed',shotIds:[]}:{...D.transfers[id]};if(!isNew&&!D.transfers[id])return;
+  UI.modal={t:id||'new'};
+  const ac=acctRows().sort((a,b)=>(a.code||'').localeCompare(b.code||''));
+  const ao=sel=>ac.map(a=>opt(a.id,aLabel(a)+' ('+(a.type||typeFromCode(a.code))+')',sel===a.id)).join('');
+  openModal(isNew?'Add transfer':'Transfer',isNew?'':esc(fmtDT(t.at)),
+  `<div class="grid2">
+   <label class="f">Date and time<input class="i" type="datetime-local" id="t_at" value="${esc(toLocalInput(new Date(t.at)))}" ${w?'':'disabled'}></label>
+   <label class="f">Status<select class="i" id="t_st" ${w?'':'disabled'}>${STAT.map(k=>opt(k,k,t.status===k)).join('')}</select></label>
+   <label class="f">Flow (type of transfer)<select class="i" id="t_fl" ${w?'':'disabled'}><option value="">Automatic (from the To account)</option>${FLOWKEYS.map(k=>opt(k,FLOWLAB[k],t.flowKey===k)).join('')}</select></label>
+   <label class="f">Project<input class="i" id="t_pj" list="dl-proj" value="${esc(t.project||'')}" placeholder="Choose or type" autocomplete="off" ${w?'':'disabled'}><datalist id="dl-proj">${projList().map(p=>`<option value="${esc(p)}">`).join('')}</datalist></label>
+   <label class="f">From account<select class="i" id="t_f" ${w?'':'disabled'}><option value="">Other / not in the list</option>${ao(t.fromId)}</select></label>
+   <label class="f">From (if not in the list)<input class="i" id="t_ft" value="${esc(t.fromText||'')}" placeholder="Name of sender" ${w?'':'disabled'}></label>
+   <label class="f">To account<select class="i" id="t_t" ${w?'':'disabled'}><option value="">Other / not in the list</option>${ao(t.toId)}</select></label>
+   <label class="f">To (if not in the list)<input class="i" id="t_tt" value="${esc(t.toText||'')}" ${w?'':'disabled'}></label>
+   <label class="f">Amount<input class="i" id="t_am" inputmode="decimal" value="${t.amount!=null?esc(t.amount):''}" ${w?'':'disabled'}></label>
+   <label class="f">Currency<select class="i" id="t_cu" ${w?'':'disabled'}>${CURS.map(k=>opt(k,k,t.currency===k)).join('')}</select></label>
+   <label class="f">Reference / transaction ID<input class="i" id="t_ref" value="${esc(t.ref||'')}" ${w?'':'disabled'}></label></div>
+   <label class="f">Remark<textarea class="i" id="t_rm" ${w?'':'disabled'}>${esc(t.remark||'')}</textarea></label>
+   <div><h3>Proof screenshot</h3><div class="shots" id="t_sh" data-shots="${esc((t.shotIds||[]).join(','))}"></div>
+   ${w?'<label class="f" style="margin-top:8px">Add screenshots (optional, several allowed)<input class="i" type="file" id="t_files" accept="image/*" multiple></label><div class="shots" id="rPrev"></div>':''}</div>
+   ${isNew?'':`<div class="faint">Recorded ${esc(fmtDT(t.createdAt))} by ${esc(t.byName||'')}${t.updatedAt?` · last changed ${esc(fmtDT(t.updatedAt))} by ${esc(t.updatedBy||'')}`:''}</div>`}
+   ${isNew?'':`<div><h3>Documents</h3><div class="faint" style="margin:2px 0 8px">Files for this transfer, with their type. Upload here and the transfer is already selected (for example the P2P record or the bank slip).</div><button class="btn" type="button" id="dcOpen">Documents (${Object.values(D.docs||{}).filter(d=>d.target==='transfers/'+id).length}) · upload…</button></div>
+   `}
+   <div class="err" id="tErr" role="alert"></div>`,
+  `<button class="btn" type="button" id="mClose">${w?'Cancel':'Close'}</button>${w&&!isNew&&can('delete')?'<button class="btn" type="button" id="tDel" style="margin-right:auto;color:var(--red)">Delete</button>':''}${w?'<button class="btn pri" type="button" id="tSave">Save</button>':''}`);
+  $('#mClose').onclick=closeModal;
+  {const dco=$('#dcOpen');if(dco)dco.onclick=()=>docsModal('transfers/'+id,true)}
+  const sh=$('#t_sh');const ids=(t.shotIds||[]).filter(Boolean);
+  if(ids.length)loadShots(null,ids).then(s=>{sh.innerHTML=s.map(x=>`<img alt="Screenshot" src="${x.data}">`).join('');sh.querySelectorAll('img').forEach(im=>im.onclick=()=>lightbox(im.src))});
+  if(!w)return;
+  let files=[];
+  $('#t_files').onchange=e=>{files=[...e.target.files];const p=$('#rPrev');p.innerHTML='';files.forEach(f=>{const im=document.createElement('img');im.alt=f.name;im.src=URL.createObjectURL(f);p.appendChild(im)})};
+  const del=$('#tDel');if(del)del.onclick=async()=>{if(del.dataset.s!=='1'){del.dataset.s='1';del.textContent='Click again to delete';return}
+    try{await db.doc('transfers/'+id).delete();await logAct('Transfer deleted',`${aLabel(D.accounts[t.fromId])||t.fromText} > ${aLabel(D.accounts[t.toId])||t.toText}`,`${t.amount} ${t.currency}, ref ${t.ref||''}`);closeModal();toast('Deleted.')}catch(e){$('#tErr').textContent='Could not delete.'}};
+  $('#tSave').onclick=async()=>{
+    const err=$('#tErr');err.textContent='';
+    const amt=parseFloat(String($('#t_am').value).replace(/,/g,'')),at=$('#t_at').value,fid=$('#t_f').value,tid=$('#t_t').value,ft=$('#t_ft').value.trim(),tt=$('#t_tt').value.trim();
+    if(!at){err.textContent='Set the date and time.';return}
+    if(!(amt>0)){err.textContent='Enter an amount above 0.';return}
+    if(!tid&&!tt){err.textContent='Choose the To account, or type a name.';return}
+    if(!fid&&!ft){err.textContent='Choose the From account, or type a name.';return}
+    if(fid&&fid===tid){err.textContent='From and To are the same account.';return}
+    const b=$('#tSave');b.disabled=true;err.textContent='Saving…';
+    try{
+      const shotIds=[...(t.shotIds||[])];
+      for(const f of files){const data=await shrink(f);const sid=rid('s');await db.doc('shots/'+sid).set({name:f.name,data,at:new Date().toISOString()});shotIds.push(sid)}
+      const doc={...t,at:new Date(at).toISOString(),status:$('#t_st').value,fromId:fid,fromText:fid?'':ft,toId:tid,toText:tid?'':tt,flowKey:$('#t_fl').value,project:$('#t_pj').value.trim(),amount:amt,currency:$('#t_cu').value,ref:$('#t_ref').value.trim(),remark:$('#t_rm').value.trim(),shotIds};
+      if(isNew){doc.by=ME.u;doc.byName=ME.name;doc.createdAt=new Date().toISOString()}else{doc.updatedAt=new Date().toISOString();doc.updatedBy=ME.name}
+      await db.doc('transfers/'+(id||rid('t'))).set(doc);
+      await logAct(isNew?'Transfer added':'Transfer changed',`${aLabel(D.accounts[fid])||ft} > ${aLabel(D.accounts[tid])||tt}`,`${amt} ${doc.currency}, ${doc.status}`);
+      closeModal();toast('Saved.');
+    }catch(e){b.disabled=false;err.textContent='Could not save. You may only have view access.'}
+  };
+}
+
+async function saveX(sheets,filename){if(!can('export')){toast('Your position cannot export to Excel.');return}
+  if(!window.XLSX||!dl){toast('Download is not available here.');return}
+  const wb=XLSX.utils.book_new();
+  sheets.forEach(s=>{const ws=XLSX.utils.aoa_to_sheet(s.rows);ws['!cols']=s.rows[0].map(h=>({wch:Math.max(14,Math.min(44,String(h).length+4))}));XLSX.utils.book_append_sheet(wb,ws,s.name)});
+  try{const buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});await dl.save({filename,data:new Blob([buf])});toast('File ready.')}catch(e){if(!e||e.code!=='declined')toast('Could not save the file.')}
+}
+/* ---------- excel ---------- */
+/* ---------- monthly sheet upload ---------- */
+const MONI={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+function cellDate(v){
+  if(v instanceof Date&&!isNaN(v))return `${v.getFullYear()}-${pad(v.getMonth()+1)}-${pad(v.getDate())}`;
+  if(typeof v==='number'&&v>20000&&v<80000){const p=XLSX.SSF.parse_date_code(v);return p?`${p.y}-${pad(p.m)}-${pad(p.d)}`:''}
+  const m=/^(\d{1,2})[-\/ ]([A-Za-z]{3})[a-z]*[-\/ ,]*(\d{2,4})$/.exec(String(v||'').trim());
+  if(m&&MONI[m[2].toLowerCase()]){const y=m[3].length===2?2000+ +m[3]:+m[3];return `${y}-${pad(MONI[m[2].toLowerCase()])}-${pad(+m[1])}`}
+  return '';
+}
+const numOf=v=>{if(typeof v==='number')return v;const s=String(v==null?'':v).trim();if(!s||/^[-–—$\s]*$/.test(s))return 0;const neg=/^\(.*\)$/.test(s)||/^-/.test(s)||/\(/.test(s);const n=parseFloat(s.replace(/[^0-9.]/g,''));return isNaN(n)?0:(neg?-n:n)};
+const normName=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+function parseMonthly(wb){
+  const out={pairs:[],rows:[],warn:[],sheets:0};
+  wb.SheetNames.forEach(sn=>{
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:true,cellDates:true});
+    let hr=-1;for(let r=0;r<Math.min(rows.length,12);r++){if(rows[r].some(c=>/^date$/i.test(String(c).trim()))){hr=r;break}}
+    if(hr<0)return;out.sheets++;
+    const h=rows[hr].map(c=>String(c).replace(/\s+/g,' ').trim());
+    const dc=h.findIndex(c=>/^date$/i.test(c));
+    const pairs=[];
+    for(let c=0;c<h.length;c++){
+      if(/^from\b/i.test(h[c])&&/^to\b/i.test(h[c+1]||'')){
+        const nm=s=>s.replace(/^(from|to)\s*:?\s*/i,'').trim();
+        pairs.push({fc:c,tc:c+1,from:nm(h[c]),to:nm(h[c+1]),n:0,sum:0,sheetTotal:null,mismatch:0});c++;
+      }
+    }
+    if(!pairs.length){out.warn.push(`Sheet "${sn}": no FROM / TO columns found.`);return}
+    for(let r=hr+1;r<rows.length;r++){
+      const row=rows[r],d=cellDate(row[dc]);
+      if(!d){if(/total/i.test(String(row[dc]))){pairs.forEach(p=>{p.sheetTotal=Math.abs(numOf(row[p.tc]))})}continue}
+      pairs.forEach(p=>{
+        const to=numOf(row[p.tc]),fr=numOf(row[p.fc]);
+        const amt=Math.abs(to)||Math.abs(fr);
+        if(!amt)return;
+        if(Math.abs(Math.abs(to)-Math.abs(fr))>0.005)p.mismatch++;
+        p.n++;p.sum+=amt;out.rows.push({date:d,pair:p,amount:amt});
+      });
+    }
+    out.pairs.push(...pairs);
+  });
+  return out;
+}
+function uploadPick(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.xlsx,.xls';
+  inp.onchange=async()=>{
+    const f=inp.files[0];if(!f)return;
+    let res;
+    try{res=parseMonthly(XLSX.read(new Uint8Array(await f.arrayBuffer()),{type:'array',cellDates:true}))}catch(e){toast('Could not read that file.');return}
+    if(!res.rows.length){openModal('Upload monthly sheet',esc(f.name),`<div class="empty"><b>No transfers found</b>The sheet needs a "Date" column and pairs of FROM and TO columns, with the dates down the side.</div>${res.warn.map(w=>`<div class="faint">${esc(w)}</div>`).join('')}`,'<button class="btn" type="button" id="mClose">Close</button>');$('#mClose').onclick=closeModal;return}
+    const accs=acctRows();
+    const find=name=>{const k=normName(name);return accs.find(a=>normName(a.name)===k)};
+    const nameMap={};res.pairs.forEach(p=>{[p.from,p.to].forEach(n=>{if(!(n in nameMap))nameMap[n]=find(n)||null})});
+    const missing=Object.keys(nameMap).filter(n=>!nameMap[n]);
+    const dates=res.rows.map(r=>r.date).sort();
+    const key=(r)=>`up_${r.date}_${normName(r.pair.from).replace(/ /g,'')}_${normName(r.pair.to).replace(/ /g,'')}`.slice(0,120);
+    const fresh=res.rows.filter(r=>!D.transfers[key(r)]);
+    const tot=res.rows.reduce((s,r)=>s+r.amount,0);
+    const bad=res.pairs.filter(p=>p.sheetTotal!=null&&Math.abs(p.sheetTotal-p.sum)>0.005||p.mismatch);
+    const prow=res.pairs.filter(p=>p.n).map(p=>{const ok=p.sheetTotal==null||Math.abs(p.sheetTotal-p.sum)<=0.005;return `<tr><td>${esc(p.from)}</td><td>${esc(p.to)}</td><td class="n">${p.n}</td><td class="n"><b>${esc(fmtAmt(p.sum,'USD'))}</b></td><td class="n">${p.sheetTotal==null?'<span class="faint">none</span>':esc(fmtAmt(p.sheetTotal,'USD'))}</td><td>${ok&&!p.mismatch?'<span class="pill g">Matches</span>':'<span class="pill r">Check</span>'}</td></tr>`}).join('');
+    openModal('Upload monthly sheet',esc(f.name),
+     `<div class="kv"><div><span>Transfers found</span>${res.rows.length}</div><div><span>New</span>${fresh.length}</div><div><span>Already imported</span>${res.rows.length-fresh.length}</div><div><span>Period</span>${esc(fmtD(dates[0]))} to ${esc(fmtD(dates[dates.length-1]))}</div><div><span>Total (USD)</span>${esc(fmtAmt(tot,'USD'))}</div></div>
+      <div class="tbox"><table class="t"><thead><tr><th>From</th><th>To</th><th class="n">Transfers</th><th class="n">Total read</th><th class="n">Sheet TOTAL</th><th>Check</th></tr></thead><tbody>${prow}</tbody></table></div>
+      ${bad.length?'<div class="lock" style="color:var(--red)">Some totals do not match the sheet, or a FROM amount differs from its TO amount. Check the file before importing.</div>':''}
+      ${missing.length?`<div class="lock">Not in the Accounts list yet, they will be added as MCA accounts: ${esc(missing.join(', '))}. You can add the account code later.</div>`:''}
+      <div class="note">Each amount becomes one Completed transfer in USD, dated that day (no time), from the FROM account to the TO account. Importing the same file again does not create duplicates.</div><div class="faint" id="iErr" role="alert"></div>`,
+     `<button class="btn" type="button" id="mClose">Cancel</button><button class="btn pri" type="button" id="iGo" ${fresh.length?'':'disabled'}>Import ${fresh.length} transfers</button>`);
+    $('#mClose').onclick=closeModal;
+    $('#iGo').onclick=async()=>{
+      $('#iGo').disabled=true;$('#iErr').textContent='Importing…';
+      try{
+        const ids={};
+        for(const n of Object.keys(nameMap)){
+          if(nameMap[n]){ids[n]=nameMap[n].id;continue}
+          const id='a'+normName(n).replace(/ /g,'').slice(0,40)+Date.now().toString(36).slice(-3);
+          await db.doc('accounts/'+id).set({code:'',name:n,type:'MCA',bank:'',accNo:'',updatedAt:new Date().toISOString(),updatedBy:ME.name});ids[n]=id;
+        }
+        const now=new Date().toISOString();
+        for(const r of fresh){
+          const [y,m,d]=r.date.split('-').map(Number);
+          await db.doc('transfers/'+key(r)).set({at:new Date(y,m-1,d,12,0,0).toISOString(),dateOnly:true,fromId:ids[r.pair.from],fromText:'',toId:ids[r.pair.to],toText:'',amount:r.amount,currency:'USD',status:'Completed',ref:'',remark:'Imported from '+f.name,shotIds:[],source:f.name,by:ME.u,byName:ME.name,createdAt:now});
+        }
+        await logAct('Monthly sheet imported',f.name,`${fresh.length} transfer(s), ${fmtAmt(fresh.reduce((s,r)=>s+r.amount,0),'USD')} USD`);
+        closeModal();toast('Imported.');
+      }catch(e){$('#iErr').textContent='Import stopped part-way. Upload the file again; transfers already saved are skipped.';$('#iGo').disabled=false}
+    };
+  };inp.click();
+}
+
+function importPick(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.xlsx,.xls,.csv';
+  inp.onchange=async()=>{
+    const f=inp.files[0];if(!f)return;
+    try{
+      const wb=XLSX.read(new Uint8Array(await f.arrayBuffer()),{type:'array'});
+      const list=[];
+      wb.SheetNames.forEach(sn=>{
+        const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:false});
+        let hi=-1,ci=-1;
+        for(let r=0;r<Math.min(rows.length,8);r++){const j=rows[r].findIndex(c=>/^(account )?code$/i.test(String(c).trim()));if(j>=0){hi=r;ci=j;break}}
+        if(hi<0)return;
+        const h=rows[hi].map(c=>String(c).trim().toLowerCase());
+        const find=(re,not)=>h.findIndex((c,i)=>i!==ci&&re.test(c)&&!(not&&not.test(c)));
+        let ni=find(/account name|^name$|^account$|account holder|company/);if(ni<0)ni=ci+1;
+        const bi=find(/^bank/),ai=find(/account (no|number)|^number$|acc no/);
+        rows.slice(hi+1).forEach(r=>{const code=String(r[ci]||'').trim();if(!code||!/[A-Za-z]/.test(code)||/total/i.test(code))return;
+          list.push({code,name:String(r[ni]||'').trim(),bank:bi>=0?String(r[bi]||'').trim():'',accNo:ai>=0?String(r[ai]||'').trim():'',type:typeFromCode(code)})});
+      });
+      const byCode={};acctRows().forEach(a=>{if(a.code)byCode[a.code]=a.id});
+      const seen={};const ul=list.filter(x=>seen[x.code]?false:(seen[x.code]=1));
+      const nNew=ul.filter(x=>!byCode[x.code]).length;
+      const tc=k=>ul.filter(x=>x.type===k).length;
+      openModal('Import accounts',esc(f.name),`<div class="kv"><div><span>Accounts read</span>${ul.length}</div><div><span>New</span>${nNew}</div><div><span>Existing, updated</span>${ul.length-nNew}</div></div><div class="kv"><div><span>MAC</span>${tc('MAC')}</div><div><span>MCA</span>${tc('MCA')}</div><div><span>CPA</span>${tc('CPA')}</div><div><span>Other</span>${tc('Other')}</div></div><div class="note">Accounts are matched by code. The sheet must have a column called Code. Type is read from the code.</div><div class="faint" id="iErr" role="alert"></div>`,
+       `<button class="btn" type="button" id="mClose">Cancel</button><button class="btn pri" type="button" id="iGo" ${ul.length?'':'disabled'}>Import ${ul.length} accounts</button>`);
+      $('#mClose').onclick=closeModal;
+      $('#iGo').onclick=async()=>{$('#iGo').disabled=true;try{for(const x of ul){const id=byCode[x.code]||rid('a'),old=byCode[x.code]?D.accounts[id]:{};await db.doc('accounts/'+id).set({...old,code:x.code,name:x.name||old.name||'',bank:x.bank||old.bank||'',accNo:x.accNo||old.accNo||'',type:old.type||x.type,updatedAt:new Date().toISOString(),updatedBy:ME.name})}await logAct('Accounts imported',f.name,`${ul.length} row(s)`);closeModal();toast('Imported.')}catch(e){$('#iErr').textContent='Import stopped part-way. Check the Accounts list.'}};
+    }catch(e){toast('Could not read that file.')}
+  };inp.click();
+}
+const XH=['Date and time','Flow','Project','From','To','Amount','Currency','Reference','Status','Remark','Proof files','Recorded by'];
+const sum0=a=>a.reduce((z,t)=>z+(+t.amount||0),0);
+const trRow=t=>[t.dateOnly?fmtD(t.day):fmtDT(t.at),t.route,t.proj||'',t.fLab,t.tLab,+t.amount||0,t.currency||'',t.ref||'',t.status||'',t.remark||'',(t.shotIds||[]).length,t.byName||''];
+
+/* ---------- draw ---------- */
+
+/* ---------- matches source ---------- */
+const REC_ONLY_ACTIVE=false;
+const recNm=x=>String(x==null?'':x).toLowerCase().replace(/[^a-z0-9]/g,'');
+function recCalc(){
+  const sn=D.source&&D.source.snap;if(!sn||!sn.accounts)return null;
+  const C={},V={},P={},out=[],noCode=[];
+  Object.values(sn.accounts).forEach(s=>C[recNm(s.code)]=s);
+  Object.values(sn.cpa||{}).forEach(s=>V[recNm(s.code)]=s);
+  Object.entries(D.accounts||{}).forEach(([id,p])=>{const k=recNm(p.code);if(k)P[k]={...p,id};else noCode.push({...p,id})});
+  const add=(code,name,issue,src,here)=>out.push({code,name,issue,src,here});
+  Object.entries(C).forEach(([k,s])=>{
+    if(REC_ONLY_ACTIVE&&s.status!=='Active')return;
+    const p=P[k];if(!p){add(s.code,s.name,'In the source, missing here',s.status+' · '+(s.bank||'')+' '+(s.accNo||''),'—');return}
+    if(recNm(s.accNo)!==recNm(p.accNo))add(s.code,s.name,'Account number differs',s.accNo||'—',p.accNo||'—');
+    if(recNm(s.bank)!==recNm(p.bank))add(s.code,s.name,'Bank differs',s.bank||'—',p.bank||'—');
+    if(recNm(s.name)!==recNm(p.name))add(s.code,s.name,'Name differs',s.name||'—',p.name||'—');
+    if(p.status&&!REC_ONLY_ACTIVE&&p.status!==s.status)add(s.code,s.name,'Status differs',s.status,p.status);
+  });
+  Object.entries(P).forEach(([k,p])=>{
+    if(C[k]){if(REC_ONLY_ACTIVE&&C[k].status!=='Active')add(p.code,p.name,'Here, but not Active in the source',C[k].status,'Listed');return}
+    if(V[k]){const s=V[k];
+      if(recNm(s.accNo)!==recNm(p.accNo))add(s.code,s.name,'Account number differs (CPA V3.3)',s.accNo||'—',p.accNo||'—');
+      if(recNm(s.bank)!==recNm(p.bank))add(s.code,s.name,'Bank differs (CPA V3.3)',s.bank||'—',p.bank||'—');
+      if(recNm(s.name)!==recNm(p.name))add(s.code,s.name,'Name differs (CPA V3.3)',s.name||'—',p.name||'—');return}
+    add(p.code,p.name,'Here, not in the source','—','Listed')});
+  noCode.forEach(p=>add('—',p.name||'(no name)','Here, no account code, not in the source','—','Listed'));
+  const srcN=Object.values(C).filter(s=>!REC_ONLY_ACTIVE||s.status==='Active').length;
+  return {sn,out,srcN,hereN:Object.keys(P).length+noCode.length};
+}
+function recView(){
+  const r=recCalc();
+  if(!r)return `<div class="tbox"><div class="empty"><b>No source copy yet</b>A copy of the Central Database has not been loaded into this page. Ask Claude to sync it.</div></div>`;
+  const {sn,out,srcN,hereN}=r,ok=!out.length&&srcN===hereN,when=sn.at?fmtDT(sn.at):'';
+  setTimeout(()=>{const b=document.getElementById('xRec');if(b)b.onclick=()=>saveX([{name:'Differences',rows:[['Account code','Account name','Issue','Source','Here'],...out.map(d=>[d.code,d.name,d.issue,d.src,d.here])]}],'Matches_source_'+new Date().toISOString().slice(0,10)+'.xlsx')},0);
+  return `<div class="${ok?'defbox':'warn'}" style="margin-top:0">${ok?'<b>Everything matches</b> the Central Database.':`<b>${out.length} difference${out.length===1?'':'s'}</b> found between this page and the Central Database.`}${when?` Source copy taken ${esc(when)}.`:''}</div>
+  <div class="sumstrip"><div class="chip"><span>Central Database${REC_ONLY_ACTIVE?' (Active)':''}</span><b>${srcN}</b></div><div class="chip"><span>Here</span><b>${hereN}</b></div><div class="chip ${out.length?'bad':''}"><span>Differences</span><b>${out.length}</b></div></div>
+  <div class="toolbar"><span class="sp"></span><button class="btn" type="button" id="xRec">Export Excel</button></div>
+  <div class="tbox"><table class="t" style="min-width:760px"><thead><tr><th>Account</th><th>Issue</th><th>Central Database</th><th>Here</th></tr></thead><tbody>${out.length?out.map(d=>`<tr><td><span class="code">${esc(d.code)}</span> <b>${esc(d.name)}</b></td><td>${esc(d.issue)}</td><td>${esc(d.src)}</td><td>${esc(d.here)}</td></tr>`).join(''):'<tr><td colspan="4" class="empty"><b>0 differences</b>Codes, names, banks and account numbers all equal the source.</td></tr>'}</tbody></table></div>
+  <div class="note">Compared by account code. Closed and Moved accounts are ${REC_ONLY_ACTIVE?'left out of the source count (only Active accounts belong here)':'kept, with their status'}. CP accounts are checked against CPA Control System V3.3.</div>`;
+}
+const PAGE_N=20;
+function paginate(){
+  if(UI.tab==='access'||UI.tab==='lists')return;
+  const old=document.getElementById('pager');if(old)old.remove();
+  const big=[...document.querySelectorAll('#view .tbox table.t')].map(t=>({t,trs:[...(t.querySelector('tbody')||{children:[]}).children].filter(r=>!r.querySelector('td.empty'))})).filter(x=>x.trs.length>PAGE_N);
+  const key=UI.tab+'|'+[...document.querySelectorAll('#view input,#view select')].map(e=>e.value).join('|');if(UI.pgKey!==key){UI.pgKey=key;UI.pg=0}
+  if(big.length!==1)return;
+  const {t,trs}=big[0],n=trs.length,pages=Math.ceil(n/PAGE_N);UI.pg=Math.min(Math.max(UI.pg||0,0),pages-1);
+  trs.forEach((r,i)=>{r.style.display=Math.floor(i/PAGE_N)===UI.pg?'':'none'});
+  const box=t.closest('.tbox');
+  box.insertAdjacentHTML('afterend',`<div class="pager" id="pager"><span>${UI.pg*PAGE_N+1}–${Math.min(n,(UI.pg+1)*PAGE_N)} of ${n}</span><button class="btn sm" type="button" data-pg="-1" ${UI.pg===0?'disabled':''}>Previous</button><span>Page ${UI.pg+1} of ${pages}</span><button class="btn sm" type="button" data-pg="1" ${UI.pg>=pages-1?'disabled':''}>Next</button></div>`);
+  document.querySelectorAll('#pager [data-pg]').forEach(b=>b.onclick=()=>{UI.pg+=+b.dataset.pg;draw();const bx=document.querySelector('#view .tbox');if(bx)bx.scrollTop=0});
+}
+function draw(){if(ME&&!menuOk(UI.tab)){const f=MENUS.find(m=>menuOk(m[0]));UI.tab=f?f[0]:'none'}
+  $('#nav').innerHTML=tabsHtml();
+  $('#todayTxt').textContent=fmtD(todayStr());
+  $('#pageTitle').textContent=TITLES[UI.tab][0];$('#pageSub').textContent=TITLES[UI.tab][1];
+  $('#view').innerHTML=UI.tab==='access'?accessView():UI.tab==='lists'?listsView():UI.tab==='none'?'<div class="empty">No menu is assigned to your position. Ask the Master Admin.</div>':UI.tab==='users'?usersView():UI.tab==='rec'?recView():UI.tab==='db'?dbView():UI.tab==='tr'?trView():UI.tab==='st'?stView():acctsView();
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{UI.tab=b.dataset.tab;draw()});
+  document.querySelectorAll('tr.row[data-t]').forEach(el=>{const go=()=>trModal(el.dataset.t);el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter')go()}});
+  document.querySelectorAll('tr.row[data-edit]').forEach(el=>{const go=()=>acctModal(el.dataset.edit);el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter')go()}});
+  document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>({addAcct:()=>acctModal(null),import:importPick,addTr:()=>trModal(null),upload:uploadPick})[b.dataset.go]());
+  document.querySelectorAll('[data-th]').forEach(async el=>{const sh=await loadShots(null,[el.dataset.th]);if(sh[0])el.innerHTML=`<img alt="Proof" src="${sh[0].data}" style="height:44px;max-width:80px;object-fit:cover;border-radius:4px;border:1px solid var(--line)">`});
+  const on=(id,ev,fn)=>{const e=$('#'+id);if(e)e[ev]=fn};
+  on('fq','oninput',e=>{UI.q=e.target.value;UI.keep='fq';draw()});
+  [['ff','flow'],['fpj','proj'],['fst','status'],['fa','acct'],['fc','cur'],['fdf','from'],['fdt','to'],['sc','statCur'],['sp','period'],['sw','avgWin'],['aty','atype'],['dbf','dfrom'],['dbt','dto']].forEach(([id,k])=>on(id,'onchange',e=>{UI[k]=e.target.value;draw()}));
+  on('aq','oninput',e=>{UI.atq=e.target.value;UI.keep='aq';draw()});
+  on('xTr','onclick',()=>saveX([{name:'Transfers',rows:[XH,...tFilt(tList()).sort((a,b)=>(b.at||'').localeCompare(a.at||'')).map(trRow)]}],`Fund_Transfers_${todayStr()}.xlsx`));
+  on('xSt','onclick',()=>{const l=tList().filter(t=>t.status==='Completed');const m={};l.forEach(t=>{const k=[t.route,t.fLab,t.tLab,t.currency].join('|');(m[k]=m[k]||[t.route,t.fLab,t.tLab,t.currency,0,0]);m[k][4]++;m[k][5]+=+t.amount||0});saveX([{name:'By route',rows:[['Flow','From','To','Currency','Transfers','Completed amount'],...Object.values(m)]},...uniq(tList().map(t=>t.currency)).map(c=>{const AV=avgData(tList().filter(t=>t.status==='Completed'&&t.currency===c),UI.avgWin||'all');return {name:('Average '+c).slice(0,31),rows:[['Account','Type','Transferred to CO per day','Transferred to CO per week','Transferred to CO per month','Biggest day transferred to CO','Received from CI per day','Received from CI per week','Received from CI per month'],...(AV?AV.rows.map(x=>[x.lab,x.ty,+x.oD.toFixed(2),+x.oW.toFixed(2),+x.oM.toFixed(2),+x.peak.toFixed(2),+x.iD.toFixed(2),+x.iW.toFixed(2),+x.iM.toFixed(2)]):[])]}})],`Fund_Transfers_stats_${todayStr()}.xlsx`)});
+  paginate();
+  if(UI.keep){const e=$('#'+UI.keep);if(e){e.focus();const n=e.value.length;e.setSelectionRange&&e.setSelectionRange(n,n)}UI.keep=null}
+}
+function refresh(){
+  if(!ME||Object.keys(READY).length<6)return;
+  const m=UI.modal;
+  if(!m||!$('#ov'))draw();else{$('#nav').innerHTML=tabsHtml();document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{closeModal();UI.tab=b.dataset.tab;draw()})}
+}
+
+
+/* ---------- auth (same as Central Database) ---------- */
+async function sha(x){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(x));return [...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,'0')).join('')}
+const hashPw=(salt,pw)=>sha(salt+':'+pw);
+const newSalt=()=>[...crypto.getRandomValues(new Uint8Array(12))].map(x=>x.toString(16).padStart(2,'0')).join('');
+async function bootstrapAdmin(){
+  if(!db||!READY.users||Object.keys(D.users).length||bootstrapAdmin.done)return;bootstrapAdmin.done=true;
+  try{const salt=newSalt();await db.doc('users/admin').set({u:'admin',name:'Administrator',role:'Admin',salt,hash:await hashPw(salt,'admin123'),mustChange:true,active:true,lastLogin:null})}catch(e){}
+}
+async function doLogin(ev){
+  ev.preventDefault();const u=$('#lu').value.trim().toLowerCase(),p=$('#lp').value;const err=$('#loginErr');err.textContent='';
+  const rec=D.users[u];
+  if(!rec||rec.active===false||await hashPw(rec.salt,p)!==rec.hash){err.textContent='Wrong username or password.';return}
+  ME={u,name:rec.name,role:rec.role};store.set('fs_user',u);logAct('Sign in','','');
+  try{await db.doc('users/'+u).update({lastLogin:new Date().toISOString()})}catch(e){}
+  enterApp();
+  if(rec.mustChange)passwordModal(true);
+}
+function enterApp(){
+  $('#login').classList.add('hidden');$('#app').classList.remove('hidden');
+  $('#who').innerHTML=`<b style="color:#fff">${esc(ME.name)}</b><br><small>${esc(rl(ME.role))} · ${esc(ME.u)}</small>`;
+  draw();
+}
+function logout(){logAct('Sign out','','');ME=null;store.del('fs_user');$('#app').classList.add('hidden');$('#login').classList.remove('hidden');$('#lp').value='';closeModal()}
+function checkSession(){
+  if(ME){const rec=D.users[ME.u];if(!rec||rec.active===false){logout();return}ME.role=rec.role;ME.name=rec.name;return}
+  const u=store.get('fs_user');if(u&&D.users[u]&&D.users[u].active!==false&&!D.users[u].mustChange){ME={u,name:D.users[u].name,role:D.users[u].role};enterApp()}
+}
+window.__mfsModuleSignIn=function(user){const u=String(user&&user.u||'').trim().toLowerCase();if(!u)return;const current=D.users[u]||{};D.users[u]={...current,u,name:user.name||current.name||u,role:user.role||current.role||'Viewer',active:true,mustChange:false};ME={u,name:D.users[u].name,role:D.users[u].role};store.set('fs_user',u);enterApp()};
+function openModalC(title,body,footer,opt={}){
+  $('#modalRoot').innerHTML=`<div class="ov" id="ov"><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}" style="${opt.narrow?'max-width:440px':''}"><header><h2>${esc(title)}</h2>${opt.force?'':'<button class="x" type="button" aria-label="Close" id="mx">×</button>'}</header><div class="mb" id="mbody">${body}</div><footer id="mfoot">${footer}</footer></div></div>`;
+  if(!opt.force){$('#mx').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal()})}
+  document.onkeydown=e=>{if(e.key==='Escape'&&!opt.force)closeModal()};
+  const f=$('#mbody input:not([disabled]),#mbody select:not([disabled])');if(f)f.focus();
+}
+function passwordModal(force){
+  const body=`${force?'':'<label class="f full">Current password<input class="i" id="pw0" type="password" autocomplete="current-password"></label>'}
+    <label class="f full">New password (at least 6 characters)<input class="i" id="pw1" type="password" autocomplete="new-password"></label>
+    <label class="f full">Repeat new password<input class="i" id="pw2" type="password" autocomplete="new-password"></label><div class="err full" id="pwErr" role="alert"></div>`;
+  openModalC(force?'Choose a new password':'Change password',body,`<span class="sp"></span>${force?'':'<button class="btn" type="button" id="pwCancel">Cancel</button>'}<button class="btn pri" type="button" id="pwSave">Save password</button>`,{force,narrow:1});
+  if(!force)$('#pwCancel').onclick=closeModal;
+  $('#pwSave').onclick=async()=>{
+    const err=$('#pwErr');const p1=$('#pw1').value,p2=$('#pw2').value;const rec=D.users[ME.u];
+    if(!force&&await hashPw(rec.salt,$('#pw0').value)!==rec.hash){err.textContent='Current password is wrong.';return}
+    if(p1.length<6){err.textContent='Use at least 6 characters.';return}
+    if(p1!==p2){err.textContent='The two passwords do not match.';return}
+    if(p1==='admin123'){err.textContent='Choose a different password.';return}
+    const salt=newSalt();
+    try{await db.doc('users/'+ME.u).update({salt,hash:await hashPw(salt,p1),mustChange:false});logAct('Change password','','');closeModal();toast('Password changed.')}catch(e){err.textContent='Could not save. Try again.'}
+  };
+}
+function usersView(){
+  if(!can('admin'))return '<div class="empty">Only a Master Admin can manage users.</div>';
+  const rows=Object.entries(D.users).map(([id,u])=>({...u,id})).sort((a,b)=>a.u.localeCompare(b.u));
+  setTimeout(()=>{document.querySelectorAll('#view tr.row[data-u]').forEach(tr=>{tr.onclick=()=>userModal(tr.dataset.u);tr.onkeydown=e=>{if(e.key==='Enter')userModal(tr.dataset.u)}});const a=$('#btnAddU');if(a)a.onclick=()=>userModal(null)},0);
+  return `<div class="toolbar"><span class="sp"></span><button class="btn pri" id="btnAddU" type="button">+ Add user</button></div><div class="tbox"><table class="t" style="min-width:600px"><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Status</th><th>Last sign-in</th></tr></thead><tbody>${rows.map(r=>`<tr class="row" tabindex="0" data-u="${esc(r.id)}"><td class="mono">${esc(r.u)}</td><td>${esc(r.name)}</td><td>${esc(rl(r.role))}</td><td>${r.active===false?'<span class="pill x">Disabled</span>':'<span class="pill g">Active</span>'}</td><td>${r.lastLogin?esc(fmtDT(r.lastLogin)):'<span class="faint">Never</span>'}</td></tr>`).join('')}</tbody></table></div>`;
+}
+function accessView(){
+  if(!can('admin'))return '<div class="empty">Only a Master Admin can manage access.</div>';
+  const defs=posDefs(),names=Object.keys(defs),builtin=['Admin','Editor','Viewer'],n2=names.length+1;
+  const cnt=n=>Object.values(D.users).filter(u=>u.role===n).length;
+  const row=(label,type,key)=>`<tr><td>${esc(label)}</td>${names.map(n=>{const lk=n==='Admin',on=lk||(type==='d'?(defs[n].docs===undefined||!(defs[n].dk||[]).includes(key)?(key.startsWith('vw:')?true:defs[n].acts.includes(DACT[key.slice(0,2)])):defs[n].docs.includes(key)):(type==='m'?defs[n].menus:defs[n].acts).includes(key));return `<td style="text-align:center"><input type="checkbox" class="ac" data-n="${esc(n)}" data-t="${type}" data-k="${esc(key)}" ${on?'checked':''} ${lk?'disabled':''} aria-label="${esc(rl(n))}: ${esc(label)}"></td>`}).join('')}</tr>`;
+  setTimeout(bindAccess,0);
+  return `<div class="defbox"><b>How it works:</b> each column is a position. Tick what that position can open and do, then press <b>Save access</b>. Give a position to a person in <b>Users</b>. Users and Access control are always for the Master Admin only. This controls what each person sees in this page. For a job that only some people can do (for example, upload one document type), add a position for that job, tick only its rows, and give that position to those people in <b>Users</b>.</div>
+  <div class="tbox"><table class="t" style="min-width:${180+110*names.length}px"><thead><tr><th>Permission</th>${names.map(n=>`<th style="text-align:center">${esc(rl(n))}<div class="faint">${cnt(n)} user${cnt(n)===1?'':'s'}</div>${builtin.includes(n)?'':`<a href="#" data-delpos="${esc(n)}">Remove</a>`}</th>`).join('')}</tr></thead><tbody>
+  <tr><td colspan="${n2}"><b>Menus they can open</b></td></tr>${MENUS.map(m=>row(m[1],'m',m[0])).join('')}
+  <tr><td colspan="${n2}"><b>What they can do</b></td></tr>${ACTS.map(a=>row(a[1],'a',a[0])).join('')}
+  <tr><td colspan="${n2}"><b>Upload documents of this type</b> <span class="faint">(also needs Upload files)</span></td></tr>${drTypes().map(t=>row(t||'No type (old files)','d','up:'+t)).join('')}
+  <tr><td colspan="${n2}"><b>View or download documents of this type</b></td></tr>${drTypes().map(t=>row(t||'No type (old files)','d','vw:'+t)).join('')}
+  <tr><td colspan="${n2}"><b>Replace or delete documents of this type</b> <span class="faint">(also needs Delete)</span></td></tr>${drTypes().map(t=>row(t||'No type (old files)','d','dl:'+t)).join('')}</tbody></table></div>
+  <div class="addrow" style="margin-top:12px"><input class="i" id="posNew" placeholder="New position, for example Finance" maxlength="30"><button class="btn" type="button" id="posAdd">+ Add position</button></div>
+  <div class="toolbar" style="margin-top:12px"><span class="err" id="acErr" role="alert"></span><span class="sp"></span><button class="btn pri" type="button" id="acSave">Save access</button></div>`;
+}
+function readAccess(){
+  const o={};posNames().filter(n=>n!=='Admin').forEach(n=>o[n]={menus:[],acts:[],docs:[],dk:[]});
+  document.querySelectorAll('input.ac').forEach(c=>{const q=o[c.dataset.n];if(!q)return;if(c.dataset.t==='d'){q.dk.push(c.dataset.k);if(c.checked)q.docs.push(c.dataset.k)}else if(c.checked)(c.dataset.t==='m'?q.menus:q.acts).push(c.dataset.k)});return o}
+function bindAccess(){
+  const err=$('#acErr');if(!err)return;
+  const put=async(list,msg)=>{try{await db.doc('settings/positions').set({list,updatedAt:new Date().toISOString(),updatedBy:ME.name});logAct('Access control','',msg);toast('Saved.');return true}catch(e){err.textContent='Could not save.';return false}};
+  $('#acSave').onclick=async()=>{err.textContent='';await put(readAccess(),'Access saved for: '+Object.keys(readAccess()).join(', '))};
+  $('#posAdd').onclick=async()=>{err.textContent='';const v=$('#posNew').value.trim();
+    if(!v){err.textContent='Type the position name.';return}
+    if(posNames().some(n=>n.toLowerCase()===v.toLowerCase())||/^master admin$/i.test(v)){err.textContent='That position already exists.';return}
+    const l=readAccess();l[v]={menus:MENUS.map(m=>m[0]),acts:[]};if(await put(l,'Position added: '+v))$('#posNew').value=''};
+  let armed=null;
+  document.querySelectorAll('[data-delpos]').forEach(a=>a.onclick=async e=>{e.preventDefault();err.textContent='';const n=a.dataset.delpos;
+    if(Object.values(D.users).some(u=>u.role===n)){err.textContent=n+' still has users. Move them to another position first.';return}
+    if(armed!==n){armed=n;a.textContent='Click again to remove';return}
+    const l=readAccess();delete l[n];await put(l,'Position removed: '+n)});
+}
+function userModal(id){
+  const isNew=!id;const r=isNew?{u:'',name:'',role:'Editor',active:true}:D.users[id];
+  openModalC(isNew?'Add user':'Edit user',`<label class="f" for="u_u">Username<input class="i" id="u_u" value="${esc(r.u)}" ${isNew?'':'disabled'} autocomplete="off"></label>
+   <label class="f" for="u_n">Full name<input class="i" id="u_n" value="${esc(r.name)}"></label>
+   <label class="f" for="u_r">Role<select class="i" id="u_r">${posNames().map(x=>`<option value="${x}" ${x===r.role?'selected':''}>${esc(rl(x))}</option>`).join('')}</select></label>
+   <label class="f" for="u_a">Status<select class="i" id="u_a"><option value="1" ${r.active!==false?'selected':''}>Active</option><option value="0" ${r.active===false?'selected':''}>Disabled</option></select></label>
+   <label class="f full" for="u_p">${isNew?'Temporary password':'Reset password (leave blank to keep)'}<input class="i" id="u_p" type="text" autocomplete="off"></label>`,
+   `<span class="sp"></span><span class="err" id="mErr" role="alert"></span><button class="btn" type="button" id="mCancel">Cancel</button><button class="btn pri" type="button" id="mSave">Save</button>`);
+  $('#mCancel').onclick=closeModal;
+  $('#mSave').onclick=async()=>{
+    const err=$('#mErr');const u=(isNew?$('#u_u').value:r.u).trim().toLowerCase(),name=$('#u_n').value.trim(),role=$('#u_r').value,active=$('#u_a').value==='1',pw=$('#u_p').value;
+    if(!/^[a-z0-9._-]{3,30}$/.test(u)){err.textContent='Username: 3 to 30 letters, numbers, dot, dash or underscore.';return}
+    if(!name){err.textContent='Enter a name.';return}
+    if(isNew&&D.users[u]){err.textContent='That username exists.';return}
+    if(isNew&&pw.length<6){err.textContent='Temporary password needs 6+ characters.';return}
+    const admins=Object.entries(D.users).filter(([k,x])=>x.role==='Admin'&&x.active!==false&&k!==u).length;
+    if((role!=='Admin'||!active)&&!isNew&&r.role==='Admin'&&admins===0){err.textContent='Keep at least one active Master Admin.';return}
+    if(!isNew&&u===ME.u&&!active){err.textContent='You cannot disable yourself.';return}
+    const doc={...(isNew?{lastLogin:null,mustChange:true}:JSON.parse(JSON.stringify(r))),u,name,role,active};delete doc.id;
+    if(pw){doc.salt=newSalt();doc.hash=await hashPw(doc.salt,pw);doc.mustChange=true}
+    try{await db.doc('users/'+u).set(doc);logAct(isNew?'Add user':'Edit user',u,`${name}, ${rl(role)}, ${active?'active':'disabled'}${pw?', password reset':''}`);closeModal();toast('Saved.')}catch(e){err.textContent='Could not save.'}
+  };
+}
+
+/* ---------- upload docs ---------- */
+const DOCMAX=700*1024;
+const KINDMAP={};
+const DKEY={upload:'up',view:'vw',change:'dl'},DACT={up:'files',dl:'delete'};
+function permKey(k){
+  if(!ME)return false;if(ME.role==='Admin')return true;
+  const q=posDefs()[ME.role];if(!q)return false;
+  if(q.docs===undefined||!(q.dk||[]).includes(k))return k.startsWith('vw:')?true:q.acts.includes(DACT[k.slice(0,2)]);
+  return q.docs.includes(k)}
+const docT=d=>(d&&(d.docType||KINDMAP[d.kind]))||'';
+const docOk=(t,act)=>(act==='upload'?can('files'):act==='change'?can('delete'):true)&&permKey(DKEY[act]+':'+(t||''));
+const drTypes=()=>[...new Set([...[],...(()=>{const x=D.settings&&D.settings.docTypes;return x&&Array.isArray(x.list)&&x.list.length?x.list:DEFT0})(),...Object.values(D.docs||{}).map(docT).filter(Boolean)])].concat(['']);
+async function posRenameDoc(o,n){
+  const q=(D.settings&&D.settings.positions||{}).list||{},q2=JSON.parse(JSON.stringify(q));let ch=false;
+  const fx=z=>/^(up|vw|dl):/.test(z)&&z.slice(3)===o?z.slice(0,3)+n:z;
+  Object.values(q2).forEach(x=>{if(x.docs){x.docs=x.docs.map(fx);ch=true}if(x.dk){x.dk=x.dk.map(fx);ch=true}});
+  if(ch)await db.doc('settings/positions').set({list:q2,updatedAt:new Date().toISOString(),updatedBy:ME.name})}
+
+const docLab=a=>a?[a.code,a.name].filter(Boolean).join(' · '):'';
+const docTargets=()=>[...tList().sort((a,b)=>(b.at||'').localeCompare(a.at||'')).slice(0,300).map(t=>({key:'transfers/'+t.id,group:'Transfers (latest 300)',label:`${fmtDT(t.at)} · ${t.fLab} > ${t.tLab} · ${fmtAmt(t.amount,t.currency)} ${t.currency||''}`})),...acctRows().map(a=>({key:'accounts/'+a.id,group:'Accounts',label:docLab(a)||a.id})).sort((x,y)=>x.label.localeCompare(y.label))];
+const fsz=n=>n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
+const readFile=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(f)});
+const imgShrink=url=>new Promise(res=>{const i=new Image();i.onload=()=>{const s=Math.min(1,1600/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*s);c.height=Math.round(i.height*s);c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.8))};i.onerror=()=>res(url);i.src=url});
+const dataToBlob=u=>{const m=/^data:([^;,]*)(;base64)?,(.*)$/.exec(u)||[];const bin=atob(m[3]||'');const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new Blob([a],{type:m[1]||'application/octet-stream'})};
+async function docGet(id){const s=await db.doc('docdata/'+id).get();return s.exists?s.data().data:null}
+function docsModal(pre,lock){
+  if(!ME)return;
+  const T=docTargets(),groups=[...new Set(T.map(t=>t.group))];
+  const DEFT=['P2P transfer record (MCA to MCA)','Bank slip / receipt','Bank statement','Approval','Settlement report','Other'];
+  const types=()=>{const x=D.settings&&D.settings.docTypes;return x&&Array.isArray(x.list)&&x.list.length?x.list:DEFT};
+  const saveTypes=async l=>{await db.doc('settings/docTypes').set({list:l,updatedAt:new Date().toISOString(),updatedBy:ME.name})};
+  const nz=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  const KW=[[/p2p|mca.?to.?mca|transfer/i,'P2P transfer record (MCA to MCA)'],[/slip|receipt|proof/i,'Bank slip / receipt'],[/statement|stmt/i,'Bank statement'],[/approv/i,'Approval'],[/settle/i,'Settlement report']];
+  const guessType=(name,hdr)=>{const n=nz(name),L=types();
+    if(hdr){const h=nz(hdr);const hit=(/from/.test(h)&&/to/.test(h)&&/amount/.test(h))?'P2P transfer record (MCA to MCA)':(/balance|debit|credit/.test(h)?'Bank statement':'');if(hit&&L.includes(hit))return hit}
+    for(const [re,t] of KW){if(re.test(name)&&L.includes(t))return t}return ''};
+  const accOf=t=>{const m=/^accounts\/(.+)$/.exec(t.key);return m?D.accounts[m[1]]:null};
+  const detect=(name,cells)=>{const n=nz(name),cs=cells||new Set(),hits={};
+    T.forEach(t=>{const a=accOf(t);if(!a)return;let sc=0;const code=nz(a.code),no=nz(a.accNo),nm=nz(a.name);
+      if(code.length>=4&&(n.includes(code)||cs.has(code)))sc=3;
+      if(no.length>=6&&(n.includes(no)||cs.has(no)))sc=3;
+      if(!sc&&nm.length>=6&&n.includes(nm))sc=2;
+      if(sc)hits[t.key]=sc});
+    const mx=Math.max(0,...Object.values(hits)),top=Object.keys(hits).filter(k=>hits[k]===mx);
+    return {key:top.length===1?top[0]:'',many:top.length>1?top.map(k=>(T.find(t=>t.key===k)||{}).label):[]}};
+  const recSel=(id,val)=>`<select class="i" id="${id}"><option value="">Choose…</option>${groups.map(g=>`<optgroup label="${esc(g)}">${T.filter(t=>t.group===g).map(t=>`<option value="${esc(t.key)}" ${t.key===val?'selected':''}>${esc(t.label)}</option>`).join('')}</optgroup>`).join('')}</select>`;
+  const typeSel=(id,val)=>`<select class="i" id="${id}"><option value="">Choose the type…</option>${types().filter(x=>docOk(x,'upload')||x===val).map(x=>`<option value="${esc(x)}" ${x===val?'selected':''}>${esc(x)}</option>`).join('')}<option value="__new">+ Add new type…</option></select>`;
+  const body=`<div class="full" id="dcUpBox">${can('files')?`<div class="faint" style="margin-bottom:6px">Step 1: choose files. Step 2: check the preview, the type and the transfer or account. Step 3: confirm. Nothing is saved until you confirm. (PDF, image, Word, Excel; up to ${fsz(DOCMAX)} each)</div><div class="addrow"><input class="i" id="dcF" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.doc,.docx,.xls,.xlsx,.csv,.txt"><button class="btn pri" type="button" id="dcRev">Review files</button> ${can('admin')?'<button class="btn" type="button" id="dcTypes">Manage types</button>':''}</div><div class="faint" id="dcMsg" role="alert" style="margin-top:4px"></div><div id="dcStage"></div>`:'<div class="faint">You have view access: you can open and download documents but not upload.</div>'}</div>
+   <div class="full toolbar" style="margin:8px 0 0"><label class="f" ${lock?'style="display:none"':''}>Transfer or account<select class="i" id="dcT"><option value="">All records</option>${groups.map(g=>`<optgroup label="${esc(g)}">${T.filter(t=>t.group===g).map(t=>`<option value="${esc(t.key)}" ${t.key===pre?'selected':''}>${esc(t.label)}</option>`).join('')}</optgroup>`).join('')}</select></label><label class="f">Type<select class="i" id="dcTy"><option value="">All types</option>${types().map(x=>`<option>${esc(x)}</option>`).join('')}<option value="__none">No type</option></select></label></div>
+   <div class="full" id="dcList"></div>`;
+  openModalC(lock?'Documents · '+((T.find(t=>t.key===pre)||{}).label||''):'Documents',body,`<span class="sp"></span><button class="btn" type="button" id="dcClose">Close</button>`);
+  $('#dcClose').onclick=closeModal;
+  const labOf=k=>(T.find(t=>t.key===k)||{}).label||'(record removed)';
+  function list(){
+    const k=$('#dcT').value,ty=$('#dcTy').value;let ds=Object.entries(D.docs||{}).map(([id,d])=>({...d,id})).filter(d=>(!k||d.target===k)&&(!ty||(ty==='__none'?!d.docType:d.docType===ty))).sort((a,b)=>(b.at||'').localeCompare(a.at||''));const hid=ds.filter(d=>!docOk(docT(d),'view')).length;ds=ds.filter(d=>docOk(docT(d),'view'));
+    $('#dcList').innerHTML=ds.length?`<table class="t" style="min-width:0"><thead><tr><th>File</th><th>Type</th>${k?'':'<th>Record</th>'}<th>Added</th><th></th></tr></thead><tbody>${ds.map(d=>`<tr><td><b>${esc(d.name)}</b><div class="faint">${esc(fsz(d.size||0))}${d.note?' · '+esc(d.note):''}</div></td><td>${d.docType?esc(d.docType):'<span class="faint">–</span>'}</td>${k?'':`<td>${esc(labOf(d.target))}</td>`}<td>${esc(fmtDT(d.at))}<div class="faint">${esc(d.byName||'')}</div></td><td style="white-space:nowrap"><button class="btn" type="button" data-v="${d.id}">${/^image\//.test(d.mime||'')?'View':'Download'}</button>${/^image\//.test(d.mime||'')?` <button class="btn" type="button" data-d="${d.id}">Download</button>`:''}${can('delete')&&docOk(docT(d),'change')?` <button class="btn" type="button" data-x="${d.id}">Delete</button>`:''}</td></tr>`).join('')}</tbody></table>`:'<div class="faint">No documents yet.</div>';
+    if(hid)$('#dcList').insertAdjacentHTML('beforeend','<div class="faint" style="margin-top:6px">'+hid+' file'+(hid===1?' is':'s are')+' restricted to assigned people.</div>');
+    $('#dcList').querySelectorAll('[data-v],[data-d]').forEach(b=>b.onclick=async()=>{
+      const id=b.dataset.v||b.dataset.d,d=D.docs[id];if(!docOk(docT(d),'view')){toast('Only assigned people can open this file.');return}b.disabled=true;
+      try{const u=await docGet(id);if(!u){toast('The file could not be found.');return}
+        if(b.dataset.v&&/^image\//.test(d.mime||''))lightbox(u);else{await dl.save({filename:d.name,data:dataToBlob(u)});toast('File ready.')}
+      }catch(e){if(!e||e.code!=='declined')toast('Could not open the file.')}finally{b.disabled=false}});
+    $('#dcList').querySelectorAll('[data-x]').forEach(b=>b.onclick=async()=>{
+      const id=b.dataset.x,d=D.docs[id];if(!docOk(docT(d),'change')){toast('Only assigned people can delete this file.');return}if(!confirm('Delete "'+d.name+'"?'))return;
+      try{await db.doc('docs/'+id).delete();await db.doc('docdata/'+id).delete();logAct('Document deleted',labOf(d.target),d.name);toast('Deleted.');setTimeout(list,150)}catch(e){toast('Could not delete.')}});
+  }
+  $('#dcT').onchange=list;$('#dcTy').onchange=list;list();
+  const tm=$('#dcTypes');if(tm)tm.onclick=()=>{
+    const L=[...types()],box=$('#dcStage');
+    const paint=()=>{box.innerHTML=`<div class="tbox" style="margin-top:8px"><table class="t" style="min-width:0"><thead><tr><th>Document types</th><th></th></tr></thead><tbody>${L.map((x,i)=>`<tr><td><input class="i ty_n" data-i="${i}" value="${esc(x)}"></td><td><button class="btn sm" type="button" data-tr="${i}">Remove</button></td></tr>`).join('')}</tbody></table></div><div class="addrow"><input class="i" id="tyNew" placeholder="New type"><button class="btn" type="button" id="tyAdd">Add</button><button class="btn pri" type="button" id="tySave">Save types</button><button class="btn" type="button" id="tyDef">Reset to default</button><button class="btn" type="button" id="tyX">Cancel</button></div><div class="faint">Renaming a type here does not change files already saved with the old name.</div>`;
+      box.querySelectorAll('.ty_n').forEach(e=>e.oninput=()=>L[+e.dataset.i]=e.value);
+      box.querySelectorAll('[data-tr]').forEach(b=>b.onclick=()=>{L.splice(+b.dataset.tr,1);paint()});
+      $('#tyAdd').onclick=()=>{const v=$('#tyNew').value.trim();if(v&&!L.includes(v)){L.push(v);paint()}};
+      $('#tyDef').onclick=()=>{L.splice(0,L.length,...DEFT);paint()};$('#tyX').onclick=()=>{box.innerHTML=''};
+      $('#tySave').onclick=async()=>{const c=L.map(x=>x.trim()).filter(Boolean);if(!c.length){toast('Keep at least one type.');return}try{await saveTypes([...new Set(c)]);logAct('Document types','',c.join(', '));toast('Types saved.');closeModal();setTimeout(()=>docsModal(pre),200)}catch(e){toast('Could not save.')}}};
+    paint()};
+  const rv=$('#dcRev');if(!rv)return;
+  let ST=[];
+  const preview=async s=>{
+    const f=s.f,n=f.name.toLowerCase();
+    if(/^image\//.test(f.type)){s.url=await readFile(f);return `<img src="${s.url}" alt="Preview" style="max-width:100%;max-height:180px;border-radius:4px;border:1px solid var(--line)">`}
+    if(/\.pdf$/i.test(n)||f.type==='application/pdf'){s.blob=URL.createObjectURL(f);return `<iframe src="${s.blob}" title="Preview" style="width:100%;height:220px;border:1px solid var(--line);border-radius:4px;background:#fff"></iframe><div class="faint">If the preview is blank, the file will still be saved correctly.</div>`}
+    if(/\.(xlsx|xls|csv)$/i.test(n)&&window.XLSX){try{const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];const a=XLSX.utils.sheet_to_json(ws,{header:1,defval:''}).slice(0,6);s.hdr=(a[0]||[]).join(' ');s.cells=new Set();XLSX.utils.sheet_to_json(ws,{header:1,defval:''}).slice(0,300).forEach(r=>r.forEach(c=>{const v=nz(c);if(v&&v.length<40)s.cells.add(v)}));return `<div class="tbox" style="max-height:200px"><table class="t" style="min-width:0">${a.map((r,i)=>`<tr>${r.slice(0,8).map(c=>i?`<td>${esc(c)}</td>`:`<th>${esc(c)}</th>`).join('')}</tr>`).join('')}</table></div><div class="faint">First rows of sheet "${esc(wb.SheetNames[0])}".</div>`}catch(e){}}
+    if(/\.txt$/i.test(n)){return `<pre style="max-height:160px;overflow:auto;margin:0;white-space:pre-wrap">${esc((await f.text()).slice(0,800))}</pre>`}
+    return `<div class="faint">No preview for this file type. It will be saved as it is.</div>`};
+  rv.onclick=async()=>{
+    const fs=[...$('#dcF').files],msg=$('#dcMsg');msg.textContent='';
+    if(!fs.length){msg.textContent='Choose a file.';return}
+    rv.disabled=true;ST=[];
+    for(const f of fs){const s={f};s.pv=await preview(s);s.type=guessType(f.name,s.hdr);if(lock){s.rec=pre}else{const d=detect(f.name,s.cells),d2=d.key?d:detect('',s.cells);s.rec=d.key||d2.key||(pre||'');s.many=d.key?[]:(d.many.length?d.many:d2.many);if(d.key)s.from=(d2.key===d.key&&s.cells&&s.cells.size&&!nz(f.name).includes(nz((accOf({key:d.key})||{}).code||'~~'))&&!nz(f.name).includes(nz((accOf({key:d.key})||{}).accNo||'~~')))?'sheet':'file name';else if(d2.key)s.from='sheet'}ST.push(s)}
+    rv.disabled=false;paintStage()};
+  function paintStage(){
+    const box=$('#dcStage');
+    if(!ST.length){box.innerHTML='';return}
+    box.innerHTML=`<div style="margin-top:10px;display:grid;gap:10px">${ST.map((s,i)=>`<div class="rs"><div class="meta"><b>${esc(s.f.name)}</b> · ${esc(fsz(s.f.size))} ${s.f.size>DOCMAX&&!/^image\//.test(s.f.type)?'<span class="pill r">Too large</span>':''} <a href="#" data-sr="${i}">Remove</a></div><div>${s.pv}</div>
+      <div class="grid2" style="margin-top:8px"><label class="f">Document type${s.type?' (suggested from the file)':''}${typeSel('st_t'+i,s.type)}</label>${lock?`<div class="f">Transfer or account<b style="color:var(--ink)">${esc(labOf(pre))}</b></div>`:`<label class="f">Transfer or account${s.from?' (detected from the '+s.from+')':''}${s.many&&s.many.length?' · several match: '+esc(s.many.join(' / ')):''}${recSel('st_r'+i,s.rec)}</label>`}</div>
+      <label class="f" style="margin-top:6px">Note (optional)<input class="i" id="st_n${i}" maxlength="200"></label></div>`).join('')}
+      <div class="addrow"><button class="btn pri" type="button" id="stOk">Confirm and save ${ST.length} file${ST.length===1?'':'s'}</button><button class="btn" type="button" id="stNo">Cancel</button></div></div>`;
+    box.querySelectorAll('[data-sr]').forEach(a=>a.onclick=e=>{e.preventDefault();ST.splice(+a.dataset.sr,1);keep();paintStage()});
+    ST.forEach((s,i)=>{$('#st_t'+i).onchange=async e=>{if(e.target.value!=='__new'){s.type=e.target.value;return}
+        const v=(prompt('New document type')||'').trim();if(!v){e.target.value=s.type||'';return}
+        const L=types();if(!L.includes(v)){try{await saveTypes([...L,v])}catch(x){toast('Could not save the type.');e.target.value=s.type||'';return}}
+        s.type=v;keep();setTimeout(paintStage,250)};
+      if($('#st_r'+i))$('#st_r'+i).onchange=e=>s.rec=e.target.value});
+    $('#stNo').onclick=()=>{ST=[];paintStage()};
+    $('#stOk').onclick=save}
+  const keep=()=>ST.forEach((s,i)=>{const n=$('#st_n'+i);if(n)s.note=n.value});
+  async function save(){
+    keep();const msg=$('#dcMsg');
+    const nope=ST.findIndex(s=>s.type&&!docOk(s.type,'upload'));if(nope>=0){msg.textContent='File '+(nope+1)+': you are not assigned to upload this document type.';return}
+    const bad0=ST.findIndex(s=>!s.type||!s.rec);
+    if(bad0>=0){msg.textContent='File '+(bad0+1)+': choose the document type'+(lock?'.':' and the transfer or account.');return}
+    const ok=$('#stOk');ok.disabled=true;let n=0,bad=[];
+    for(const s of ST){const f=s.f;
+      try{let u=s.url||await readFile(f),mime=f.type||'application/octet-stream';
+        if(/^image\//.test(mime)&&mime!=='image/gif'){u=await imgShrink(u);mime='image/jpeg'}
+        if(u.length*0.75>DOCMAX){bad.push(f.name+' (too large)');continue}
+        const id=rid('d');
+        await db.doc('docdata/'+id).set({data:u});
+        await db.doc('docs/'+id).set({target:s.rec,docType:s.type,name:f.name,mime,size:Math.round(u.length*0.75),note:(s.note||'').trim(),at:new Date().toISOString(),by:ME.u,byName:ME.name});
+        logAct('Document uploaded',labOf(s.rec),s.type+' · '+f.name);n++}
+      catch(e){bad.push(f.name)}}
+    ST.forEach(s=>{if(s.blob)URL.revokeObjectURL(s.blob)});
+    ST=[];$('#dcF').value='';paintStage();msg.textContent=(n?n+' saved. ':'')+(bad.length?'Not saved: '+bad.join(', '):'');setTimeout(list,250)}
+}
+
+/* ---------- Lists: the Master Admin can add, rename, move and delete dropdown choices ---------- */
+const LST=[];
+function lstReg(r){r.def=r.kv?r.keys.map(k=>({k,l:r.labels[k]||k})):(r.arr?r.arr.slice():(r.store?r.store.read():[]));LST.push(r);return r}
+const lstAll=()=>(D.settings&&D.settings.lists)||{};
+function lstRead(r){
+  if(r.store&&!r.kv)return r.store.read();
+  const s=lstAll()[r.key];
+  if(r.kv)return s&&Array.isArray(s.items)&&s.items.length?s.items.map(x=>({k:x.k,l:x.l})):r.def.map(x=>({...x}));
+  return s&&Array.isArray(s.items)&&s.items.length?s.items.slice():r.def.slice();
+}
+function lstSync(){LST.forEach(r=>{const v=lstRead(r);
+  if(r.kv){r.keys.splice(0,r.keys.length,...v.map(x=>x.k));v.forEach(x=>{r.labels[x.k]=x.l;(r.labels2||[]).forEach((m,mi)=>{if(x.k in m||(mi===0&&!(r.locked||[]).includes(x.k)))m[x.k]=x.l})})}
+  else if(r.arr)r.arr.splice(0,r.arr.length,...v)})}
+const lstVal=(r,it)=>r.kv?it.l:it;
+function lstUsed(r,it){const val=r.kv?it.k:it;let n=0;(r.uses||[]).forEach(([c,f])=>Object.values(D[c]||{}).forEach(x=>{if(x&&x[f]===val)n++}));return n}
+async function lstWrite(r,items,msg){
+  if(r.store&&!r.kv)await r.store.write(items);
+  else await db.doc('settings/lists').set({...lstAll(),[r.key]:{items,updatedAt:new Date().toISOString(),updatedBy:ME.name}});
+  logAct('List changed',r.title,msg);
+}
+async function lstMass(r,oldV,newV){
+  if(r.key==='docTypes'||r.key==='doct')await posRenameDoc(oldV,newV);
+  const jobs=[];(r.uses||[]).forEach(([c,f])=>Object.entries(D[c]||{}).forEach(([id,x])=>{if(x&&x[f]===oldV)jobs.push([c,id,f])}));
+  for(let i=0;i<jobs.length;i+=20)await Promise.all(jobs.slice(i,i+20).map(([c,id,f])=>db.doc(c+'/'+id).update({[f]:newV})));
+  return jobs.length;
+}
+UI.lst=null;
+function listsView(){
+  if(!can('admin'))return '<div class="empty">Only a Master Admin can manage lists.</div>';
+  const box=r=>{const items=lstRead(r),ed=UI.lst&&UI.lst.k===r.key?UI.lst.i:-1;
+    return `<div class="lbox" data-lk="${esc(r.key)}"><h3>${esc(r.title)}</h3><div class="lsub">${esc(r.hint||'')}</div>
+    <div class="tbox" style="max-height:none"><table class="t tight" style="min-width:0"><thead><tr><th>Choice</th><th class="n">In use</th><th></th></tr></thead><tbody>${items.length?items.map((it,i)=>{const v=lstVal(r,it),n=lstUsed(r,it);
+      return `<tr>${ed===i?`<td><input class="i" data-lstin value="${esc(v)}" maxlength="60"></td><td class="n">${n}</td><td class="act"><button class="btn sm pri" type="button" data-lst="save" data-i="${i}">Save</button> <button class="btn sm" type="button" data-lst="cancel">Cancel</button></td>`
+      :`<td>${esc(v)}${r.kv&&(r.locked||[]).includes(it.k)?' <span class="faint">(built in)</span>':''}</td><td class="n">${n}</td><td class="act"><button class="btn sm" type="button" data-lst="up" data-i="${i}" aria-label="Move up" ${i?'':'disabled'}>↑</button> <button class="btn sm" type="button" data-lst="dn" data-i="${i}" aria-label="Move down" ${i<items.length-1?'':'disabled'}>↓</button> <button class="btn sm" type="button" data-lst="ren" data-i="${i}">Rename</button> <button class="btn sm danger" type="button" data-lst="del" data-i="${i}">Delete</button></td>`}</tr>`}).join(''):'<tr><td colspan="3" class="empty">No choices yet.</td></tr>'}</tbody></table></div>
+    <div class="addrow"><input class="i" data-lstnew placeholder="Add a new choice…" maxlength="60"><button class="btn pri" type="button" data-lst="add">Add</button><button class="btn" type="button" data-lst="reset">Reset to default</button></div><div class="err" data-lsterr role="alert"></div></div>`};
+  return `<div class="defbox"><b>Lists.</b> Every dropdown with fixed choices is managed here. <b>Add</b> a choice and it appears in the dropdown straight away. <b>Rename</b> updates every record that uses it. <b>Delete</b> works only when no record uses the choice. Only the Master Admin can change lists.</div><div class="lgrid">${LST.map(box).join('')}</div>`;
+}
+async function lstClick(e){
+  const b=e.target.closest('[data-lst]');if(!b||!can('admin'))return;
+  const bx=b.closest('[data-lk]'),r=LST.find(x=>x.key===bx.dataset.lk),err=bx.querySelector('[data-lsterr]'),act=b.dataset.lst,i=+b.dataset.i;
+  const say=t=>{err.textContent=t};say('');
+  const items=lstRead(r),dup=(v,skip)=>items.some((it,j)=>j!==skip&&lstVal(r,it).toLowerCase()===v.toLowerCase());
+  try{
+    if(act==='ren'){UI.lst={k:r.key,i};draw();const inp=document.querySelector('[data-lk="'+r.key+'"] [data-lstin]');if(inp){inp.focus();inp.select()}return}
+    if(act==='cancel'){UI.lst=null;draw();return}
+    if(act==='add'){const inp=bx.querySelector('[data-lstnew]'),v=inp.value.trim();if(!v){say('Type the new choice first.');return}if(dup(v,-1)){say('That choice already exists.');return}
+      const nv=r.kv?[...items,{k:'F'+Date.now().toString(36),l:v}]:[...items,v];await lstWrite(r,nv,'Added: '+v);toast('Added.');return}
+    if(act==='save'){const v=bx.querySelector('[data-lstin]').value.trim(),it=items[i],old=lstVal(r,it);
+      if(!v){say('The choice cannot be empty.');return}if(v!==old&&dup(v,i)){say('That choice already exists.');return}
+      if(v===old){UI.lst=null;draw();return}
+      const n=lstUsed(r,it);if(n&&!r.kv&&!confirm('Rename "'+old+'" to "'+v+'"? This also changes '+n+' record'+(n===1?'':'s')+'.'))return;
+      const nv=items.map((x,j)=>j===i?(r.kv?{k:x.k,l:v}:v):x);
+      b.disabled=true;await lstWrite(r,nv,'Renamed: '+old+' → '+v);if(!r.kv&&n)await lstMass(r,old,v);UI.lst=null;toast(n&&!r.kv?'Renamed. '+n+' record'+(n===1?'':'s')+' updated.':'Renamed.');draw();return}
+    if(act==='del'){const it=items[i],v=lstVal(r,it);
+      if(r.kv&&(r.locked||[]).includes(it.k)){say('"'+v+'" is built in and follows the account type. You can rename it but not delete it.');return}
+      const n=lstUsed(r,it);if(n){say('"'+v+'" is used by '+n+' record'+(n===1?'':'s')+'. Rename it, or change those records first.');return}
+      if(items.length<2){say('Keep at least one choice.');return}
+      if(!confirm('Delete "'+v+'"?'))return;
+      await lstWrite(r,items.filter((x,j)=>j!==i),'Deleted: '+v);toast('Deleted.');return}
+    if(act==='up'||act==='dn'){const j=act==='up'?i-1:i+1;if(j<0||j>=items.length)return;const nv=items.slice();[nv[i],nv[j]]=[nv[j],nv[i]];await lstWrite(r,nv,'Moved: '+lstVal(r,items[i]));return}
+    if(act==='reset'){if(!confirm('Put "'+r.title+'" back to its original choices? Records keep what they already have.'))return;
+      await lstWrite(r,r.kv?r.def.map(x=>({...x})):r.def.slice(),'Reset to default');toast('Reset.');return}
+  }catch(x){say('Could not save. Try again.')}
+}
+document.addEventListener('click',lstClick);
+(function(){const s=document.createElement('style');s.textContent='.lgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}@media(max-width:1000px){.lgrid{grid-template-columns:minmax(0,1fr)}}.lbox{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px}.lbox h3{font-family:var(--head);font-size:16px;margin:0 0 2px}.lbox .lsub{color:var(--faint);font-size:12px;margin-bottom:10px}.lbox .addrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.lbox .addrow .i{flex:1 1 160px;width:auto}.lbox td.act{white-space:nowrap;text-align:right}.lbox .btn.danger{color:var(--red);border-color:var(--red)}.tbox table.t.tight td,.tbox table.t.tight th{padding:6px 8px}';document.head.appendChild(s)})();
+
+const DEFT0=['P2P transfer record (MCA to MCA)','Bank slip / receipt','Bank statement','Approval','Settlement report','Other'];
+lstReg({key:'flows',title:'Flow (type of transfer)',hint:'Used in the Flow filter and the transfer form. MCA, CPA and MAC follow the account type.',kv:true,keys:FLOWKEYS,labels:FLOWLAB,labels2:[FLOWLAB2],locked:['MCA','CPA','MAC'],uses:[['transfers','flowKey']]});
+lstReg({key:'projects',title:'Project',hint:'Used in the Project filter and the transfer form.',store:{read:()=>{const x=D.settings&&D.settings.projects;return x&&Array.isArray(x.list)&&x.list.length?x.list.slice():DEFPROJ.slice()},write:l=>db.doc('settings/projects').set({list:l,updatedAt:new Date().toISOString(),updatedBy:ME.name})},uses:[['transfers','project']]});
+lstReg({key:'currencies',title:'Currency',hint:'Used in the transfer form and filters.',arr:CURS,uses:[['transfers','currency']]});
+lstReg({key:'docTypes',title:'Document types',hint:'Used when attaching documents.',store:{read:()=>{const x=D.settings&&D.settings.docTypes;return x&&Array.isArray(x.list)&&x.list.length?x.list.slice():DEFT0.slice()},write:l=>db.doc('settings/docTypes').set({list:l,updatedAt:new Date().toISOString(),updatedBy:ME.name})},uses:[['docs','docType']]});
+/* ---------- boot ---------- */
+async function boot(){
+  try{db=await window.claude.use('db');dl=await window.claude.use('downloads')}catch(e){}
+  if(!db){$('#loginBtn').textContent='Unavailable';$('#loginErr').textContent='Open this page signed in to claude.ai to reach the database.';return}
+  let t;
+  const sub=(c,q)=>(q||db.collection(c)).onSnapshot(s=>{
+    const o={};s.docs.forEach(d=>o[d.id]=d.data());D[c]=o;READY[c]=1;if(c==='settings')lstSync();
+    if(c==='users'){bootstrapAdmin();checkSession();const b=$('#loginBtn');if(!b.dataset.ready){b.disabled=false;b.textContent='Sign in';b.dataset.ready=1}}
+    clearTimeout(t);t=setTimeout(refresh,50)},()=>{READY[c]=1;if(c==='users'){$('#loginErr').textContent='Could not read the database.'}});
+  sub('source');sub('accounts');sub('transfers');sub('settings');sub('users');sub('docs',db.collection('docs').orderBy('at','desc').limit(500));sub('log',db.collection('log').orderBy('at','desc').limit(200));
+  $('#loginForm').addEventListener('submit',doLogin);
+  $('#nav').addEventListener('click',e=>{if(e.target.closest('[data-docs]'))docsModal()});$('#btnPw').onclick=()=>passwordModal(false);$('#btnOut').onclick=logout;
+  setInterval(()=>{if(ME&&!$('#ov'))draw()},3600*1000);
+}
+boot();
+})();
+</script>
+
+</body></html>

@@ -10,3 +10,5 @@ node_modules/
 dist/
 .pnpm-store/
 .ssh-*
+*.zip
+*.tmp

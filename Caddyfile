@@ -1,4 +1,4 @@
-tonchet.com {
+tonchet.com, www.tonchet.com {
     encode zstd gzip
 
     header {

@@ -1,6 +1,6 @@
 # MicroFinance · MFS
 
-A local workspace containing the six MM1 system modules, their original browser experiences, and a local MySQL/API/file backend.
+A local workspace containing ten system modules across MM1 and MM4, a React workspace, and a local MySQL/API/file backend.
 
 ## Start on Windows
 
@@ -38,7 +38,7 @@ Configure app and MySQL settings in `.env`; `MM1_APP_PORT` sets the app port and
 | MM1-05 Communication Channel | Communication channels, teams/users, positions and access definitions | Maintain channel records, configure the team/position lists, set access, and export channel information. |
 | MM1-06 Company Database | Company profiles, registrations, accounts, contacts, contracts, communication details and supporting files | Search/select a company, maintain company and registration details, manage accounts and documents, then export. |
 
-The main workspace, dashboard, API key manager, and account settings are built with React. Each of the six module systems and the detailed API guide now loads through an isolated React micro-app entry, preserving the original module workflows and browser data while those workflows are migrated. The module screens and their business logic still use the original HTML/JavaScript, so this is an incremental conversion rather than a completed React rewrite. Their existing browser data remains separate; module records are not silently copied into MySQL.
+The main workspace, dashboard, API key manager, and account settings are built with React. The six MM1 systems and four MM4 systems load through isolated React entries while preserving their existing workflows. Their browser data stores synchronize to each module’s MySQL `browser-state` records after that module’s own sign-in; the bridge retries when the database is unavailable. No MFS workspace sign-in is required for module data. MM4-03 reads the related data stores for settlement summaries. The nine MM2 screens use module-specific MySQL records and logins. Original HTML/JavaScript assets remain in the compatibility runtime for MM1 and MM4.
 
 ## Local data and API
 
@@ -52,3 +52,8 @@ The default account is for first-run local setup. Change its password before ope
 ## Production deployment
 
 The included `Caddyfile` serves `tonchet.com` with automatic HTTPS and proxies traffic to the app container. Docker builds the React frontend as part of the image. Point the domain A record to the server, allow inbound ports 80 and 443, and run Docker Compose on the server. Set unique values for `MM1_ADMIN_PASSWORD`, `MM1_DB_PASSWORD`, and `MM1_MYSQL_ROOT_PASSWORD` in the server-only `.env`; set `MM1_COOKIE_SECURE=1`. Never copy a local `.env` into the public repository. Administrator sign-in is available from the top bar for API key and account management, while MySQL and the app port stay bound to localhost.
+
+
+MM2 contributes nine native React system screens in the dashboard. See [MODULES.md](MODULES.md) for workflow summaries and [API.md](API.md) for module scopes and integration instructions.
+
+Each module retains a separate username/password login and user list. MM2 accounts are stored independently in MySQL by module; each MM2 administrator account starts as `admin` / `admin` and can be changed from inside its module. MM1 and MM4 retain their source module sign-in flows.

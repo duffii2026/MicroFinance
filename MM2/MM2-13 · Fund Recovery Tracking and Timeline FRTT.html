@@ -1,0 +1,706 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MM2-13 · Fund Recovery Tracking and Timeline (FRTT)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600&display=swap">
+<style>
+:root{--paper:#F2F4F6;--surface:#FFFFFF;--ink:#17212C;--muted:#5E6B78;--faint:#8A96A3;--line:#DCE1E6;--line2:#EBEEF1;--steel:#23507A;--steel-d:#1A3D5E;--steel-l:#E6EEF5;--on-steel:#FFFFFF;--side:#132230;--side-2:#1C3043;--side-ink:#C8D4DF;--side-line:#2B435A;--red:#B42318;--red-l:#FDECEA;--amber:#B54708;--amber-l:#FEF3E2;--green:#067647;--green-l:#E7F6EC;--band:#EEF2F5;--shadow:0 8px 30px rgba(15,30,45,.22);--head:"Barlow Semi Condensed","Bahnschrift","Arial Narrow",sans-serif;--body:"Segoe UI","Inter",system-ui,-apple-system,Arial,sans-serif;--mono:ui-monospace,"SFMono-Regular",Consolas,Menlo,monospace}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--paper:#0E151C;--surface:#162029;--ink:#E6ECF1;--muted:#9AA8B5;--faint:#6F7E8C;--line:#2A3947;--line2:#223039;--steel:#6FA3D6;--steel-d:#8DB8E3;--steel-l:#1B3248;--on-steel:#0E151C;--side:#0A1118;--side-2:#14212C;--side-ink:#AEBBC8;--side-line:#243543;--red:#F07A6C;--red-l:#3A1A16;--amber:#E3A948;--amber-l:#33270F;--green:#5CC98A;--green-l:#15301F;--band:#1B2630;--shadow:0 8px 30px rgba(0,0,0,.5)}}
+:root[data-theme="dark"]{--paper:#0E151C;--surface:#162029;--ink:#E6ECF1;--muted:#9AA8B5;--faint:#6F7E8C;--line:#2A3947;--line2:#223039;--steel:#6FA3D6;--steel-d:#8DB8E3;--steel-l:#1B3248;--on-steel:#0E151C;--side:#0A1118;--side-2:#14212C;--side-ink:#AEBBC8;--side-line:#243543;--red:#F07A6C;--red-l:#3A1A16;--amber:#E3A948;--amber-l:#33270F;--green:#5CC98A;--green-l:#15301F;--band:#1B2630;--shadow:0 8px 30px rgba(0,0,0,.5)}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--paper);color:var(--ink);font:14px/1.45 var(--body);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--head);font-weight:600;margin:0;letter-spacing:.01em}
+h1{font-size:24px}h2{font-size:18px}h3{font-size:15px}
+:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
+.hidden{display:none!important}
+.mono{font-family:var(--mono);font-size:12.5px}
+.muted{color:var(--muted)}.faint{color:var(--faint)}
+.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:600;min-width:0}
+.i{width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:8px 10px;font-weight:400;font-size:14px;min-width:0}
+textarea.i{min-height:64px;resize:vertical}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:7px 12px;cursor:pointer;font-weight:600;font-size:13px;white-space:nowrap}
+.btn:hover{border-color:var(--steel)}
+.btn.pri{background:var(--steel);border-color:var(--steel);color:var(--on-steel)}
+.btn.pri:hover{background:var(--steel-d);border-color:var(--steel-d)}
+.btn.danger{color:var(--red);border-color:var(--red)}
+.btn.sm{padding:4px 9px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:default}
+.err{color:var(--red);font-size:13px;min-height:18px}
+#app{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh}
+aside{background:var(--side);color:var(--side-ink);display:flex;flex-direction:column;position:sticky;top:0;align-self:start;height:100vh;max-height:100vh;overflow:auto}
+.brand{padding:18px 18px 14px;border-bottom:1px solid var(--side-line)}
+.brand b{display:block;font:600 19px var(--head);color:#fff}
+.brand small{color:#8397AA}
+nav{padding:10px 8px;display:flex;flex-direction:column;gap:2px;flex:1}
+.ng{font:600 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:#6F8499;padding:12px 10px 4px}
+nav button{all:unset;box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;color:var(--side-ink);font-size:13.5px}
+nav button:hover{background:var(--side-2)}
+nav button[aria-current="page"]{background:var(--steel);color:var(--on-steel);font-weight:600}
+nav .ct{font:11px var(--mono);opacity:.8}
+.side-foot{padding:14px 18px;border-top:1px solid var(--side-line);font-size:12.5px}
+.side-foot .btns{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.side-foot .btn{background:transparent;color:var(--side-ink);border-color:var(--side-line)}
+main{padding:22px clamp(16px,3vw,36px) 48px;min-width:0}
+.topbar{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;margin-bottom:16px}
+.topbar .sub{color:var(--muted);font-size:13px}
+.sync{margin-left:auto;font:12px var(--mono);color:var(--muted)}
+@media (max-width:860px){#app{grid-template-columns:1fr}aside{position:static;max-height:none;height:auto}nav{flex-direction:row;overflow-x:auto;padding:8px;flex:none}.ng{display:none}nav button{white-space:nowrap}}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:12px}
+.toolbar .f{min-width:120px}
+.toolbar .sp{flex:1}
+.sumstrip{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.chip{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 14px;min-width:120px}
+.chip span{display:block;font:600 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.chip b{font:600 22px var(--head);font-variant-numeric:tabular-nums}
+.chip.bad b{color:var(--red)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:6px;min-height:96px}
+.card .k{font:600 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.card .v{font:600 26px var(--head);font-variant-numeric:tabular-nums}
+.card .m{font-size:12.5px;color:var(--muted)}
+@media(max-width:1000px){.cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.cards{grid-template-columns:1fr}}
+.xgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media(max-width:900px){.xgrid{grid-template-columns:1fr}}
+.xcard{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;min-width:0}
+.xcard h3{margin:0 0 10px;font:600 16px var(--head)}
+.tbox{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:auto;max-height:calc(100vh - 260px)}
+table.t{border-collapse:collapse;width:100%;min-width:760px;font-size:13px}
+table.t th{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);background:var(--band);white-space:nowrap;position:sticky;top:0;z-index:3}
+table.t td{padding:8px 10px;border-bottom:1px solid var(--line2);vertical-align:top}
+table.t td.n,table.t th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.row{cursor:pointer}
+tr.row:hover td{background:var(--steel-l)}
+.pill{display:inline-flex;align-items:center;gap:5px;font:600 11.5px var(--body);padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.g{color:var(--green);background:var(--green-l)}
+.pill.a{color:var(--amber);background:var(--amber-l)}
+.pill.r{color:var(--red);background:var(--red-l)}
+.pill.x{color:var(--muted);background:var(--band)}
+.code{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--steel)}
+.empty{padding:36px 16px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--ink);font:600 20px var(--head);margin-bottom:6px}
+.defbox{background:var(--steel-l);border-left:3px solid var(--steel);border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.5}
+.note{font-size:12.5px;color:var(--muted);margin-top:10px}
+.addrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.addrow .i{flex:1 1 180px;width:auto}
+.ov{position:fixed;inset:0;background:rgba(10,18,26,.55);display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow:auto;z-index:50}
+.modal{background:var(--surface);border-radius:10px;width:100%;max-width:760px;box-shadow:var(--shadow);margin:auto 0}
+.modal.wide{max-width:960px}
+.modal header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.modal header .faint{font-size:13px}
+.modal .x{all:unset;cursor:pointer;font-size:22px;line-height:1;padding:2px 8px;color:var(--muted)}
+.modal .body{padding:16px 18px;display:grid;gap:16px}
+.modal footer{display:flex;flex-wrap:wrap;gap:8px;padding:12px 18px;border-top:1px solid var(--line);align-items:center}
+.modal footer .sp{flex:1}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kv div>span:first-child{display:block;font:600 10.5px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:8px;font-size:13px;z-index:80}
+.gantt{position:relative;height:26px;background:var(--band);border-radius:4px;margin:6px 0}
+.gantt i{position:absolute;top:3px;height:20px;border-radius:3px;background:var(--steel);opacity:.9;color:#fff;font-size:11px;padding:3px 5px;white-space:nowrap;overflow:hidden;font-style:normal}
+.bar{height:10px;background:var(--line2);border-radius:5px;overflow:hidden;min-width:120px}
+.bar i{display:block;height:100%;background:var(--green)}
+.bar i.over{background:var(--red)}
+.tag{display:inline-block;padding:2px 7px;border-radius:10px;font-size:11px;color:#fff;background:var(--faint);white-space:nowrap}
+.sev-high{color:var(--red);font-weight:700}.sev-med{color:var(--amber);font-weight:700}.sev-low{color:var(--muted)}
+#login{min-height:100vh;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
+.login-art{background:var(--side);color:#fff;padding:48px clamp(24px,5vw,64px);display:flex;flex-direction:column;justify-content:space-between;gap:32px}
+.login-art h1{font-size:clamp(28px,4vw,40px);color:#fff;margin-top:14px;line-height:1.1}
+.login-art p{color:#A9B9C9;max-width:44ch;margin:14px 0 0}
+.login-art .eb{color:#8397AA;font-size:13px}
+.codes{display:flex;flex-wrap:wrap;gap:8px}
+.codes span{font:600 12px var(--mono);letter-spacing:.06em;border:1px solid #2B435A;color:#C8D4DF;padding:4px 9px;border-radius:4px}
+.login-form{display:flex;align-items:center;justify-content:center;padding:32px 16px}
+.login-form form{width:100%;max-width:340px;display:flex;flex-direction:column;gap:14px}
+.hint{font-size:12px;color:var(--muted)}
+@media (max-width:760px){#login{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="login">
+  <div class="login-art">
+    <div>
+      <div class="eb">IR Group · PSS Department · MM2-13</div>
+      <h1>Fund Recovery Tracking and Timeline (FRTT)</h1>
+      <p>Account register for restricted balances: agents, holders, contact attempts, bank steps, settlement, timeline, alerts and rewards.</p>
+    </div>
+    <div class="codes"><span>REGISTER</span><span>TODAY</span><span>TIMELINE</span><span>ALERTS</span><span>REWARDS</span></div>
+  </div>
+  <div class="login-form">
+    <form id="loginForm" autocomplete="on">
+      <h2>Sign in</h2>
+      <label class="f" for="lu">Username<input class="i" id="lu" autocomplete="username" required></label>
+      <label class="f" for="lp">Password<input class="i" id="lp" type="password" autocomplete="current-password" required></label>
+      <div class="err" id="loginErr" role="alert"></div>
+      <button class="btn pri" id="loginBtn" type="submit" style="justify-content:center;padding:10px" disabled>Connecting…</button>
+      <p class="hint" style="margin:0">Ask your Admin for an account. Sign-in locks the page; it is not bank-grade security.</p>
+      <p class="hint" style="margin:0">Version 0.1 · 21 Oct 2026</p>
+    </form>
+  </div>
+</div>
+<div id="app" class="hidden">
+  <aside>
+    <div class="brand"><b>MM2-13 · FRTT</b><small>IR Group · PSS Department</small></div>
+    <nav id="nav" aria-label="Fund recovery"></nav>
+    <div class="side-foot"><div id="who"></div><div class="btns"><button class="btn sm" id="btnPw" type="button">Password</button><button class="btn sm" id="btnOut" type="button">Sign out</button></div></div>
+  </aside>
+  <main><div class="topbar"><h1 id="pageTitle"></h1><span class="sub" id="pageSub"></span><span class="sync" id="todayTxt"></span></div><section id="view"><div class="empty">Loading…</div></section></main>
+</div>
+<div id="modalRoot"></div><div id="toastRoot"></div>
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const pad=n=>String(n).padStart(2,'0');
+const todayStr=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+const fmtD=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||'');return m?`${+m[3]} ${MON[+m[2]-1]} ${m[1]}`:''};
+const fmtDT=iso=>{if(!iso)return '';const d=new Date(iso);if(isNaN(d))return '';return `${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())}`};
+const dayDiff=(a,b)=>Math.round((new Date(b)-new Date(a))/86400000);
+const fmt=n=>'$'+(Number(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const pct=n=>(n*100).toFixed(1)+'%';
+const rid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function toast(t){const r=$('#toastRoot');r.innerHTML=`<div class="toast" role="status">${esc(t)}</div>`;clearTimeout(toast.t);toast.t=setTimeout(()=>r.innerHTML='',3000)}
+const store={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
+
+let db=null,dl=null,ME=null;
+/* ---------- access (same positions model as MM2-04) ---------- */
+const MENUS=[["dash","Dashboard"],["reg","Account register"],["today","Today / Priorities"],["time","Timeline & milestones"],["alerts","Alerts"],["rew","Rewards"],["set","Settings & data"]];
+const ACTS=[['edit','Add, edit and record contact attempts'],['delete','Delete accounts'],['export','Excel and JSON export']];
+const posDefs=()=>{const L=((D.settings.positions||{}).list)||{},all=MENUS.map(m=>m[0]);
+  const def={Admin:{menus:all,acts:ACTS.map(a=>a[0])},Editor:{menus:all,acts:['edit','delete','export']},Viewer:{menus:all,acts:[]}};
+  const o={};Object.keys(def).forEach(k=>o[k]=k!=='Admin'&&L[k]?{menus:L[k].menus||[],acts:L[k].acts||[]}:def[k]);
+  Object.keys(L).forEach(k=>{if(!def[k])o[k]={menus:L[k].menus||[],acts:L[k].acts||[]}});return o};
+const posNames=()=>Object.keys(posDefs());
+const rl=r=>r==='Admin'?'Master Admin':r;
+const can=p=>{if(!ME)return false;if(p==='view')return true;if(ME.role==='Admin')return true;if(p==='admin')return false;const q=posDefs()[ME.role];if(!q)return false;return p.startsWith('m:')?q.menus.includes(p.slice(2)):q.acts.includes(p)};
+const menuOk=k=>k==='users'||k==='access'?can('admin'):can('m:'+k);
+
+const D={settings:{},accounts:{},log:{},users:{}};
+const READY={};
+const UI={tab:'dash',q:'',agent:'',status:'',tier:'',step:'',alSev:''};
+
+/* ---------- constants from the FRTT plan ---------- */
+const AGENTS=['Mr T','Mr Leang','Mr Tam','Mr Tou Lek','Mr Nang'];
+const STEPS=['Not started','Triage','Briefing','Bank action','Settlement','Closed'];
+const STATUSES=['Blocked','Stop Use','Sign Out','Unable to Log In','Never Used','Active','Closed'];
+const BANKS=['ABA','Wing','PiPAY','ACLEDA','Other'];
+const FAIL_RESULTS=['No answer','Refused','Wrong number','Unreachable'];
+const RESULTS=['Reached','No answer','Refused','Wrong number','Unreachable','Visit done','Bank referred','Pending'];
+const CHANNELS=['Call','Text','Message','Visit','Bank'];
+const TIERS=[
+ {n:1,min:15000,max:Infinity,target:.85,start:6,end:45,label:'Tier 1 (≥ $15,000)'},
+ {n:2,min:10000,max:15000,target:.80,start:21,end:60,label:'Tier 2 ($10,000–$14,999)'},
+ {n:3,min:5000,max:10000,target:.75,start:36,end:75,label:'Tier 3 ($5,000–$9,999)'},
+ {n:4,min:0,max:5000,target:.70,start:51,end:90,label:'Tier 4 (< $5,000)'}];
+const PLAN_TARGET=555415.84;
+const tierOf=bal=>bal>=15000?1:bal>=10000?2:bal>=5000?3:4;
+const tdef=n=>TIERS[n-1];
+const settingsFrt=()=>Object.assign({day1:'',stale:7,roster:5,fail:3,target:PLAN_TARGET},D.settings.frt||{});
+const acctList=()=>Object.entries(D.accounts).map(([id,a])=>({...a,id}));
+const isOpen=a=>a.status!=='Closed'&&a.step<5&&!(a.cleared>0&&a.cleared>=a.balance-0.005);
+const lastAct=a=>(a.attempts||[]).map(x=>x.date).filter(Boolean).sort().pop()||'';
+const failCount=a=>(a.attempts||[]).filter(x=>FAIL_RESULTS.includes(x.result)).length;
+const contingency=a=>{const s=settingsFrt();if(a.agentUnr&&isOpen(a))return 'A';if(failCount(a)>=s.fail&&isOpen(a))return 'B';return ''};
+const dateOfDay=n=>{const s=settingsFrt();if(!s.day1)return 'Day '+n;const d=new Date(s.day1);d.setDate(d.getDate()+n-1);return d.toISOString().slice(0,10)};
+const clearedOf=a=>Number(a.cleared)||0;
+function totals(list){
+  const bal=list.reduce((s,a)=>s+(Number(a.balance)||0),0), cl=list.reduce((s,a)=>s+clearedOf(a),0);
+  return {bal,cl,remain:bal-cl,rate:bal?cl/bal:0,count:list.length,open:list.filter(isOpen).length};
+}
+function computeAlerts(){
+  const out=[],today=todayStr(),s=settingsFrt();
+  acctList().forEach(a=>{
+    const open=isOpen(a),last=lastAct(a),who={acct:a};
+    const add=(sev,type,msg)=>out.push({sev,type,msg,acct:a});
+    if(open&&last&&dayDiff(last,today)>s.stale) add('Medium','Stale',`No activity for ${dayDiff(last,today)} days`);
+    if(open&&!last&&a.step>=1) add('Medium','No log','Step started but no contact attempt logged');
+    if(open&&a.step===0&&a.balance>=15000) add('High','Tier 1 not started','Tier 1 account not yet in triage');
+    if(open&&contingency(a)==='A') add('High','Contingency A','Agent unreachable: follow escalation ladder (Plan §6)');
+    if(open&&contingency(a)==='B') add('High','Contingency B',`${failCount(a)} failed holder attempts: trace and time-boxed decision (Plan §7)`);
+    if(open&&!a.triage&&a.step>=1) add('Low','Triage missing','Set triage class A, B or C');
+    if(open&&!a.roster&&s.day1&&dayDiff(s.day1,today)+1>s.roster) add('High','Roster overdue',`Contact roster not submitted by Day ${s.roster}`);
+    if(a.status==='Closed'&&a.balance>0.01&&clearedOf(a)<a.balance-0.01) add('High','Closed, balance shown','Marked Closed but balance still on the register: verify with bank statement (Plan §2)');
+    if(!a.opened) add('Low','No opened date','Backfill opened date from opening records');
+    if(a.step>=4&&!a.legal&&a.balance>=5000) add('High','Legal gate','Settlement step without legal approval recorded (Tier 1-3)');
+    if(clearedOf(a)>0&&a.step<4&&open) add('Medium','Cleared vs step','Cleared amount recorded before settlement step');
+  });
+  const order={High:0,Medium:1,Low:2};
+  return out.sort((x,y)=>order[x.sev]-order[y.sev]);
+}
+function nextAction(a){
+  if(!isOpen(a))return 'None (closed)';
+  if(a.step===0)return 'Start triage: classify holder A / B / C and log contact roster';
+  if(a.step===1)return a.triage?'Brief holder: what to bring, what the bank will ask':'Set triage class';
+  if(a.step===2)return 'Book bank visit with holder; prepare Unblock Pack';
+  if(a.step===3)return 'Chase bank for unblock reference; record bank ref';
+  if(a.step===4)return 'Settle to collection account same day; dual sign-off; holder acknowledgement';
+  return 'Report and close after Finance confirms receipt';
+}
+
+/* ---------- rewards (Plan 8.2) ---------- */
+const COMM=[[0,3000,.02,.02],[3000,10000,.035,.035],[10000,25000,.05,.05],[25000,75000,.05,.10],[75000,150000,.10,.15],[150000,300000,.15,.20],[300000,Infinity,.20,.20]];
+function commissionFor(C){
+  let total=0;
+  COMM.forEach(([lo,hi,r1,r2])=>{
+    const a=lo,b=Math.min(hi,C); if(b<=a)return;
+    const rate=x=>hi===Infinity?r1:r1+(r2-r1)*(x-lo)/(hi-lo);
+    total+=(b-a)*(rate(a)+rate(b))/2;
+  });
+  return total;
+}
+const HOLD=[[0,2500,.04],[2500,5000,.03],[5000,10000,.025],[10000,15000,.02],[15000,Infinity,.015]];
+function holderReward(bal,fast){
+  let r=0; HOLD.forEach(([lo,hi,rate])=>{const a=lo,b=Math.min(hi,bal); if(b>a)r+=(b-a)*rate});
+  if(fast)r+=bal*0.01;
+  return Math.max(50,r);
+}
+
+/* ---------- audit ---------- */
+async function logAct(action,target,detail){try{await db.collection('log').doc(rid('l')).set({at:new Date().toISOString(),by:ME?ME.u:'',name:ME?ME.name:'',action,target,detail:detail||''})}catch(e){}}
+
+/* ---------- modal ---------- */
+function openModal(title,sub,body,footer,wide){
+  $('#modalRoot').innerHTML=`<div class="ov" id="ov"><div class="modal${wide?' wide':''}" role="dialog" aria-modal="true" aria-label="${esc(title)}"><header><div><h2>${esc(title)}</h2>${sub?`<div class="faint">${sub}</div>`:''}</div><button class="x" type="button" id="mx" aria-label="Close">×</button></header><div class="body">${body}</div>${footer?`<footer>${footer}</footer>`:''}</div></div>`;
+  $('#mx').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal()});
+  document.onkeydown=e=>{if(e.key==='Escape')closeModal()};
+}
+const closeModal=()=>{$('#modalRoot').innerHTML='';document.onkeydown=null;if(ME&&!$('#ov'))draw()};
+
+/* ---------- account form (add / edit, with contact attempts) ---------- */
+function accountForm(id){
+  const isNew=!id;const a=isNew?{agent:'Mr T',bank:'ABA',status:'Blocked',step:0,attempts:[]}:{...D.accounts[id]};
+  if(!isNew&&!D.accounts[id])return;
+  const att=(a.attempts||[]);
+  const rows=att.map((x,i)=>attRow(i,x)).join('');
+  openModal(isNew?'Add account':'Edit account',isNew?'New holder account':esc(a.holder||''),
+  `<div class="grid2">
+    <label class="f">Agent<select class="i" id="a_agent">${AGENTS.map(x=>`<option ${a.agent===x?'selected':''}>${esc(x)}</option>`).join('')}</select></label>
+    <label class="f">Holder name<input class="i" id="a_holder" value="${esc(a.holder||'')}"></label>
+    <label class="f">Bank / wallet<select class="i" id="a_bank">${BANKS.map(x=>`<option ${a.bank===x?'selected':''}>${x}</option>`).join('')}</select></label>
+    <label class="f">Account name<input class="i" id="a_acctName" value="${esc(a.acctName||'')}"></label>
+    <label class="f">Account number<input class="i" id="a_acctNo" value="${esc(a.acctNo||'')}"></label>
+    <label class="f">Balance (USD)<input class="i" type="number" step="0.01" id="a_balance" value="${a.balance??''}"></label>
+    <label class="f">Status<select class="i" id="a_status">${STATUSES.map(x=>`<option ${a.status===x?'selected':''}>${x}</option>`).join('')}</select></label>
+    <label class="f">Project / PSS code<input class="i" id="a_project" value="${esc(a.project||'')}"></label>
+    <label class="f">Opened date<input class="i" type="date" id="a_opened" value="${esc(a.opened||'')}"></label>
+    <label class="f">Triage class<select class="i" id="a_triage"><option value="">—</option>${['A','B','C'].map(x=>`<option ${a.triage===x?'selected':''}>${x}</option>`).join('')}</select></label>
+    <label class="f">Current step<select class="i" id="a_step">${STEPS.map((x,i)=>`<option value="${i}" ${a.step===i?'selected':''}>${i} · ${x}</option>`).join('')}</select></label>
+    <label class="f">Bank reference / receipt<input class="i" id="a_bankRef" value="${esc(a.bankRef||'')}"></label>
+  </div>
+  <div class="grid2">
+    <label class="f"><span><input type="checkbox" id="a_roster" ${a.roster?'checked':''}> Contact roster submitted</span></label>
+    <label class="f"><span><input type="checkbox" id="a_legal" ${a.legal?'checked':''}> Legal approval recorded</span></label>
+    <label class="f"><span><input type="checkbox" id="a_agentUnr" ${a.agentUnr?'checked':''}> Agent unreachable (Contingency A)</span></label>
+  </div>
+  <div class="grid2">
+    <label class="f">Cleared amount (USD)<input class="i" type="number" step="0.01" id="a_cleared" value="${a.cleared||''}"></label>
+    <label class="f">Cleared date<input class="i" type="date" id="a_clearedDate" value="${esc(a.clearedDate||'')}"></label>
+    <label class="f" style="grid-column:1/-1">PSS note for fix<input class="i" id="a_pssNote" value="${esc(a.pssNote||'')}"></label>
+  </div>
+  <div><h3>Contact attempts</h3>
+    <div class="tbox" style="margin-top:8px;max-height:none"><table class="t" style="min-width:620px"><thead><tr><th>Stage</th><th>Date</th><th>Channel</th><th>Result</th><th>Note</th><th></th></tr></thead><tbody id="attRows">${rows}</tbody></table></div>
+    <div class="addrow"><button class="btn sm" type="button" id="addAtt">+ Add contact attempt</button></div>
+  </div>
+  <div class="err" id="aErr" role="alert"></div>`,
+  `<button class="btn" id="mClose">Cancel</button><span class="sp"></span>${isNew||can('delete')?'':''}${!isNew&&can('delete')?'<button class="btn danger" id="aDel">Delete</button>':''}<button class="btn pri" id="aSave">Save</button>`, true);
+  $('#mClose').onclick=closeModal;
+  bindAttRows();
+  $('#addAtt').onclick=()=>{const tb=$('#attRows');tb.insertAdjacentHTML('beforeend',attRow(tb.children.length,{date:todayStr(),channel:'Call',result:'Pending'}));bindAttRows()};
+  $('#aSave').onclick=async()=>{
+    const err=$('#aErr');err.textContent='';
+    const holder=$('#a_holder').value.trim(),bal=Number($('#a_balance').value);
+    if(!holder){err.textContent='Enter the holder name.';return}
+    if($('#a_balance').value===''||isNaN(bal)){err.textContent='Enter the balance.';return}
+    const attempts=readAtt();
+    const v={agent:$('#a_agent').value,holder,bank:$('#a_bank').value,acctName:$('#a_acctName').value.trim(),acctNo:$('#a_acctNo').value.trim(),
+      balance:bal,status:$('#a_status').value,project:$('#a_project').value.trim(),opened:$('#a_opened').value,triage:$('#a_triage').value,
+      step:Number($('#a_step').value),bankRef:$('#a_bankRef').value.trim(),roster:$('#a_roster').checked,legal:$('#a_legal').checked,
+      agentUnr:$('#a_agentUnr').checked,cleared:Number($('#a_cleared').value)||0,clearedDate:$('#a_clearedDate').value,
+      pssNote:$('#a_pssNote').value.trim(),attempts};
+    const b=$('#aSave');b.disabled=true;
+    try{
+      const key=isNew?'accounts/'+rid('c'):'accounts/'+id;
+      await db.doc(key).set({...(isNew?{}:a),...v,updatedAt:new Date().toISOString(),updatedBy:ME.name});
+      await logAct(isNew?'Account added':'Account changed',holder,`${v.bank} ${v.acctNo||''} · ${fmt(bal)}`);
+      closeModal();toast('Saved.');
+    }catch(e){b.disabled=false;err.textContent='Could not save. You may only have edit access.'}
+  };
+  const del=$('#aDel');if(del)del.onclick=async()=>{
+    if(del.dataset.s!=='1'){del.dataset.s='1';del.textContent='Click again to delete';return}
+    try{await db.doc('accounts/'+id).delete();await logAct('Account deleted',a.holder,a.acctNo||'');closeModal();toast('Deleted.')}catch(e){toast('Could not delete.')}
+  };
+}
+function attRow(i,x){
+  return `<tr><td>Stage ${i+1}</td><td><input class="i ad" type="date" value="${esc(x.date||'')}"></td>
+  <td><select class="i ac">${CHANNELS.map(c=>`<option ${x.channel===c?'selected':''}>${c}</option>`).join('')}</select></td>
+  <td><select class="i ar">${RESULTS.map(r=>`<option ${x.result===r?'selected':''}>${r}</option>`).join('')}</select></td>
+  <td><input class="i an" value="${esc(x.note||'')}"></td>
+  <td><button type="button" class="btn sm danger rmAtt">×</button></td></tr>`;
+}
+function bindAttRows(){
+  document.querySelectorAll('.rmAtt').forEach(b=>b.onclick=()=>{b.closest('tr').remove();renumberAtt()});
+}
+function renumberAtt(){document.querySelectorAll('#attRows tr').forEach((tr,i)=>tr.firstElementChild.textContent='Stage '+(i+1))}
+function readAtt(){
+  return [...document.querySelectorAll('#attRows tr')].map(tr=>({date:tr.querySelector('.ad').value,channel:tr.querySelector('.ac').value,result:tr.querySelector('.ar').value,note:tr.querySelector('.an').value})).filter(x=>x.date||x.note);
+}
+
+/* ---------- account detail (read view + open edit) ---------- */
+function accountDetail(id){
+  const a=D.accounts[id];if(!a)return;
+  const t=tierOf(a.balance),cont=contingency(a);
+  const al=computeAlerts().filter(x=>x.acct.id===id);
+  openModal(esc(a.holder||''),`${esc(a.agent)} · ${esc(a.bank)} ${esc(a.acctNo||'')} · T${t}`,
+  `<div class="kv"><div><span>Balance</span><b>${fmt(a.balance)}</b></div><div><span>Cleared</span>${clearedOf(a)?fmt(clearedOf(a)):'—'}</div><div><span>Status</span><span class="tag">${esc(a.status)}</span></div><div><span>Step</span>${a.step}. ${STEPS[a.step]}</div><div><span>Triage</span>${esc(a.triage||'—')}</div><div><span>Contingency</span>${cont?'<span class="sev-high">'+cont+'</span>':'—'}</div></div>
+  <div class="note" style="margin-top:0">Next action: ${esc(nextAction(a))}</div>
+  <div><h3>Contact attempts</h3><div class="tbox" style="margin-top:8px;max-height:260px"><table class="t" style="min-width:520px"><thead><tr><th>Date</th><th>Channel</th><th>Result</th><th>Note</th></tr></thead><tbody>${(a.attempts||[]).length?(a.attempts||[]).map(x=>`<tr><td>${esc(fmtD(x.date))}</td><td>${esc(x.channel)}</td><td>${esc(x.result)}</td><td>${esc(x.note||'')}</td></tr>`).join(''):'<tr><td colspan="4" class="empty">No contact attempts yet.</td></tr>'}</tbody></table></div></div>
+  ${al.length?`<div><h3>Alerts</h3>${al.map(x=>`<div class="note"><span class="sev-${x.sev==='High'?'high':x.sev==='Medium'?'med':'low'}">${esc(x.sev)}</span> · ${esc(x.type)} — ${esc(x.msg)}</div>`).join('')}</div>`:''}
+  <div class="note">Last updated ${esc(fmtDT(a.updatedAt))} ${esc(a.updatedBy||'')}${a.pssNote?' · PSS note: '+esc(a.pssNote):''}</div>`,
+  `<button class="btn" id="mClose">Close</button><span class="sp"></span>${can('edit')?'<button class="btn pri" id="dEdit">Edit</button>':''}`,true);
+  $('#mClose').onclick=closeModal;
+  const e=$('#dEdit');if(e)e.onclick=()=>accountForm(id);
+}
+
+/* ---------- settings (plan) ---------- */
+async function saveSettingsDoc(patch,msg){
+  try{await db.doc('settings/frt').set({...settingsFrt(),...patch,updatedAt:new Date().toISOString(),updatedBy:ME.name});await logAct('Plan settings',msg,'');toast('Saved.')}catch(e){toast('Could not save.')}
+}
+
+/* ---------- import / export ---------- */
+function parseCSV(text){
+  const lines=text.trim().split(/\r?\n/).filter(Boolean);if(!lines.length)return [];
+  const head=lines.shift().split(',').map(h=>h.trim());
+  return lines.map(l=>{const cols=l.split(',').map(c=>c.trim());const o={};head.forEach((h,i)=>o[h]=cols[i]??'');return o});
+}
+async function importCSV(text){
+  const rows=parseCSV(text||'');
+  if(!rows.length){toast('Nothing to import.');return}
+  let added=0,updated=0;
+  const list=acctList();
+  const batch=[];
+  rows.forEach(r=>{
+    const data={agent:r.agent||'Mr T',holder:r.holder||'',bank:r.bank||'Other',acctName:r.acctName||'',acctNo:r.acctNo||'',balance:Number(r.balance)||0,status:r.status||'Blocked',project:r.project||'',opened:r.opened||'',roster:/^(y|yes|true|1)$/i.test(r.contactRoster||''),legal:/^(y|yes|true|1)$/i.test(r.legalApproved||'')};
+    const ex=data.acctNo?list.find(x=>x.acctNo===data.acctNo):null;
+    if(ex){updated++;batch.push(['accounts/'+ex.id,{...data,updatedAt:new Date().toISOString(),updatedBy:ME.name}])}
+    else{added++;batch.push(['accounts/'+rid('c'),{triage:'',step:0,agentUnr:false,bankRef:'',cleared:0,clearedDate:'',pssNote:'',attempts:[],...data,updatedAt:new Date().toISOString(),updatedBy:ME.name}])}
+  });
+  try{for(const [k,v] of batch)await db.doc(k).set(v);await logAct('CSV import','',`Added ${added}, updated ${updated}`);toast(`Added ${added}, updated ${updated}.`)}catch(e){toast('Import failed part way. Check the list.')}
+}
+async function saveX(sheets,filename){
+  if(!can('export')){toast('Your position cannot export.');return}
+  if(!window.XLSX||!dl){toast('Download is not available here.');return}
+  const wb=XLSX.utils.book_new();
+  sheets.forEach(s=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s.rows),s.name));
+  try{const buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});await dl.save({filename,data:new Blob([buf])});toast('File ready.')}catch(e){if(!e||e.code!=='declined')toast('Could not save the file.')}
+}
+async function saveJSON(){
+  if(!can('export')){toast('Your position cannot export.');return}
+  if(!dl){toast('Download is not available here.');return}
+  try{await dl.save({filename:'frt-backup-'+todayStr()+'.json',data:new Blob([JSON.stringify({accounts:D.accounts,settings:settingsFrt()},null,2)],{type:'application/json'})});toast('File ready.')}catch(e){if(!e||e.code!=='declined')toast('Could not save the file.')}
+}
+
+/* ---------- views ---------- */
+function dashView(){
+  const list=acctList(),t=totals(list),s=settingsFrt(),al=computeAlerts();
+  const cards=`<div class="cards">
+    <div class="card"><span class="k">Restricted balance</span><span class="v">${fmt(t.bal)}</span><span class="m">${t.count} accounts</span></div>
+    <div class="card"><span class="k">Cleared to collection</span><span class="v">${fmt(t.cl)}</span><span class="m">Recovery rate ${pct(t.rate)}</span></div>
+    <div class="card"><span class="k">Remaining</span><span class="v">${fmt(t.remain)}</span><span class="m">Gap to target ${fmt(Math.max(0,s.target-t.cl))}</span></div>
+    <div class="card"><span class="k">Open alerts</span><span class="v">${al.length}</span><span class="m">${al.filter(x=>x.sev==='High').length} high</span></div>
+  </div>`;
+  const byAgent=AGENTS.map(ag=>{const l=list.filter(a=>a.agent===ag);if(!l.length)return '';const tt=totals(l);
+    return `<tr><td>${esc(ag)}</td><td class="n">${l.length}</td><td class="n">${fmt(tt.bal)}</td><td class="n">${fmt(tt.cl)}</td><td><div class="bar"><i style="width:${Math.min(100,tt.rate*100)}%"></i></div></td><td class="n">${tt.open}</td></tr>`}).join('');
+  const byTier=TIERS.map(td=>{const l=list.filter(a=>tierOf(a.balance)===td.n);const b=l.reduce((x,a)=>x+(Number(a.balance)||0),0),c=l.reduce((x,a)=>x+clearedOf(a),0),tg=b*td.target;
+    return `<tr><td>${esc(td.label)}</td><td class="n">${l.length}</td><td class="n">${fmt(b)}</td><td class="n">${fmt(c)}</td><td class="n">${pct(b?c/b:0)}</td><td class="n">${pct(td.target)}</td><td class="n">${fmt(tg)}</td><td class="n">${fmt(Math.max(0,tg-c))}</td></tr>`}).join('');
+  const byStatus=STATUSES.map(st=>{const l=list.filter(a=>a.status===st);if(!l.length)return '';return `<tr><td><span class="tag">${esc(st)}</span></td><td class="n">${l.length}</td><td class="n">${fmt(l.reduce((x,a)=>x+(Number(a.balance)||0),0))}</td></tr>`}).join('');
+  return `${cards}<div class="xgrid">
+   <div class="xcard" style="grid-column:1/-1"><h3>Recovery by agent</h3><div class="tbox" style="border:0"><table class="t" style="min-width:680px"><thead><tr><th>Agent</th><th class="n">Accounts</th><th class="n">Balance</th><th class="n">Cleared</th><th>Progress</th><th class="n">Open</th></tr></thead><tbody>${byAgent||'<tr><td colspan="6" class="empty">No accounts yet.</td></tr>'}</tbody></table></div></div>
+   <div class="xcard" style="grid-column:1/-1"><h3>Recovery by tier (target vs actual)</h3><div class="tbox" style="border:0"><table class="t" style="min-width:820px"><thead><tr><th>Tier</th><th class="n">Accounts</th><th class="n">Balance</th><th class="n">Cleared</th><th class="n">Actual</th><th class="n">Target %</th><th class="n">Target $</th><th class="n">Gap $</th></tr></thead><tbody>${byTier}</tbody></table></div></div>
+   <div class="xcard" style="grid-column:1/-1"><h3>Status mix</h3><div class="tbox" style="border:0"><table class="t" style="min-width:420px"><thead><tr><th>Status</th><th class="n">Accounts</th><th class="n">Balance</th></tr></thead><tbody>${byStatus||'<tr><td colspan="3" class="empty">No accounts yet.</td></tr>'}</tbody></table></div></div>
+  </div>`;
+}
+function regView(){
+  const q=UI.q.toLowerCase();
+  const rows=acctList().filter(a=>(!UI.agent||a.agent===UI.agent)&&(!UI.status||a.status===UI.status)&&(!UI.tier||String(tierOf(a.balance))===UI.tier)&&(UI.step===''||String(a.step)===UI.step)&&(!q||[a.holder,a.bank,a.acctName,a.acctNo,a.agent].join(' ').toLowerCase().includes(q))).sort((x,y)=>(y.balance||0)-(x.balance||0));
+  const body=rows.length?rows.map((a,i)=>{const cont=contingency(a);const al=computeAlerts().filter(x=>x.acct.id===a.id).length;
+    return `<tr class="row" tabindex="0" data-acct="${esc(a.id)}"><td>${i+1}</td><td>${esc(a.agent)}</td><td><b>${esc(a.holder)}</b><div class="faint">${esc(a.acctName||'')}</div></td><td>${esc(a.bank)}<div class="faint mono">${esc(a.acctNo||'')}</div></td><td class="n">${fmt(a.balance)}</td><td>T${tierOf(a.balance)}</td><td><span class="tag">${esc(a.status)}</span></td><td>${a.step}. ${STEPS[a.step]}</td><td>${esc(a.triage||'—')}</td><td>${esc(lastAct(a)||'—')}</td><td>${cont?'<span class="sev-high">'+cont+'</span>':'—'}</td><td class="n">${clearedOf(a)?fmt(clearedOf(a)):'—'}</td><td>${al?'<span class="sev-med">'+al+'</span>':'—'}</td></tr>`}).join('')
+    :'<tr><td colspan="13" class="empty"><b>No accounts yet</b>Add an account or import a CSV in Settings &amp; data.</td></tr>';
+  return `<div class="toolbar"><label class="f" style="flex:1;min-width:200px">Search<input class="i" id="fq" type="search" value="${esc(UI.q)}" placeholder="Holder, bank, account, agent…"></label>
+  <label class="f">Agent<select class="i" id="fa"><option value="">All</option>${AGENTS.map(x=>`<option ${UI.agent===x?'selected':''}>${esc(x)}</option>`).join('')}</select></label>
+  <label class="f">Status<select class="i" id="fs"><option value="">All</option>${STATUSES.map(x=>`<option ${UI.status===x?'selected':''}>${esc(x)}</option>`).join('')}</select></label>
+  <label class="f">Tier<select class="i" id="ft"><option value="">All</option>${TIERS.map(x=>`<option value="${x.n}" ${UI.tier===String(x.n)?'selected':''}>Tier ${x.n}</option>`).join('')}</select></label>
+  <label class="f">Step<select class="i" id="fst"><option value="">All</option>${STEPS.map((x,i)=>`<option value="${i}" ${UI.step===String(i)?'selected':''}>${i} · ${x}</option>`).join('')}</select></label>
+  <span class="sp"></span>${can('export')?'<button class="btn" id="xReg">Export Excel</button>':''}${can('edit')?'<button class="btn pri" id="addAcc">Add account</button>':''}</div>
+  <div class="tbox"><table class="t" style="min-width:1400px"><thead><tr><th>#</th><th>Agent</th><th>Holder</th><th>Bank / account</th><th class="n">Balance</th><th>Tier</th><th>Status</th><th>Step</th><th>Triage</th><th>Last activity</th><th>Contingency</th><th class="n">Cleared</th><th>Alerts</th></tr></thead><tbody>${body}</tbody></table></div>
+  <div class="note">${rows.length} of ${acctList().length} accounts · balance ${fmt(rows.reduce((s,a)=>s+(Number(a.balance)||0),0))}. Click a row for contact attempts and details.</div>`;
+}
+function todayView(){
+  const list=acctList().filter(isOpen).sort((x,y)=>(y.balance||0)-(x.balance||0));
+  const al=computeAlerts();
+  const rows=list.slice(0,60).map((a,i)=>{const flags=al.filter(x=>x.acct.id===a.id).map(x=>`<span class="sev-${x.sev==='High'?'high':x.sev==='Medium'?'med':'low'}">${esc(x.type)}</span>`).join('<br>');
+    return `<tr class="row" tabindex="0" data-acct="${esc(a.id)}"><td>${i+1}</td><td>T${tierOf(a.balance)}</td><td>${esc(a.agent)}</td><td>${esc(a.holder)}<div class="faint">${esc(a.acctName||'')}</div></td><td class="n">${fmt(a.balance)}</td><td><span class="tag">${esc(a.status)}</span></td><td>${a.step}. ${STEPS[a.step]}</td><td>${esc(nextAction(a))}</td><td>${esc(lastAct(a)||'—')}</td><td>${flags||'—'}</td></tr>`}).join('');
+  const w1=acctList().filter(a=>tierOf(a.balance)===1).sort((x,y)=>(y.balance||0)-(x.balance||0));
+  const w1rows=w1.map(a=>`<tr><td>${esc(a.agent)}</td><td>${esc(a.holder)}</td><td class="n">${fmt(a.balance)}</td><td>${esc(a.status)}</td><td>${a.step}. ${STEPS[a.step]}</td><td>${a.roster?'Yes':'No'}</td><td>${a.legal?'Yes':'No'}</td></tr>`).join('');
+  return `<div class="defbox">Open accounts ranked by balance. Tier 1 is shown first within equal balances. The next action follows each account's current step.</div>
+  <div class="tbox" style="margin-bottom:14px"><table class="t" style="min-width:1000px"><thead><tr><th>#</th><th>Tier</th><th>Agent</th><th>Holder / account</th><th class="n">Balance</th><th>Status</th><th>Step</th><th>Next action</th><th>Last activity</th><th>Flags</th></tr></thead><tbody>${rows||'<tr><td colspan="10" class="empty">No open accounts.</td></tr>'}</tbody></table></div>
+  <h2 style="margin:6px 0 10px">Wave 1 focus (Tier 1)</h2>
+  <div class="tbox"><table class="t" style="min-width:700px"><thead><tr><th>Agent</th><th>Holder</th><th class="n">Balance</th><th>Status</th><th>Step</th><th>Roster</th><th>Legal</th></tr></thead><tbody>${w1rows||'<tr><td colspan="7" class="empty">No Tier 1 accounts yet.</td></tr>'}</tbody></table></div>`;
+}
+function timeView(){
+  const s=settingsFrt(),max=90;
+  let g='';
+  TIERS.forEach(td=>{const l=(td.start-1)/max*100,w=(td.end-td.start+1)/max*100;
+    g+=`<div class="muted" style="margin-top:8px">${esc(td.label)} · Wave start Day ${td.start} · Window to Day ${td.end} · Target ${pct(td.target)}</div><div class="gantt"><i style="left:${l}%;width:${w}%">${esc(dateOfDay(td.start))} → ${esc(dateOfDay(td.end))}</i></div>`});
+  [['Mobilise and verify',1,14],['Escalation and close-out',14,90]].forEach(([n,a,b])=>{g+=`<div class="muted" style="margin-top:8px">${n} · Days ${a}–${b}</div><div class="gantt"><i style="left:${(a-1)/max*100}%;width:${(b-a+1)/max*100}%;background:var(--faint)">${n}</i></div>`});
+  const ms=[['Approve plan and Day 1 start','Before Day 1','Principal, Manager'],['Mandates signed by all 5 agents','Day 14','PSS Manager'],['Contact rosters from all agents (Day 5 deadline)','Day 5',''],['Collection account open, dual sign-off','Day 5','Finance'],['Verify 3 "Closed" accounts with bank statements','Day 5','PSS Manager'],['Wave 1 Tier 1 at 85% of value','Day 45','PSS Manager'],['Wave 2 Tier 2 at 80%','Day 60','PSS Manager'],['Wave 3 Tier 3 at 75%','Day 75','PSS Manager'],['Wave 4 Tier 4 at 70%','Day 90','PSS Manager'],['Day 90 close-out report and reconciliation','Day 90','CFO']];
+  return `<div class="xcard" style="margin-bottom:14px"><h3>Plan timeline (Day 1 = ${esc(s.day1||'not set')})</h3><div class="faint" style="font-size:12.5px">Set Day 1 in Settings &amp; data. Until then, dates show as Day numbers only.</div>${g}<div class="faint" style="margin-top:8px;font-size:12px">Scale: Day 1 → Day 90</div></div>
+  <div class="tbox"><table class="t" style="min-width:600px"><thead><tr><th>Milestone</th><th>Timing</th><th>Owner</th></tr></thead><tbody>${ms.map(m=>`<tr><td>${esc(m[0])}</td><td>${esc(m[1])}</td><td>${esc(m[2])}</td></tr>`).join('')}</tbody></table></div>
+  <div class="note">Weekly rhythm: Monday worklist refresh · Tue–Thu holder meetings, bank visits, settlements · Thursday agent reports · Friday recovery review chaired by the Manager.</div>`;
+}
+function alertsView(){
+  const sev=UI.alSev;const al=computeAlerts().filter(x=>!sev||x.sev===sev);
+  const rows=al.map(x=>`<tr class="row" tabindex="0" data-acct="${esc(x.acct.id)}"><td class="sev-${x.sev==='High'?'high':x.sev==='Medium'?'med':'low'}">${esc(x.sev)}</td><td>${esc(x.type)}</td><td>${esc(x.acct.agent)}</td><td>${esc(x.acct.holder)}<div class="faint">${esc(x.acct.acctName||'')}</div></td><td class="n">${fmt(x.acct.balance)}</td><td>${esc(x.msg)}</td></tr>`).join('');
+  return `<div class="toolbar"><label class="f">Severity<select class="i" id="fsev"><option value="">All</option>${['High','Medium','Low'].map(x=>`<option ${sev===x?'selected':''}>${x}</option>`).join('')}</select></label></div>
+  <div class="tbox"><table class="t" style="min-width:900px"><thead><tr><th>Severity</th><th>Type</th><th>Agent</th><th>Holder / account</th><th class="n">Balance</th><th>Message</th></tr></thead><tbody>${rows||'<tr><td colspan="6" class="empty"><b>No active alerts</b></td></tr>'}</tbody></table></div>`;
+}
+function rewView(){
+  const list=acctList(),cleared=list.reduce((s,a)=>s+clearedOf(a),0);
+  const agCom=AGENTS.reduce((s,ag)=>s+commissionFor(list.filter(a=>a.agent===ag).reduce((x,a)=>x+clearedOf(a),0)),0);
+  const hold=list.filter(a=>clearedOf(a)>0).reduce((s,a)=>s+holderReward(clearedOf(a),false),0);
+  const total=agCom+hold,ratio=cleared?total/cleared:0;
+  const agRows=AGENTS.map(ag=>{const c=list.filter(a=>a.agent===ag).reduce((x,a)=>x+clearedOf(a),0);return `<tr><td>${esc(ag)}</td><td class="n">${fmt(c)}</td><td class="n">${fmt(commissionFor(c))}</td></tr>`}).join('');
+  return `<div class="cards">
+    <div class="card"><span class="k">Total cleared</span><span class="v">${fmt(cleared)}</span></div>
+    <div class="card"><span class="k">Agent commission (est.)</span><span class="v">${fmt(agCom)}</span></div>
+    <div class="card"><span class="k">Holder rewards (est.)</span><span class="v">${fmt(hold)}</span></div>
+    <div class="card"><span class="k">Programme cost ratio</span><span class="v ${ratio>.22?'sev-high':''}">${pct(ratio)}</span><span class="m">Cap 22% of cleared</span></div>
+  </div>
+  <div class="xgrid">
+   <div class="xcard"><h3>Agent commission</h3><div class="faint" style="font-size:12px;margin-bottom:10px">Marginal brackets on cumulative cleared funds per agent (Plan 8.2).</div><div class="tbox" style="border:0"><table class="t" style="min-width:0"><thead><tr><th>Agent</th><th class="n">Cleared</th><th class="n">Commission</th></tr></thead><tbody>${agRows}</tbody></table></div></div>
+   <div class="xcard"><h3>Holder cooperation reward</h3>
+     <div class="grid2"><label class="f">Cleared balance (USD)<input class="i" type="number" min="0" step="0.01" id="hAmt"></label><label class="f"><span><input type="checkbox" id="hFast"> Fast-track (≤ 14 days)</span></label></div>
+     <div class="note" id="hOut">Minimum $50; fast-track adds 1 percentage point; cap 30% of cleared per account.</div></div>
+  </div>`;
+}
+function setView(){
+  const s=settingsFrt();
+  return `<div class="xgrid">
+   <div class="xcard"><h3>Plan settings</h3>
+     <div class="grid2">
+       <label class="f">Day 1 (leave blank until approved)<input class="i" type="date" id="sDay1" value="${esc(s.day1||'')}"></label>
+       <label class="f">Stale after (days without activity)<input class="i" type="number" id="sStale" min="1" value="${s.stale}"></label>
+       <label class="f">Contact roster deadline (day)<input class="i" type="number" id="sRoster" min="1" value="${s.roster}"></label>
+       <label class="f">Failed attempts before Contingency B<input class="i" type="number" id="sFail" min="1" value="${s.fail}"></label>
+       <label class="f">Planning target (USD)<input class="i" type="number" id="sTarget" value="${s.target}"></label>
+     </div>
+     <div class="addrow"><button class="btn pri" id="sSave" ${can('edit')?'':'disabled'}>Save settings</button></div>
+     <div class="note">Recovery targets (planning assumptions): Tier 1 85%, Tier 2 80%, Tier 3 75%, Tier 4 70%. Waves start Day 6, 21, 36, 51. Escalation review Day 90.</div>
+   </div>
+   <div class="xcard"><h3>Import accounts (CSV)</h3>
+     <div class="faint" style="font-size:12px">Header: agent,holder,bank,acctName,acctNo,balance,status,project,opened,contactRoster,legalApproved. Existing account numbers are updated; new ones are added.</div>
+     <textarea class="i" id="csvIn" rows="6" style="margin-top:8px"></textarea>
+     <div class="addrow"><button class="btn pri" id="csvGo" ${can('edit')?'':'disabled'}>Import CSV</button></div>
+   </div>
+   <div class="xcard"><h3>Export and backup</h3>
+     <div class="addrow"><button class="btn" id="xRegBtn" ${can('export')?'':'disabled'}>Export register (Excel)</button><button class="btn" id="xJson" ${can('export')?'':'disabled'}>Export JSON backup</button></div>
+     <div class="note">Data is stored in the shared database, with an audit log of every change.</div>
+   </div>
+  </div>`;
+}
+function accessView(){
+  if(!can('admin'))return '<div class="empty">Only a Master Admin can manage access.</div>';
+  const defs=posDefs(),names=Object.keys(defs),builtin=['Admin','Editor','Viewer'],n2=names.length+1;
+  const cnt=n=>Object.values(D.users).filter(u=>u.role===n).length;
+  const row=(label,type,key)=>`<tr><td>${esc(label)}</td>${names.map(n=>{const lk=n==='Admin',on=lk||(type==='m'?defs[n].menus:defs[n].acts).includes(key);return `<td style="text-align:center"><input type="checkbox" class="ac" data-n="${esc(n)}" data-t="${type}" data-k="${esc(key)}" ${on?'checked':''} ${lk?'disabled':''} aria-label="${esc(rl(n))}: ${esc(label)}"></td>`}).join('')}</tr>`;
+  return `<div class="defbox"><b>How it works:</b> tick what each position can open and do, then press <b>Save access</b>. Give a position to a person in <b>Users</b>.</div>
+  <div class="tbox"><table class="t" style="min-width:${180+110*names.length}px"><thead><tr><th>Permission</th>${names.map(n=>`<th style="text-align:center">${esc(rl(n))}<div class="faint">${cnt(n)} user${cnt(n)===1?'':'s'}</div>${builtin.includes(n)?'':`<a href="#" data-delpos="${esc(n)}">Remove</a>`}</th>`).join('')}</tr></thead><tbody>
+  <tr><td colspan="${n2}"><b>Menus they can open</b></td></tr>${MENUS.map(m=>row(m[1],'m',m[0])).join('')}
+  <tr><td colspan="${n2}"><b>What they can do</b></td></tr>${ACTS.map(a=>row(a[1],'a',a[0])).join('')}</tbody></table></div>
+  <div class="addrow" style="margin-top:12px"><input class="i" id="posNew" placeholder="New position, for example Recovery officer" maxlength="30"><button class="btn" id="posAdd">+ Add position</button></div>
+  <div class="toolbar" style="margin-top:12px"><span class="err" id="acErr" role="alert"></span><span class="sp"></span><button class="btn pri" id="acSave">Save access</button></div>`;
+}
+function usersView(){
+  if(!can('admin'))return '<div class="empty">Only a Master Admin can manage users.</div>';
+  const rows=Object.entries(D.users).map(([id,u])=>({...u,id})).sort((a,b)=>a.u.localeCompare(b.u));
+  return `<div class="toolbar"><span class="sp"></span><button class="btn pri" id="btnAddU" type="button">+ Add user</button></div><div class="tbox"><table class="t" style="min-width:600px"><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Status</th><th>Last sign-in</th></tr></thead><tbody>${rows.map(r=>`<tr class="row" tabindex="0" data-u="${esc(r.id)}"><td class="mono">${esc(r.u)}</td><td>${esc(r.name)}</td><td>${esc(rl(r.role))}</td><td>${r.active===false?'<span class="pill x">Disabled</span>':'<span class="pill g">Active</span>'}</td><td>${r.lastLogin?esc(fmtDT(r.lastLogin)):'<span class="faint">Never</span>'}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
+/* ---------- draw ---------- */
+const TITLES={dash:['Dashboard','Recovery of restricted balances'],reg:['Account register','Every holder account, one row each'],today:['Today / Priorities','Open accounts ranked by balance, with next action'],time:['Timeline & milestones','The 90-day plan and waves'],alerts:['Alerts','Items that need attention now'],rew:['Rewards','Agent commission, holder rewards and the cost cap'],set:['Settings & data','Plan settings, CSV import and exports'],access:['Access control','Positions: what each person can open and do'],users:['Users','Master Admin: everything. Editor: add and edit. Viewer: view only.']};
+function tabsHtml(){
+  const alc=computeAlerts().filter(x=>x.sev==='High').length;
+  const T=[['dash','Dashboard'],['reg','Account register',acctList().length||''],['today','Today / Priorities'],['time','Timeline & milestones'],['alerts','Alerts',alc||''],['rew','Rewards'],['set','Settings & data'],...(can('admin')?[['g','Tools'],['access','Access control'],['users','Users']]:[])];
+  return T.filter(x=>x[0]==='g'||menuOk(x[0])).map(([k,l,c])=>k==='g'?`<div class="ng">Admin</div>`:`<button type="button" data-tab="${k}" ${UI.tab===k?'aria-current="page"':''}><span>${l}</span>${c?`<span class="ct">${c}</span>`:''}</button>`).join('');
+}
+function draw(){
+  if(ME&&!menuOk(UI.tab)){const f=MENUS.find(m=>menuOk(m[0]));UI.tab=f?f[0]:'none'}
+  $('#nav').innerHTML=tabsHtml();
+  $('#todayTxt').textContent=fmtD(todayStr());
+  const T=TITLES[UI.tab]||['No access','Ask the Master Admin to give your position a menu'];
+  $('#pageTitle').textContent=T[0];$('#pageSub').textContent=T[1];
+  const V={dash:dashView,reg:regView,today:todayView,time:timeView,alerts:alertsView,rew:rewView,set:setView,access:accessView,users:usersView};
+  $('#view').innerHTML=V[UI.tab]?V[UI.tab]():'<div class="empty">No menu is assigned to your position. Ask the Master Admin.</div>';
+  bind();
+}
+function bind(){
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{UI.tab=b.dataset.tab;draw()});
+  document.querySelectorAll('[data-acct]').forEach(el=>{const go=()=>accountDetail(el.dataset.acct);el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter')go()}});
+  document.querySelectorAll('tr.row[data-u]').forEach(tr=>{tr.onclick=()=>userModal(tr.dataset.u)});
+  const on=(id,ev,fn)=>{const e=$('#'+id);if(e)e[ev]=fn};
+  on('fq','oninput',e=>{UI.q=e.target.value;draw();const f=$('#fq');if(f){f.focus();f.setSelectionRange(f.value.length,f.value.length)}});
+  on('fa','onchange',e=>{UI.agent=e.target.value;draw()});
+  on('fs','onchange',e=>{UI.status=e.target.value;draw()});
+  on('ft','onchange',e=>{UI.tier=e.target.value;draw()});
+  on('fst','onchange',e=>{UI.step=e.target.value;draw()});
+  on('fsev','onchange',e=>{UI.alSev=e.target.value;draw()});
+  on('addAcc','onclick',()=>accountForm(null));
+  on('btnAddU','onclick',()=>userModal(null));
+  on('xReg','onclick',()=>saveX([{name:'Accounts',rows:[['Agent','Holder','Bank','Account name','Account no','Balance','Status','Step','Triage','Last activity','Cleared','Cleared date','Bank ref','PSS note'],...acctList().map(a=>[a.agent,a.holder,a.bank,a.acctName||'',a.acctNo||'',a.balance,a.status,STEPS[a.step],a.triage||'',lastAct(a),clearedOf(a),a.clearedDate||'',a.bankRef||'',a.pssNote||''])]}],'FRTT_register_'+todayStr()+'.xlsx'));
+  on('xRegBtn','onclick',()=>saveX([{name:'Accounts',rows:[['Agent','Holder','Bank','Account name','Account no','Balance','Status','Step','Triage','Last activity','Cleared','Cleared date','Bank ref','PSS note'],...acctList().map(a=>[a.agent,a.holder,a.bank,a.acctName||'',a.acctNo||'',a.balance,a.status,STEPS[a.step],a.triage||'',lastAct(a),clearedOf(a),a.clearedDate||'',a.bankRef||'',a.pssNote||''])]}],'FRTT_register_'+todayStr()+'.xlsx'));
+  on('xJson','onclick',saveJSON);
+  on('sSave','onclick',()=>saveSettingsDoc({day1:$('#sDay1').value||'',stale:Number($('#sStale').value)||7,roster:Number($('#sRoster').value)||5,fail:Number($('#sFail').value)||3,target:Number($('#sTarget').value)||0},'Settings saved'));
+  on('csvGo','onclick',()=>importCSV($('#csvIn').value));
+  const hA=$('#hAmt');if(hA){const up=()=>{const bal=Number(hA.value)||0,fast=$('#hFast').checked,r=bal?holderReward(bal,fast):0;$('#hOut').innerHTML=`<b>Cooperation reward: ${fmt(r)}</b> · cap 30% = ${fmt(bal*.3)}`};hA.oninput=up;$('#hFast').onchange=up}
+  document.querySelectorAll('[data-delpos]').forEach(a=>a.onclick=async e=>{e.preventDefault();const n=a.dataset.delpos,err=$('#acErr');
+    if(Object.values(D.users).some(u=>u.role===n)){err.textContent=n+' still has users. Move them first.';return}
+    if(a.dataset.s!=='1'){a.dataset.s='1';a.textContent='Click again to remove';return}
+    const l=readAccess();delete l[n];await putAccess(l,'Position removed: '+n)});
+  const acSave=$('#acSave');if(acSave)bindAccess();
+}
+function readAccess(){
+  const o={};posNames().filter(n=>n!=='Admin').forEach(n=>o[n]={menus:[],acts:[]});
+  document.querySelectorAll('input.ac').forEach(c=>{const q=o[c.dataset.n];if(q&&c.checked)(c.dataset.t==='m'?q.menus:q.acts).push(c.dataset.k)});return o}
+async function putAccess(list,msg){try{await db.doc('settings/positions').set({list,updatedAt:new Date().toISOString(),updatedBy:ME.name});await logAct('Access control','',msg);toast('Saved.')}catch(e){const er=$('#acErr');if(er)er.textContent='Could not save.'}}
+function bindAccess(){
+  const err=$('#acErr');
+  $('#acSave').onclick=()=>putAccess(readAccess(),'Access saved');
+  $('#posAdd').onclick=async()=>{const v=$('#posNew').value.trim();
+    if(!v){err.textContent='Type the position name.';return}
+    if(posNames().some(n=>n.toLowerCase()===v.toLowerCase())||/^master admin$/i.test(v)){err.textContent='That position already exists.';return}
+    const l=readAccess();l[v]={menus:MENUS.map(m=>m[0]),acts:[]};await putAccess(l,'Position added: '+v);$('#posNew').value=''};
+}
+function userModal(id){
+  const isNew=!id;const r=isNew?{u:'',name:'',role:'Editor',active:true}:D.users[id];
+  if(!r)return;
+  openModal(isNew?'Add user':'Edit user','',`<label class="f">Username<input class="i" id="u_u" value="${esc(r.u)}" ${isNew?'':'disabled'} autocomplete="off"></label>
+   <label class="f">Full name<input class="i" id="u_n" value="${esc(r.name)}"></label>
+   <label class="f">Role<select class="i" id="u_r">${posNames().map(x=>`<option value="${x}" ${x===r.role?'selected':''}>${esc(rl(x))}</option>`).join('')}</select></label>
+   <label class="f">Status<select class="i" id="u_a"><option value="1" ${r.active!==false?'selected':''}>Active</option><option value="0" ${r.active===false?'selected':''}>Disabled</option></select></label>
+   <label class="f">${isNew?'Temporary password':'Reset password (leave blank to keep)'}<input class="i" id="u_p" type="text" autocomplete="off"></label><div class="err" id="mErr" role="alert"></div>`,
+   `<button class="btn" id="mCancel">Cancel</button><button class="btn pri" id="mSave">Save</button>`);
+  $('#mCancel').onclick=closeModal;
+  $('#mSave').onclick=async()=>{
+    const err=$('#mErr');const u=(isNew?$('#u_u').value:r.u).trim().toLowerCase(),name=$('#u_n').value.trim(),role=$('#u_r').value,active=$('#u_a').value==='1',pw=$('#u_p').value;
+    if(!/^[a-z0-9._-]{3,30}$/.test(u)){err.textContent='Username: 3 to 30 letters, numbers, dot, dash or underscore.';return}
+    if(!name){err.textContent='Enter a name.';return}
+    if(isNew&&D.users[u]){err.textContent='That username exists.';return}
+    if(isNew&&pw.length<6){err.textContent='Temporary password needs 6+ characters.';return}
+    if(!isNew&&u===ME.u&&!active){err.textContent='You cannot disable yourself.';return}
+    const doc={...(isNew?{lastLogin:null,mustChange:true}:JSON.parse(JSON.stringify(r))),u,name,role,active};delete doc.id;
+    if(pw){doc.salt=newSalt();doc.hash=await hashPw(doc.salt,pw);doc.mustChange=true}
+    try{await db.doc('users/'+u).set(doc);await logAct(isNew?'Add user':'Edit user',u,`${name}, ${rl(role)}`);closeModal();toast('Saved.')}catch(e){err.textContent='Could not save.'}
+  };
+}
+
+/* ---------- auth (same as MM2-04) ---------- */
+async function sha(x){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(x));return [...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,'0')).join('')}
+const hashPw=(salt,pw)=>sha(salt+':'+pw);
+const newSalt=()=>[...crypto.getRandomValues(new Uint8Array(12))].map(x=>x.toString(16).padStart(2,'0')).join('');
+async function bootstrapAdmin(){
+  if(!db||!READY.users||Object.keys(D.users).length||bootstrapAdmin.done)return;bootstrapAdmin.done=true;
+  try{const salt=newSalt();await db.doc('users/admin').set({u:'admin',name:'Administrator',role:'Admin',salt,hash:await hashPw(salt,'admin123'),mustChange:true,active:true,lastLogin:null})}catch(e){}
+}
+async function doLogin(ev){
+  ev.preventDefault();const u=$('#lu').value.trim().toLowerCase(),p=$('#lp').value;const err=$('#loginErr');err.textContent='';
+  const rec=D.users[u];
+  if(!rec||rec.active===false||await hashPw(rec.salt,p)!==rec.hash){err.textContent='Wrong username or password.';return}
+  ME={u,name:rec.name,role:rec.role};store.set('frt_user',u);logAct('Sign in','','');
+  try{await db.doc('users/'+u).update({lastLogin:new Date().toISOString()})}catch(e){}
+  enterApp();
+  if(rec.mustChange)passwordModal(true);
+}
+function enterApp(){
+  $('#login').classList.add('hidden');$('#app').classList.remove('hidden');
+  $('#who').innerHTML=`<b style="color:#fff">${esc(ME.name)}</b><br><small>${esc(rl(ME.role))} · ${esc(ME.u)}</small>`;
+  draw();
+}
+function logout(){logAct('Sign out','','');ME=null;store.del('frt_user');$('#app').classList.add('hidden');$('#login').classList.remove('hidden');$('#lp').value='';closeModal()}
+function checkSession(){
+  if(ME){const rec=D.users[ME.u];if(!rec||rec.active===false){logout();return}ME.role=rec.role;ME.name=rec.name;return}
+  const u=store.get('frt_user');if(u&&D.users[u]&&D.users[u].active!==false&&!D.users[u].mustChange){ME={u,name:D.users[u].name,role:D.users[u].role};enterApp()}
+}
+function passwordModal(force){
+  openModal(force?'Choose a new password':'Change password','',`${force?'':'<label class="f">Current password<input class="i" id="pw0" type="password" autocomplete="current-password"></label>'}
+    <label class="f">New password (at least 6 characters)<input class="i" id="pw1" type="password" autocomplete="new-password"></label>
+    <label class="f">Repeat new password<input class="i" id="pw2" type="password" autocomplete="new-password"></label><div class="err" id="pwErr" role="alert"></div>`,
+    `${force?'':'<button class="btn" id="pwCancel">Cancel</button>'}<span class="sp"></span><button class="btn pri" id="pwSave">Save password</button>`);
+  if(!force)$('#pwCancel').onclick=closeModal;
+  $('#pwSave').onclick=async()=>{
+    const err=$('#pwErr');const p1=$('#pw1').value,p2=$('#pw2').value;const rec=D.users[ME.u];
+    if(!force&&await hashPw(rec.salt,$('#pw0').value)!==rec.hash){err.textContent='Current password is wrong.';return}
+    if(p1.length<6){err.textContent='Use at least 6 characters.';return}
+    if(p1!==p2){err.textContent='The two passwords do not match.';return}
+    if(p1==='admin123'){err.textContent='Choose a different password.';return}
+    const salt=newSalt();
+    try{await db.doc('users/'+ME.u).update({salt,hash:await hashPw(salt,p1),mustChange:false});await logAct('Change password','','');closeModal();toast('Password changed.')}catch(e){err.textContent='Could not save. Try again.'}
+  };
+}
+
+
+/* ---- standalone sample store (in-memory; resets on reload) ---- */
+const SAMPLE={accounts:{"sample_acc_01": {"acctName": "DUMMY Holder 01", "acctNo": "DUMMY-FRT-001", "agent": "Mr T", "agentUnr": false, "attempts": [{"channel": "Call", "date": "2026-10-10", "note": "DUMMY note", "result": "Reached"}], "balance": 22500, "bank": "ABA", "bankRef": "", "cleared": 0, "clearedDate": "", "holder": "DUMMY Holder 01", "legal": false, "opened": "2026-09-02", "project": "DUMMY Project A", "pssNote": "DUMMY DATA", "roster": true, "status": "Blocked", "step": 1, "triage": "A", "updatedBy": "DUMMY seed", "updatedAt": "2026-10-29T00:00:00.000Z"}, "sample_acc_02": {"acctName": "DUMMY Holder 02", "acctNo": "DUMMY-FRT-002", "agent": "Mr Leang", "agentUnr": false, "attempts": [{"channel": "Call", "date": "2026-10-12", "note": "DUMMY note", "result": "No answer"}, {"channel": "Text", "date": "2026-10-16", "note": "DUMMY note", "result": "No answer"}], "balance": 16800, "bank": "Wing", "bankRef": "", "cleared": 0, "clearedDate": "", "holder": "DUMMY Holder 02", "legal": false, "opened": "2026-09-05", "project": "DUMMY Project B", "pssNote": "DUMMY DATA", "roster": true, "status": "Stop Use", "step": 2, "triage": "A", "updatedBy": "DUMMY seed", "updatedAt": "2026-10-29T00:00:00.000Z"}, "sample_acc_03": {"acctName": "DUMMY Holder 03", "acctNo": "DUMMY-FRT-003", "agent": "Mr Tam", "agentUnr": false, "attempts": [{"channel": "Visit", "date": "2026-10-05", "note": "DUMMY note", "result": "Visit done"}], "balance": 12400, "bank": "PiPAY", "bankRef": "DUMMY-BANK-REF-03", "cleared": 0, "clearedDate": "", "holder": "DUMMY Holder 03", "legal": true, "opened": "2026-08-20", "project": "DUMMY Project A", "pssNote": "DUMMY DATA", "roster": true, "status": "Sign Out", "step": 3, "triage": "B", "updatedBy": "DUMMY seed", "updatedAt": "2026-10-29T00:00:00.000Z"}, "sample_acc_04": {"acctName": "DUMMY Holder 04", "acctNo": "DUMMY-FRT-004", "agent": "Mr Tou Lek", "agentUnr": true, "attempts": [{"channel": "Call", "date": "2026-10-20", "note": "DUMMY note", "result": "Unreachable"}], "balance": 8900, "bank": "ACLEDA", "bankRef": "", "cleared": 0, "clearedDate": "", "holder": "DUMMY Holder 04", "legal": false, "opened": "2026-10-01", "project": "DUMMY Project B", "pssNote": "DUMMY DATA", "roster": false, "status": "Unable to Log In", "step": 0, "triage": "", "updatedBy": "DUMMY seed", "updatedAt": "2026-10-29T00:00:00.000Z"}, "sample_acc_05": {"acctName": "DUMMY Holder 05", "acctNo": "DUMMY-FRT-005", "agent": "Mr Nang", "agentUnr": false, "attempts": [{"channel": "Bank", "date": "2026-10-18", "note": "DUMMY note", "result": "Bank referred"}], "balance": 6300, "bank": "Other", "bankRef": "DUMMY-BANK-REF-05", "cleared": 0, "clearedDate": "", "holder": "DUMMY Holder 05", "legal": true, "opened": "2026-08-28", "project": "DUMMY Project A", "pssNote": "DUMMY DATA", "roster": true, "status": "Active", "step": 4, "triage": "B", "updatedBy": "DUMMY seed", "updatedAt": "2026-10-29T00:00:00.000Z"}, "sample_acc_06": {"acctName": "DUMMY Holder 06", "acctNo": "DUMMY-FRT-006", "agent": "Mr T", "agentUnr": false, "attempts": [], "balance": 4100, "bank": "ABA", "bankRef": "", "cleared": 0, "clearedDate": "", "holder": "DUMMY Holder 06", "legal": false, "opened": "2026-10-03", "project": "DUMMY Project B", "pssNote": "DUMMY DATA", "roster": false, "status": "Never Used", "step": 0, "triage": "", "updatedBy": "DUMMY seed", "updatedAt": "2026-10-29T00:00:00.000Z"}, "sample_acc_07": {"acctName": "DUMMY Holder 07", "acctNo": "DUMMY-FRT-007", "agent": "Mr Tam", "agentUnr": false, "attempts": [{"channel": "Message", "date": "2026-10-08", "note": "DUMMY note", "result": "Reached"}], "balance": 27500, "bank": "Wing", "bankRef": "DUMMY-BANK-REF-07", "cleared": 27500, "clearedDate": "2026-10-20", "holder": "DUMMY Holder 07", "legal": true, "opened": "2026-07-15", "project": "DUMMY Project A", "pssNote": "DUMMY DATA", "roster": true, "status": "Closed", "step": 5, "triage": "A", "updatedBy": "DUMMY seed", "updatedAt": "2026-10-29T00:00:00.000Z"}, "sample_acc_08": {"acctName": "DUMMY Holder 08", "acctNo": "DUMMY-FRT-008", "agent": "Mr Leang", "agentUnr": false, "attempts": [{"channel": "Call", "date": "2026-09-20", "note": "DUMMY note", "result": "Refused"}, {"channel": "Call", "date": "2026-09-28", "note": "DUMMY note", "result": "Refused"}, {"channel": "Call", "date": "2026-10-03", "note": "DUMMY note", "result": "Wrong number"}], "balance": 9800, "bank": "PiPAY", "bankRef": "", "cleared": 0, "clearedDate": "", "holder": "DUMMY Holder 08", "legal": false, "opened": "2026-08-11", "project": "DUMMY Project B", "pssNote": "DUMMY DATA", "roster": true, "status": "Stop Use", "step": 2, "triage": "B", "updatedBy": "DUMMY seed", "updatedAt": "2026-10-29T00:00:00.000Z"}, "sample_acc_09": {"acctName": "DUMMY Holder 09", "acctNo": "DUMMY-FRT-009", "agent": "Mr Nang", "agentUnr": false, "attempts": [{"channel": "Bank", "date": "2026-10-14", "note": "DUMMY note", "result": "Bank referred"}], "balance": 14000, "bank": "ABA", "bankRef": "DUMMY-BANK-REF-09", "cleared": 5000, "clearedDate": "2026-10-22", "holder": "DUMMY Holder 09", "legal": true, "opened": "2026-08-25", "project": "DUMMY Project A", "pssNote": "DUMMY DATA", "roster": true, "status": "Sign Out", "step": 4, "triage": "A", "updatedBy": "DUMMY seed", "updatedAt": "2026-10-29T00:00:00.000Z"}, "sample_acc_10": {"acctName": "DUMMY Holder 10", "acctNo": "DUMMY-FRT-010", "agent": "Mr Tou Lek", "agentUnr": false, "attempts": [{"channel": "Message", "date": "2026-10-21", "note": "DUMMY note", "result": "Pending"}], "balance": 2100, "bank": "Other", "bankRef": "", "cleared": 0, "clearedDate": "", "holder": "DUMMY Holder 10", "legal": false, "opened": "2026-10-06", "project": "DUMMY Project B", "pssNote": "DUMMY DATA", "roster": true, "status": "Never Used", "step": 1, "triage": "C", "updatedBy": "DUMMY seed", "updatedAt": "2026-10-29T00:00:00.000Z"}},settings:{},users:{},log:{}};
+function makeLocal(seed){
+  const store={};Object.keys(seed).forEach(c=>{store[c]={};Object.keys(seed[c]).forEach(k=>store[c][k]=JSON.parse(JSON.stringify(seed[c][k])))});
+  const subs={};
+  const segs=p=>String(p).split('/').filter(Boolean);
+  const snapFor=(c,opts)=>{let entries=Object.entries(store[c]||{});
+    if(opts&&opts.order){entries.sort((a,b)=>{const x=a[1][opts.order.f],y=b[1][opts.order.f];return (x<y?-1:x>y?1:0)*(opts.order.desc?-1:1)})}
+    if(opts&&opts.limit)entries=entries.slice(0,opts.limit);
+    return{docs:entries.map(([id,v])=>({id,data:()=>JSON.parse(JSON.stringify(v)),exists:true}))}};
+  const notify=c=>(subs[c]||[]).forEach(f=>f());
+  const mkQuery=(c,opts)=>({
+    orderBy:(f,d)=>mkQuery(c,Object.assign({},opts,{order:{f,desc:d==='desc'}})),
+    limit:n=>mkQuery(c,Object.assign({},opts,{limit:n})),
+    get:async()=>snapFor(c,opts),
+    onSnapshot:(cb,err)=>{const f=()=>cb(snapFor(c,opts));(subs[c]=subs[c]||[]).push(f);Promise.resolve().then(f);return()=>{subs[c]=(subs[c]||[]).filter(x=>x!==f)}}
+  });
+  const mkDoc=p=>{const s=segs(p);const c=s.slice(0,-1).join('/'),id=s[s.length-1];
+    return{id,path:p,
+      get:async()=>({exists:!!(store[c]&&store[c][id]),id,data:()=>store[c]&&store[c][id]?JSON.parse(JSON.stringify(store[c][id])):undefined}),
+      set:async d=>{store[c]=store[c]||{};store[c][id]=JSON.parse(JSON.stringify(d));notify(c)},
+      update:async d=>{store[c]=store[c]||{};store[c][id]=Object.assign({},store[c][id]||{},JSON.parse(JSON.stringify(d)));notify(c)},
+      delete:async()=>{if(store[c])delete store[c][id];notify(c)},
+      onSnapshot:(cb)=>{const f=()=>cb({exists:!!(store[c]&&store[c][id]),data:()=>store[c]&&store[c][id]});(subs[c]=subs[c]||[]).push(f);Promise.resolve().then(f);return()=>{}}};};
+  return{
+    collection:c=>Object.assign(mkQuery(c,{}),{doc:id=>mkDoc(c+'/'+id)}),
+    doc:p=>mkDoc(p)
+  };
+}
+/* ---------- refresh + boot ---------- */
+function refresh(){if(!ME)return;if(!$('#ov'))draw()}
+async function boot(){
+  try{db=await window.claude.use('db');dl=await window.claude.use('downloads')}catch(e){}
+  if(!db){db=makeLocal(SAMPLE)}
+  let t;
+  const sub=(c,q)=>(q||db.collection(c)).onSnapshot(s=>{
+    const o={};s.docs.forEach(d=>o[d.id]=d.data());D[c]=o;READY[c]=1;
+    if(c==='users'){bootstrapAdmin();checkSession();const b=$('#loginBtn');if(!b.dataset.ready){b.disabled=false;b.textContent='Sign in';b.dataset.ready=1}}
+    clearTimeout(t);t=setTimeout(refresh,50)},()=>{READY[c]=1;if(c==='users')$('#loginErr').textContent='Could not read the database.'});
+  sub('accounts');sub('settings');sub('users');sub('log',db.collection('log').orderBy('at','desc').limit(200));
+  $('#loginForm').addEventListener('submit',doLogin);
+  $('#btnPw').onclick=()=>passwordModal(false);$('#btnOut').onclick=logout;
+}
+boot();
+})();
+</script>
+</body>
+</html>
+
+</body></html>

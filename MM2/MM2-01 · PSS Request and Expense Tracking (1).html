@@ -1,0 +1,827 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>MM2-01 · PSS Request and Expense Tracking</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600&display=swap">
+<style>
+
+/* Layout: dark navy sidebar + paper work area, same family as CPA Control. Grouped ledgers read like the Excel sheets (band, rows, sub-total, grand total). */
+:root{
+  --paper:#F2F4F6;--surface:#FFFFFF;--ink:#17212C;--muted:#5E6B78;--faint:#8A96A3;--line:#DCE1E6;--line2:#EBEEF1;
+  --steel:#23507A;--steel-d:#1A3D5E;--steel-l:#E6EEF5;--on-steel:#FFFFFF;
+  --side:#132230;--side-2:#1C3043;--side-ink:#C8D4DF;--side-line:#2B435A;
+  --red:#B42318;--red-l:#FDECEA;--amber:#B54708;--amber-l:#FEF3E2;--green:#067647;--green-l:#E7F6EC;
+  --band:#EEF2F5;--grand:#DDE8F2;--shadow:0 8px 30px rgba(15,30,45,.22);
+  --head:"Barlow Semi Condensed","Bahnschrift","DIN Alternate","Roboto Condensed","Arial Narrow",sans-serif;
+  --body:"Segoe UI","Inter",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular",Consolas,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#0E151C;--surface:#162029;--ink:#E6ECF1;--muted:#9AA8B5;--faint:#6F7E8C;--line:#2A3947;--line2:#223039;
+    --steel:#6FA3D6;--steel-d:#8DB8E3;--steel-l:#1B3248;--on-steel:#0E151C;
+    --side:#0A1118;--side-2:#14212C;--side-ink:#AEBBC8;--side-line:#243543;
+    --red:#F07A6C;--red-l:#3A1A16;--amber:#E3A948;--amber-l:#33270F;--green:#5CC98A;--green-l:#15301F;
+    --band:#1B2630;--grand:#1F3A52;--shadow:0 8px 30px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#0E151C;--surface:#162029;--ink:#E6ECF1;--muted:#9AA8B5;--faint:#6F7E8C;--line:#2A3947;--line2:#223039;
+  --steel:#6FA3D6;--steel-d:#8DB8E3;--steel-l:#1B3248;--on-steel:#0E151C;
+  --side:#0A1118;--side-2:#14212C;--side-ink:#AEBBC8;--side-line:#243543;
+  --red:#F07A6C;--red-l:#3A1A16;--amber:#E3A948;--amber-l:#33270F;--green:#5CC98A;--green-l:#15301F;
+  --band:#1B2630;--grand:#1F3A52;--shadow:0 8px 30px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--paper);color:var(--ink);font:14px/1.45 var(--body);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--head);font-weight:600;margin:0;letter-spacing:.01em;text-wrap:balance}
+h1{font-size:24px}h2{font-size:18px}h3{font-size:15px}
+:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
+.hidden{display:none!important}
+.mono{font-family:var(--mono);font-size:12.5px}
+.muted{color:var(--muted)}.faint{color:var(--faint)}
+small{font-size:11.5px}
+
+/* controls */
+.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:600;min-width:0}
+.i{width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:8px 10px;font-weight:400;font-size:14px;min-width:0}
+.i:disabled{background:var(--paper);color:var(--muted)}
+textarea.i{min-height:64px;resize:vertical}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:7px 12px;cursor:pointer;font-weight:600;font-size:13px}
+.btn:hover{border-color:var(--steel)}
+.btn.pri{background:var(--steel);border-color:var(--steel);color:var(--on-steel)}
+.btn.pri:hover{background:var(--steel-d);border-color:var(--steel-d)}
+.btn.danger{color:var(--red);border-color:var(--red)}
+.btn.sm{padding:4px 9px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:default}
+.err{color:var(--red);font-size:13px;min-height:18px}
+.hint{font-size:12px;color:var(--muted)}
+
+/* app shell */
+#app{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh}
+aside{background:var(--side);color:var(--side-ink);display:flex;flex-direction:column;position:sticky;top:env(safe-area-inset-top,0px);align-self:start;height:100vh;max-height:100vh;overflow:auto}
+.brand{padding:18px 18px 14px;border-bottom:1px solid var(--side-line)}
+.brand b{display:block;font:600 19px var(--head);color:#fff}
+.brand small{color:#8397AA}
+nav{padding:10px 8px;display:flex;flex-direction:column;gap:2px;flex:1}
+.ng{font:600 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:#6F8499;padding:12px 10px 4px}
+nav button{all:unset;box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;color:var(--side-ink);font-size:13.5px}
+nav a.navlink{box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;color:var(--side-ink);font-size:13.5px;text-decoration:none}
+nav a.navlink:hover{background:var(--side-2)}
+nav a.navlink:focus-visible{outline:2px solid #8DB8E3}
+nav button:hover{background:var(--side-2)}
+nav button:focus-visible{outline:2px solid #8DB8E3}
+nav button[aria-current="page"]{background:var(--steel);color:var(--on-steel);font-weight:600}
+nav .ct{font:11px var(--mono);opacity:.7}
+.side-foot{padding:14px 18px;border-top:1px solid var(--side-line);font-size:12.5px}
+.side-foot .btns{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.side-foot .btn{background:transparent;color:var(--side-ink);border-color:var(--side-line)}
+main{padding:22px clamp(16px,3vw,36px) 48px;min-width:0}
+.topbar{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;margin-bottom:16px}
+.topbar .sub{color:var(--muted);font-size:13px}
+.sync{margin-left:auto;font:12px var(--mono);color:var(--muted)}
+@media (max-width:860px){
+  #app{grid-template-columns:1fr}
+  aside{position:static;max-height:none;height:auto}
+  nav{flex-direction:row;overflow-x:auto;padding:8px;flex:none}
+  .ng{display:none}
+  nav button{white-space:nowrap}
+  .side-foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 16px}
+  .side-foot .btns{margin-top:0}
+}
+
+/* toolbar + summary */
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:12px}
+.toolbar .f{min-width:120px}
+.toolbar .grow{flex:1 1 220px}
+.toolbar .sp{flex:1}
+.sumstrip{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.chip{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 14px;min-width:120px}
+.chip span{display:block;font:600 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.chip b{font:600 22px var(--head);font-variant-numeric:tabular-nums}
+.chip.big b{font-size:28px;color:var(--steel)}
+
+/* tables */
+.tbox{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:auto;max-height:calc(100vh - 230px)}
+.pager{display:flex;align-items:center;gap:8px;justify-content:flex-end;margin:8px 0;font-size:13px;color:var(--muted)}
+.pager .btn[disabled]{opacity:.4;cursor:default}
+table.t{border-collapse:collapse;width:100%;min-width:760px;font-size:13px}
+table.t th{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);background:var(--band);white-space:nowrap;position:sticky;top:0;z-index:3;box-shadow:0 1px 0 var(--line)}
+table.t td{padding:8px 10px;border-bottom:1px solid var(--line2);vertical-align:top}
+table.t td.n,table.t th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.n small{display:block;color:var(--muted);font-size:10.5px}
+td.neg{color:var(--red)}
+tr.row{cursor:pointer}
+tr.row:hover td{background:var(--steel-l)}
+tr.row:focus-visible{outline:2px solid var(--steel);outline-offset:-2px}
+tr.band td{background:var(--band);font:600 13px var(--head);letter-spacing:.04em;text-transform:uppercase;color:var(--steel);padding:7px 10px;border-bottom:1px solid var(--line)}
+tr.band td span{font:11px var(--mono);color:var(--muted);text-transform:none;letter-spacing:0;margin-left:8px}
+tr.sub td{background:var(--steel-l);font-weight:600;border-bottom:1px solid var(--line)}
+tr.grand td{background:var(--grand);font:600 14px var(--head);border-bottom:0}
+td.rem{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+td.wrap{max-width:300px}
+.pill{display:inline-flex;align-items:center;gap:5px;font:600 11.5px var(--body);padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.g{color:var(--green);background:var(--green-l)}
+.pill.a{color:var(--amber);background:var(--amber-l)}
+.pill.x{color:var(--muted);background:var(--band)}
+.tag{font:600 11px var(--mono);padding:2px 7px;border-radius:4px;background:var(--band);color:var(--muted);white-space:nowrap}
+.tag.in{background:var(--green-l);color:var(--green)}.tag.out{background:var(--amber-l);color:var(--amber)}
+.bank{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.bank i{width:9px;height:9px;border-radius:2px;display:inline-block}
+.stale{color:var(--amber)}
+.empty{padding:36px 16px;text-align:center;color:var(--muted)}
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;padding:5px 10px;border:1px solid var(--line,#ccc);border-radius:8px;cursor:pointer}
+.chk input{margin:0}
+.defbox{background:var(--steel-l);border-left:3px solid var(--steel);border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.5}
+.defbox b{font-weight:700}
+.note{font-size:12.5px;color:var(--muted);margin-top:10px}
+.warn{background:var(--amber-l);color:var(--amber);border-radius:6px;padding:8px 12px;font-size:13px;margin-top:10px}
+
+/* overview */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:6px;cursor:pointer;text-align:left}
+.card:hover{border-color:var(--steel)}
+.card .k{font:600 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.card .v{font:600 28px var(--head);font-variant-numeric:tabular-nums}
+.card .m{font-size:12.5px;color:var(--muted)}
+.ok{color:var(--green)}.bad{color:var(--red)}
+.sec{display:flex;flex-direction:column;gap:10px;margin-bottom:22px}
+.mini{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(10,18,26,.55);display:flex;align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 16px 16px;overflow:auto;z-index:50}
+.modal{background:var(--surface);border-radius:10px;width:100%;max-width:760px;box-shadow:var(--shadow);margin:auto 0}
+.modal header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.modal .x{all:unset;cursor:pointer;font-size:22px;line-height:1;padding:2px 8px;color:var(--muted)}
+.modal .x:focus-visible{outline:2px solid var(--steel)}
+.mb{padding:16px 18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.mb .full{grid-column:1/-1}
+.modal footer{display:flex;flex-wrap:wrap;gap:8px;padding:12px 18px;border-top:1px solid var(--line);align-items:center}
+.modal footer .sp{flex:1}
+@media (max-width:560px){.mb{grid-template-columns:1fr}}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pc{display:inline-flex;align-items:center;gap:4px;background:var(--steel-l);color:var(--steel);border-radius:999px;padding:3px 4px 3px 10px;font-size:12.5px;font-weight:600}
+.pc button{all:unset;cursor:pointer;padding:0 6px;font-size:15px;line-height:1}
+.addrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.addrow .i{flex:1 1 140px;width:auto}
+.hist{grid-column:1/-1;border:1px solid var(--line);border-radius:6px;overflow:auto}
+.hist table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:380px}
+.hist th,.hist td{padding:5px 8px;text-align:left;border-bottom:1px solid var(--line2)}
+.hist th{font:600 10.5px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--band)}
+.hist td.n,.hist th.n{text-align:right;font-variant-numeric:tabular-nums}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:8px;font-size:13px;z-index:80;max-width:calc(100vw - 32px)}
+.ck{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-bottom:1px solid var(--line2)}
+.ck:last-child{border-bottom:0}
+.ck input{margin-top:3px;width:17px;height:17px;flex:none}
+.ck.done .tx{color:var(--muted);text-decoration:line-through}
+.ck .ar{font:600 11px var(--mono);color:var(--steel);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* login */
+#login{min-height:100vh;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
+.login-art{background:var(--side);color:#fff;padding:48px clamp(24px,5vw,64px);display:flex;flex-direction:column;justify-content:space-between;gap:32px}
+.login-art h1{font-size:clamp(28px,4vw,40px);color:#fff;margin-top:14px;line-height:1.1}
+.login-art p{color:#A9B9C9;max-width:44ch;margin:14px 0 0}
+.login-art .eb{color:#8397AA;font-size:13px}
+.codes{display:flex;flex-wrap:wrap;gap:8px}
+.codes span{font:600 12px var(--mono);letter-spacing:.06em;border:1px solid #2B435A;color:#C8D4DF;padding:4px 9px;border-radius:4px}
+.login-form{display:flex;align-items:center;justify-content:center;padding:32px 16px}
+.login-form form{width:100%;max-width:340px;display:flex;flex-direction:column;gap:14px}
+@media (max-width:760px){#login{grid-template-columns:1fr}.login-art{padding:28px 16px;gap:18px}}
+
+
+/* Statement Alert additions */
+.sumstrip .chip.bad b{color:var(--red)}
+.pill.r{color:var(--red);background:var(--red-l)}
+.days{font:600 18px var(--head);color:var(--red);font-variant-numeric:tabular-nums}
+.empty b{display:block;color:var(--ink);font:600 20px var(--head);margin-bottom:6px}
+.empty .acts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.grp{margin-bottom:18px}
+.grp>header{display:flex;gap:10px;align-items:baseline;margin-bottom:6px}
+.grp>header .c{font:600 11.5px var(--mono);color:var(--red)}
+.cell{display:inline-block;min-width:78px;text-align:center;border-radius:4px;padding:3px 6px;font:600 12px var(--mono);cursor:pointer;border:0}
+.cell.ok{background:var(--green-l);color:var(--green)}.cell.late{background:var(--red-l);color:var(--red)}
+.cell.warn{background:var(--amber-l);color:var(--amber)}.cell.none{background:var(--band);color:var(--muted)}
+.modal .body{padding:16px 18px;display:grid;gap:16px}
+.modal h2{font-size:18px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kv div>span:first-child{display:block;font:600 10.5px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.tl{display:grid;gap:12px}
+.rs{border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--paper)}
+.rs .meta{font:600 11.5px var(--mono);color:var(--muted);margin-bottom:6px}
+.rs p{margin:0;white-space:pre-wrap}
+.shots{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.shots img{height:84px;max-width:140px;object-fit:cover;border-radius:4px;border:1px solid var(--line);cursor:zoom-in;background:var(--band)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.lock{font:600 12px var(--mono);color:var(--muted);border:1px dashed var(--line);border-radius:5px;padding:8px 10px}
+.light{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:90;padding:16px}
+.light img{max-width:100%;max-height:100%;border-radius:4px}
+.cgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;align-items:stretch}.cgrid>.cbox:last-child{grid-column:span 2}@media(max-width:1100px){.cgrid{grid-template-columns:repeat(2,1fr)}.cgrid>.cbox:last-child{grid-column:1/-1}}@media(max-width:700px){.cgrid{grid-template-columns:1fr}}
+.cbox{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.cbox h3{font-family:var(--head);font-size:16px;margin:0 0 2px}.cbox .sub{color:var(--faint);font-size:12px;margin-bottom:10px}
+.dnw{display:flex;align-items:center;gap:18px;flex-wrap:wrap}.dnw svg{flex:0 0 auto}
+.leg{display:flex;flex-direction:column;gap:6px;flex:1;min-width:140px;font-size:13px}
+.leg div{display:flex;align-items:center;gap:8px}.leg i{width:10px;height:10px;border-radius:3px;flex:0 0 auto}.leg b{margin-left:auto}
+.leg div[data-loc]{cursor:pointer}.leg div[data-loc]:hover{text-decoration:underline}
+.brow{display:grid;grid-template-columns:minmax(90px,38%) 1fr auto;align-items:center;gap:10px;font-size:13px;margin:7px 0}
+.brow .tr{height:12px;background:var(--line2);border-radius:6px;overflow:hidden;display:flex}.brow .tr span{display:block;height:100%}
+.brow .n{font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+.cbox .tot{font-family:var(--head);font-size:26px;fill:var(--ink)}.cbox .tl{font-size:11px;fill:var(--faint)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}.card{min-height:96px}@media(max-width:1000px){.cards{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.cards{grid-template-columns:1fr}}
+td.act{white-space:nowrap}
+.cards{grid-template-columns:repeat(3,1fr)}@media(min-width:1500px){.cards{grid-template-columns:repeat(6,1fr)}}@media(max-width:1000px){.cards{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.cards{grid-template-columns:1fr}}
+.card{cursor:default}.card:hover{border-color:var(--line)}.mb>.kv,.mb>.grid2,.mb>.lock,.mb>.chk,.mb>.f:not(.full),.mb>.faint{grid-column:1/-1}.mb>.grid2{display:grid}
+.card.clk,.brow.clk,.leg div.clk{cursor:pointer}.card.clk:hover{border-color:var(--accent,#1F4E79)}.brow.clk:hover,.leg div.clk:hover{background:rgba(0,0,0,.05)}.shw{border:0;background:none;color:var(--accent,#1F4E79);cursor:pointer;font:inherit;font-size:12px;text-decoration:underline;padding:0 2px}.acct{white-space:nowrap}.acct+.acct{margin-top:2px}.warn a[data-go]{color:inherit;font-weight:600;text-decoration:underline}.tbox th.s:hover{color:var(--ink)}.cbox select.i{width:100%}
+</style>
+<div id="login">
+  <div class="login-art">
+    <div>
+      <div class="eb">IR Group · PSS Department</div>
+      <h1>MM2-01 · PSS Request and Expense Tracking</h1>
+      <p>Tracks the requests and clearings from MM4-01 (PSS Request &amp; Approval): on time or late against the policy, returns and rejections, and clearing compliance. No amounts are kept here.</p>
+    </div>
+    <div class="codes"><span>DASHBOARD</span><span>REQUESTS</span><span>ALERTS</span><span>MM4-01 LINK</span></div>
+  </div>
+  <div class="login-form">
+    <form id="loginForm" autocomplete="on">
+      <h2>Sign in</h2>
+      <label class="f" for="lu">Username<input class="i" id="lu" autocomplete="username" required></label>
+      <label class="f" for="lp">Password<input class="i" id="lp" type="password" autocomplete="current-password" required></label>
+      <div class="err" id="loginErr" role="alert"></div>
+      <button class="btn pri" id="loginBtn" type="submit" style="justify-content:center;padding:10px" disabled>Connecting…</button>
+      <p class="hint" style="margin:0">Ask your Admin for an account. Sign-in locks the page; it is not bank-grade security.</p>
+      <p class="hint" style="margin:0">Version 1.0 · 21 Oct 2026</p>
+    </form>
+  </div>
+</div>
+<div id="app" class="hidden">
+  <aside>
+    <div class="brand"><b>MM2-01 · PSS Request and Expense Tracking</b><small>IR Group · PSS Department</small></div>
+    <nav id="nav" aria-label="PSS Request and Expense Tracking"></nav>
+    <div class="side-foot"><div id="who"></div><div class="btns"><button class="btn sm" id="btnPw" type="button">Password</button><button class="btn sm" id="btnOut" type="button">Sign out</button></div></div>
+  </aside>
+  <main><div class="topbar"><h1 id="pageTitle"></h1><span class="sub" id="pageSub"></span><span class="sync" id="todayTxt"></span></div><section id="view"><div class="empty">Loading…</div></section></main>
+</div>
+<div id="modalRoot"></div><div id="toastRoot"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const pad=n=>String(n).padStart(2,'0');
+const todayStr=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+const addMonth=(ym,n)=>{let [y,m]=ym.split('-').map(Number);m+=n;y+=Math.floor((m-1)/12);m=((m-1)%12+12)%12+1;return `${y}-${pad(m)}`};
+const monthLabel=ym=>ym?`${MON[+ym.slice(5)-1]} ${ym.slice(0,4)}`:'';
+const dueOf=ym=>addMonth(ym,1)+'-05';
+const fmtD=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||'');return m?`${+m[3]} ${MON[+m[2]-1]} ${m[1]}`:''};
+const dayDiff=(a,b)=>Math.round((Date.parse(a+'T00:00:00Z')-Date.parse(b+'T00:00:00Z'))/864e5);
+const fmtDT=iso=>{if(!iso)return '';const d=new Date(iso);if(isNaN(d))return '';return `${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())}`};
+const toLocalInput=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const uniq=a=>[...new Set(a.filter(Boolean))].sort((x,y)=>x.localeCompare(y));
+const rid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function toast(t){const r=$('#toastRoot');r.innerHTML=`<div class="toast" role="status">${esc(t)}</div>`;clearTimeout(toast.t);toast.t=setTimeout(()=>r.innerHTML='',3000)}
+
+let db=null,dl=null,ME=null;
+const MENUS=[["dash","Dashboard"],["req","All requests"],["alerts","Alerts"],["hist","History"]];
+const ACTS=[['edit','Add reasons and notes'],['export','Excel export']];
+const posDefs=()=>{const L=((D.settings&&D.settings.positions)||{}).list||{},all=MENUS.map(m=>m[0]);
+  const def={Admin:{menus:all,acts:ACTS.map(a=>a[0])},Editor:{menus:all,acts:['edit','export']},Viewer:{menus:all,acts:[]}};
+  const o={};Object.keys(def).forEach(k=>o[k]=k!=='Admin'&&L[k]?{menus:L[k].menus||[],acts:L[k].acts||[]}:def[k]);
+  Object.keys(L).forEach(k=>{if(!def[k])o[k]={menus:L[k].menus||[],acts:L[k].acts||[]}});return o};
+const posNames=()=>Object.keys(posDefs());
+const rl=r=>r==='Admin'?'Master Admin':r;
+const can=p=>{if(!ME)return false;if(p==='view')return true;if(ME.role==='Admin')return true;if(p==='admin')return false;const q=posDefs()[ME.role];if(!q)return false;return p.startsWith('m:')?q.menus.includes(p.slice(2)):q.acts.includes(p)};
+const menuOk=k=>k==='users'||k==='access'||k==='lists'?can('admin'):can('m:'+k);
+const store={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
+const D={requests:{},settings:{},users:{},log:{}};
+const READY={};
+const UI={tab:'dash',q:'',rs:'',rt:'',ro:'',hq:''};
+const TITLES={dash:['Dashboard','Requests from MM4-01: on time, late, overdue, clearing and returns'],req:['All requests','Every request from MM4-01, connected automatically, with its timeliness against the policy'],alerts:['Alerts','Overdue, late and past-due requests that need a reason or follow-up'],hist:['History','Every change: who, when and what'],users:['Users','Master Admin: everything. Add and change who can sign in.'],access:['Access control','Choose what each position can open and do'],lists:['Dropdown lists','Add, rename, reorder or delete the choices in dropdowns']};
+async function logAct(action,target,detail){try{await db.collection('log').doc(rid('l')).set({at:new Date().toISOString(),by:ME?ME.u:'',name:ME?ME.name:'',action,target,detail:detail||''})}catch(e){}}
+function openModal(title,sub,body,footer){
+  $('#modalRoot').innerHTML=`<div class="ov" id="ov"><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><header><div><h2>${esc(title)}</h2>${sub?`<div class="faint">${sub}</div>`:''}</div><button class="x" type="button" id="mx" aria-label="Close">×</button></header><div class="body">${body}</div>${footer?`<footer>${footer}</footer>`:''}</div></div>`;
+  $('#mx').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal()});
+  document.onkeydown=e=>{if(e.key==='Escape'){if($('.light'))$('.light').remove();else closeModal()}};
+}
+const closeModal=()=>{$('#modalRoot').innerHTML='';document.onkeydown=null;UI.modal=null;if(ME&&typeof draw==='function')draw()};
+function lightbox(src){const d=document.createElement('div');d.className='light';d.innerHTML=`<img alt="Screenshot" src="${src}">`;d.onclick=()=>d.remove();document.body.appendChild(d)}
+async function sha(x){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(x));return [...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,'0')).join('')}
+const hashPw=(salt,pw)=>sha(salt+':'+pw);
+const newSalt=()=>[...crypto.getRandomValues(new Uint8Array(12))].map(x=>x.toString(16).padStart(2,'0')).join('');
+
+/* ---------- offline shared-folder shim (same as MM2-04 pilot) ---------- */
+const DEMO_ROWS={"dummy_req_001": {"id": "dummy_req_001", "key": "ID-dummy_req_001", "ref": "DUMMY-REQ-001", "route": "A", "routeName": "Monthly invoice — GM approval", "expense": "Owner salary", "section": "SKC2", "status": "DONE", "requester": "DUMMY Staff 001", "company": "SKC-001 · DUMMY MCA Company 01", "purpose": "DUMMY Owner salary — October 2026", "submittedOn": "2026-10-05", "completedOn": "2026-10-08", "dueDate": "2026-10-10", "total": "450.00", "step": "DUMMY step", "rejections": 0, "overBudget": false, "advance": "", "lastNote": "", "steps": ""}, "dummy_req_002": {"id": "dummy_req_002", "key": "ID-dummy_req_002", "ref": "DUMMY-REQ-002", "route": "A", "routeName": "Monthly invoice — GM approval", "expense": "Office / home rental", "section": "SKC2", "status": "DONE", "requester": "DUMMY Staff 002", "company": "SKC-002 · DUMMY MCA Company 02", "purpose": "DUMMY Office / home rental — October 2026", "submittedOn": "2026-10-12", "completedOn": "2026-10-20", "dueDate": "2026-10-25", "total": "800.00", "step": "DUMMY step", "rejections": 0, "overBudget": false, "advance": "", "lastNote": "", "steps": ""}, "dummy_req_003": {"id": "dummy_req_003", "key": "ID-dummy_req_003", "ref": "DUMMY-REQ-003", "route": "B", "routeName": "Payment approval", "expense": "Supplier payment", "section": "SKC2", "status": "OPEN", "requester": "DUMMY Staff 003", "company": "SKC-001 · DUMMY MCA Company 01", "purpose": "DUMMY Supplier payment — October 2026", "submittedOn": "2026-10-20", "completedOn": "", "dueDate": "2026-10-28", "total": "2200.00", "step": "DUMMY step", "rejections": 0, "overBudget": true, "advance": "", "lastNote": "", "steps": ""}, "dummy_req_004": {"id": "dummy_req_004", "key": "ID-dummy_req_004", "ref": "DUMMY-REQ-004", "route": "C", "routeName": "Expense claim", "expense": "Expense claim", "section": "SKC2", "status": "OPEN", "requester": "DUMMY Staff 004", "company": "CPA-001 · DUMMY Agent A", "purpose": "DUMMY Expense claim — October 2026", "submittedOn": "2026-10-26", "completedOn": "", "dueDate": "2026-11-02", "total": "120.00", "step": "DUMMY step", "rejections": 0, "overBudget": false, "advance": "", "lastNote": "", "steps": ""}, "dummy_req_005": {"id": "dummy_req_005", "key": "ID-dummy_req_005", "ref": "DUMMY-REQ-005", "route": "CLR", "routeName": "Clearing", "expense": "Clearing of advance", "section": "SKC2", "status": "DONE", "requester": "DUMMY Staff 005", "company": "SKC-002 · DUMMY MCA Company 02", "purpose": "DUMMY Clearing of advance — October 2026", "submittedOn": "2026-09-28", "completedOn": "2026-10-07", "dueDate": "2026-10-05", "total": "800.00", "step": "DUMMY step", "rejections": 0, "overBudget": false, "advance": "", "lastNote": "", "steps": ""}, "dummy_req_006": {"id": "dummy_req_006", "key": "ID-dummy_req_006", "ref": "DUMMY-REQ-006", "route": "D", "routeName": "Agent payment", "expense": "Agent commission", "section": "SKC2", "status": "RETURNED", "requester": "DUMMY Staff 006", "company": "CPA-001 · DUMMY Agent A", "purpose": "DUMMY Agent commission — October 2026", "submittedOn": "2026-10-14", "completedOn": "", "dueDate": "2026-10-22", "total": "900.00", "step": "DUMMY step", "rejections": 1, "overBudget": false, "advance": "", "lastNote": "DUMMY missing invoice copy", "steps": ""}, "dummy_req_007": {"id": "dummy_req_007", "key": "ID-dummy_req_007", "ref": "DUMMY-REQ-007", "route": "E", "routeName": "Refund", "expense": "Refund to customer", "section": "SKC2", "status": "DONE", "requester": "DUMMY Staff 007", "company": "SKC-001 · DUMMY MCA Company 01", "purpose": "DUMMY Refund to customer — October 2026", "submittedOn": "2026-10-01", "completedOn": "2026-10-06", "dueDate": "2026-10-08", "total": "120.00", "step": "DUMMY step", "rejections": 0, "overBudget": false, "advance": "", "lastNote": "", "steps": ""}, "dummy_req_008": {"id": "dummy_req_008", "key": "ID-dummy_req_008", "ref": "DUMMY-REQ-008", "route": "F1", "routeName": "Fund transfer (step 1)", "expense": "Fund transfer to PSS", "section": "SKC2", "status": "OPEN", "requester": "DUMMY Staff 008", "company": "SKC-002 · DUMMY MCA Company 02", "purpose": "DUMMY Fund transfer to PSS — October 2026", "submittedOn": "2026-10-27", "completedOn": "", "dueDate": "2026-11-05", "total": "5000.00", "step": "DUMMY step", "rejections": 0, "overBudget": false, "advance": "", "lastNote": "", "steps": ""}};
+const LOCAL={handle:{name:'this device'},subs:[],timer:null,data:(()=>{try{return JSON.parse(localStorage.getItem('irg-offline-'+location.pathname.split('/').pop())||'{}')}catch(e){return {}}})()};
+if(!LOCAL.data.mm4_rows||!Object.keys(LOCAL.data.mm4_rows).length)LOCAL.data.mm4_rows=JSON.parse(JSON.stringify(DEMO_ROWS));
+function colOf(name){if(!LOCAL.data[name])LOCAL.data[name]={};return LOCAL.data[name]}
+function emitAll(){LOCAL.subs.forEach(f=>{try{f()}catch(e){}})}
+function persistShared(){try{localStorage.setItem('irg-offline-'+location.pathname.split('/').pop(),JSON.stringify(LOCAL.data))}catch(e){}return;}function _unusedPersist(){
+  if(!LOCAL.handle)return;
+  clearTimeout(LOCAL.timer);
+  LOCAL.timer=setTimeout(async()=>{
+    try{const fh=await LOCAL.handle.getFileHandle('data.json',{create:true});const w=await fh.createWritable();await w.write(JSON.stringify(LOCAL.data));await w.close()}
+    catch(e){toast('Could not save to the shared folder. Check the folder permission.')}
+  },150);
+}
+function makeDb(){
+  const docRef=(col,id)=>({
+    id,
+    get:async()=>{const d=colOf(col)[id];return {exists:!!d,data:()=>d?JSON.parse(JSON.stringify(d)):undefined}},
+    set:async v=>{colOf(col)[id]=JSON.parse(JSON.stringify(v));persistShared();emitAll()},
+    update:async v=>{colOf(col)[id]={...(colOf(col)[id]||{}),...JSON.parse(JSON.stringify(v))};persistShared();emitAll()},
+    delete:async()=>{delete colOf(col)[id];persistShared();emitAll()},
+    onSnapshot:cb=>{const run=()=>{const d=colOf(col)[id];cb({exists:!!d,id,data:()=>d?JSON.parse(JSON.stringify(d)):undefined})};LOCAL.subs.push(run);run();return ()=>{}}
+  });
+  const colRef=name=>{
+    const q={order:null,dir:1,lim:null};
+    const api={
+      doc:id=>docRef(name,id),
+      orderBy:(f,dir)=>{q.order=f;q.dir=dir==='desc'?-1:1;return api},
+      limit:n=>{q.lim=n;return api},
+      get:async()=>{
+          let es=Object.entries(colOf(name)).map(([id,d])=>({id,d}));
+          if(q.order)es.sort((a,b)=>{const x=a.d[q.order]??'',y=b.d[q.order]??'';return (x>y?1:x<y?-1:0)*q.dir});
+          if(q.lim)es=es.slice(0,q.lim);
+          return {docs:es.map(e=>({id:e.id,data:()=>JSON.parse(JSON.stringify(e.d))}))};
+      },
+      onSnapshot:cb=>{
+        const run=()=>{
+          let es=Object.entries(colOf(name)).map(([id,d])=>({id,d}));
+          if(q.order)es.sort((a,b)=>{const x=a.d[q.order]??'',y=b.d[q.order]??'';return (x>y?1:x<y?-1:0)*q.dir});
+          if(q.lim)es=es.slice(0,q.lim);
+          cb({docs:es.map(e=>({id:e.id,data:()=>JSON.parse(JSON.stringify(e.d))}))});
+        };
+        LOCAL.subs.push(run);run();
+        return ()=>{};
+      }
+    };
+    return api;
+  };
+  return {collection:n=>colRef(n),doc:path=>{const i=path.indexOf('/');return docRef(path.slice(0,i),path.slice(i+1))}};
+}
+function makeDl(){
+  return {save:async({filename,data})=>{
+    const url=URL.createObjectURL(data);const a=document.createElement('a');
+    a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),2000);return true;
+  }};
+}
+
+async function bootstrapAdmin(){
+  if(!db||!READY.users||Object.keys(D.users).length||bootstrapAdmin.done)return;bootstrapAdmin.done=true;
+  try{const salt=newSalt();await db.doc('users/admin').set({u:'admin',name:'Administrator',role:'Admin',salt,hash:await hashPw(salt,'admin123'),mustChange:true,active:true,lastLogin:null})}catch(e){}
+}
+async function doLogin(ev){
+  ev.preventDefault();const u=$('#lu').value.trim().toLowerCase(),p=$('#lp').value;const err=$('#loginErr');err.textContent='';
+  const rec=D.users[u];
+  if(!rec||rec.active===false||await hashPw(rec.salt,p)!==rec.hash){err.textContent='Wrong username or password.';return}
+  ME={u,name:rec.name,role:rec.role};store.set('ex_user',u);logAct('Sign in','','');
+  try{await db.doc('users/'+u).update({lastLogin:new Date().toISOString()})}catch(e){}
+  enterApp();
+  if(rec.mustChange)passwordModal(true);
+}
+function enterApp(){
+  $('#login').classList.add('hidden');$('#app').classList.remove('hidden');
+  $('#who').innerHTML=`<b style="color:#fff">${esc(ME.name)}</b><br><small>${esc(rl(ME.role))} · ${esc(ME.u)}</small>`;
+  draw();
+}
+function logout(){logAct('Sign out','','');ME=null;store.del('ex_user');$('#app').classList.add('hidden');$('#login').classList.remove('hidden');$('#lp').value='';closeModal()}
+function checkSession(){
+  if(ME){const rec=D.users[ME.u];if(!rec||rec.active===false){logout();return}ME.role=rec.role;ME.name=rec.name;return}
+  const u=store.get('ex_user');if(u&&D.users[u]&&D.users[u].active!==false&&!D.users[u].mustChange){ME={u,name:D.users[u].name,role:D.users[u].role};enterApp()}
+}
+function openModalC(title,body,footer,opt={}){
+  $('#modalRoot').innerHTML=`<div class="ov" id="ov"><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}" style="${opt.narrow?'max-width:440px':''}"><header><h2>${esc(title)}</h2>${opt.force?'':'<button class="x" type="button" aria-label="Close" id="mx">×</button>'}</header><div class="mb" id="mbody">${body}</div><footer id="mfoot">${footer}</footer></div></div>`;
+  if(!opt.force){$('#mx').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal()})}
+  document.onkeydown=e=>{if(e.key==='Escape'&&!opt.force)closeModal()};
+  const f=$('#mbody input:not([disabled]),#mbody select:not([disabled])');if(f)f.focus();
+}
+function passwordModal(force){
+  const body=`${force?'':'<label class="f full">Current password<input class="i" id="pw0" type="password" autocomplete="current-password"></label>'}
+    <label class="f full">New password (at least 6 characters)<input class="i" id="pw1" type="password" autocomplete="new-password"></label>
+    <label class="f full">Repeat new password<input class="i" id="pw2" type="password" autocomplete="new-password"></label><div class="err full" id="pwErr" role="alert"></div>`;
+  openModalC(force?'Choose a new password':'Change password',body,`<span class="sp"></span>${force?'':'<button class="btn" type="button" id="pwCancel">Cancel</button>'}<button class="btn pri" type="button" id="pwSave">Save password</button>`,{force,narrow:1});
+  if(!force)$('#pwCancel').onclick=closeModal;
+  $('#pwSave').onclick=async()=>{
+    const err=$('#pwErr');const p1=$('#pw1').value,p2=$('#pw2').value;const rec=D.users[ME.u];
+    if(!force&&await hashPw(rec.salt,$('#pw0').value)!==rec.hash){err.textContent='Current password is wrong.';return}
+    if(p1.length<6){err.textContent='Use at least 6 characters.';return}
+    if(p1!==p2){err.textContent='The two passwords do not match.';return}
+    if(p1==='admin123'){err.textContent='Choose a different password.';return}
+    const salt=newSalt();
+    try{await db.doc('users/'+ME.u).update({salt,hash:await hashPw(salt,p1),mustChange:false});logAct('Change password','','');closeModal();toast('Password changed.')}catch(e){err.textContent='Could not save. Try again.'}
+  };
+}
+function usersView(){
+  if(!can('admin'))return '<div class="empty">Only a Master Admin can manage users.</div>';
+  const rows=Object.entries(D.users).map(([id,u])=>({...u,id})).sort((a,b)=>a.u.localeCompare(b.u));
+  setTimeout(()=>{document.querySelectorAll('#view tr.row[data-u]').forEach(tr=>{tr.onclick=()=>userModal(tr.dataset.u);tr.onkeydown=e=>{if(e.key==='Enter')userModal(tr.dataset.u)}});const a=$('#btnAddU');if(a)a.onclick=()=>userModal(null)},0);
+  return `<div class="toolbar"><span class="sp"></span><button class="btn pri" id="btnAddU" type="button">+ Add user</button></div><div class="tbox"><table class="t" style="min-width:600px"><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Status</th><th>Last sign-in</th></tr></thead><tbody>${rows.map(r=>`<tr class="row" tabindex="0" data-u="${esc(r.id)}"><td class="mono">${esc(r.u)}</td><td>${esc(r.name)}</td><td>${esc(rl(r.role))}</td><td>${r.active===false?'<span class="pill x">Disabled</span>':'<span class="pill g">Active</span>'}</td><td>${r.lastLogin?esc(fmtDT(r.lastLogin)):'<span class="faint">Never</span>'}</td></tr>`).join('')}</tbody></table></div>`;
+}
+function accessView(){
+  if(!can('admin'))return '<div class="empty">Only a Master Admin can manage access.</div>';
+  const defs=posDefs(),names=Object.keys(defs),builtin=['Admin','Editor','Viewer'],n2=names.length+1;
+  const cnt=n=>Object.values(D.users).filter(u=>u.role===n).length;
+  const row=(label,type,key)=>`<tr><td>${esc(label)}</td>${names.map(n=>{const lk=n==='Admin',on=lk||(type==='m'?defs[n].menus:defs[n].acts).includes(key);return `<td style="text-align:center"><input type="checkbox" class="ac" data-n="${esc(n)}" data-t="${type}" data-k="${esc(key)}" ${on?'checked':''} ${lk?'disabled':''} aria-label="${esc(rl(n))}: ${esc(label)}"></td>`}).join('')}</tr>`;
+  setTimeout(bindAccess,0);
+  return `<div class="defbox"><b>How it works:</b> each column is a position. Tick what that position can open and do, then press <b>Save access</b>. Give a position to a person in <b>Users</b>. Users and Access control are always for the Master Admin only. This controls what each person sees in this page.</div>
+  <div class="tbox"><table class="t" style="min-width:${180+110*names.length}px"><thead><tr><th>Permission</th>${names.map(n=>`<th style="text-align:center">${esc(rl(n))}<div class="faint">${cnt(n)} user${cnt(n)===1?'':'s'}</div>${builtin.includes(n)?'':`<a href="#" data-delpos="${esc(n)}">Remove</a>`}</th>`).join('')}</tr></thead><tbody>
+  <tr><td colspan="${n2}"><b>Menus they can open</b></td></tr>${MENUS.map(m=>row(m[1],'m',m[0])).join('')}
+  <tr><td colspan="${n2}"><b>What they can do</b></td></tr>${ACTS.map(a=>row(a[1],'a',a[0])).join('')}</tbody></table></div>
+  <div class="addrow" style="margin-top:12px"><input class="i" id="posNew" placeholder="New position, for example Finance" maxlength="30"><button class="btn" type="button" id="posAdd">+ Add position</button></div>
+  <div class="toolbar" style="margin-top:12px"><span class="err" id="acErr" role="alert"></span><span class="sp"></span><button class="btn pri" type="button" id="acSave">Save access</button></div>`;
+}
+function readAccess(){
+  const o={};posNames().filter(n=>n!=='Admin').forEach(n=>o[n]={menus:[],acts:[]});
+  document.querySelectorAll('input.ac').forEach(c=>{const q=o[c.dataset.n];if(q&&c.checked)(c.dataset.t==='m'?q.menus:q.acts).push(c.dataset.k)});return o}
+function bindAccess(){
+  const err=$('#acErr');if(!err)return;
+  const put=async(list,msg)=>{try{await db.doc('settings/positions').set({list,updatedAt:new Date().toISOString(),updatedBy:ME.name});logAct('Access control','',msg);toast('Saved.');return true}catch(e){err.textContent='Could not save.';return false}};
+  $('#acSave').onclick=async()=>{err.textContent='';await put(readAccess(),'Access saved for: '+Object.keys(readAccess()).join(', '))};
+  $('#posAdd').onclick=async()=>{err.textContent='';const v=$('#posNew').value.trim();
+    if(!v){err.textContent='Type the position name.';return}
+    if(posNames().some(n=>n.toLowerCase()===v.toLowerCase())||/^master admin$/i.test(v)){err.textContent='That position already exists.';return}
+    const l=readAccess();l[v]={menus:MENUS.map(m=>m[0]),acts:[]};if(await put(l,'Position added: '+v))$('#posNew').value=''};
+  let armed=null;
+  document.querySelectorAll('[data-delpos]').forEach(a=>a.onclick=async e=>{e.preventDefault();err.textContent='';const n=a.dataset.delpos;
+    if(Object.values(D.users).some(u=>u.role===n)){err.textContent=n+' still has users. Move them to another position first.';return}
+    if(armed!==n){armed=n;a.textContent='Click again to remove';return}
+    const l=readAccess();delete l[n];await put(l,'Position removed: '+n)});
+}
+function userModal(id){
+  const isNew=!id;const r=isNew?{u:'',name:'',role:'Editor',active:true}:D.users[id];
+  openModalC(isNew?'Add user':'Edit user',`<label class="f" for="u_u">Username<input class="i" id="u_u" value="${esc(r.u)}" ${isNew?'':'disabled'} autocomplete="off"></label>
+   <label class="f" for="u_n">Full name<input class="i" id="u_n" value="${esc(r.name)}"></label>
+   <label class="f" for="u_r">Role<select class="i" id="u_r">${posNames().map(x=>`<option value="${x}" ${x===r.role?'selected':''}>${esc(rl(x))}</option>`).join('')}</select></label>
+   <label class="f" for="u_a">Status<select class="i" id="u_a"><option value="1" ${r.active!==false?'selected':''}>Active</option><option value="0" ${r.active===false?'selected':''}>Disabled</option></select></label>
+   <label class="f full" for="u_p">${isNew?'Temporary password':'Reset password (leave blank to keep)'}<input class="i" id="u_p" type="text" autocomplete="off"></label>`,
+   `<span class="sp"></span><span class="err" id="mErr" role="alert"></span><button class="btn" type="button" id="mCancel">Cancel</button><button class="btn pri" type="button" id="mSave">Save</button>`);
+  $('#mCancel').onclick=closeModal;
+  $('#mSave').onclick=async()=>{
+    const err=$('#mErr');const u=(isNew?$('#u_u').value:r.u).trim().toLowerCase(),name=$('#u_n').value.trim(),role=$('#u_r').value,active=$('#u_a').value==='1',pw=$('#u_p').value;
+    if(!/^[a-z0-9._-]{3,30}$/.test(u)){err.textContent='Username: 3 to 30 letters, numbers, dot, dash or underscore.';return}
+    if(!name){err.textContent='Enter a name.';return}
+    if(isNew&&D.users[u]){err.textContent='That username exists.';return}
+    if(isNew&&pw.length<6){err.textContent='Temporary password needs 6+ characters.';return}
+    const admins=Object.entries(D.users).filter(([k,x])=>x.role==='Admin'&&x.active!==false&&k!==u).length;
+    if((role!=='Admin'||!active)&&!isNew&&r.role==='Admin'&&admins===0){err.textContent='Keep at least one active Master Admin.';return}
+    if(!isNew&&u===ME.u&&!active){err.textContent='You cannot disable yourself.';return}
+    const doc={...(isNew?{lastLogin:null,mustChange:true}:JSON.parse(JSON.stringify(r))),u,name,role,active};delete doc.id;
+    if(pw){doc.salt=newSalt();doc.hash=await hashPw(doc.salt,pw);doc.mustChange=true}
+    try{await db.doc('users/'+u).set(doc);logAct(isNew?'Add user':'Edit user',u,`${name}, ${rl(role)}, ${active?'active':'disabled'}${pw?', password reset':''}`);closeModal();toast('Saved.')}catch(e){err.textContent='Could not save.'}
+  };
+}
+
+/* ---------- upload docs ---------- */
+const DOCMAX=700*1024;
+const docLab=a=>a?[a.code,a.name].filter(Boolean).join(' · '):'';
+const docTargets=()=>rows2().map(r=>({key:'requests/'+r.id,group:'Requests',label:[r.ref||'(draft)',r.expense,r.company].filter(Boolean).join(' · ')})).sort((x,y)=>x.label.localeCompare(y.label));
+const fsz=n=>n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
+const readFile=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(f)});
+const imgShrink=url=>new Promise(res=>{const i=new Image();i.onload=()=>{const s=Math.min(1,1600/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*s);c.height=Math.round(i.height*s);c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.8))};i.onerror=()=>res(url);i.src=url});
+const dataToBlob=u=>{const m=/^data:([^;,]*)(;base64)?,(.*)$/.exec(u)||[];const bin=atob(m[3]||'');const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new Blob([a],{type:m[1]||'application/octet-stream'})};
+async function docGet(id){const s=await db.doc('docdata/'+id).get();return s.exists?s.data().data:null}
+function docsModal(pre){
+  if(!ME)return;
+  const T=docTargets(),groups=[...new Set(T.map(t=>t.group))];
+  const body=`<label class="f full" for="dcT">Record<select class="i" id="dcT"><option value="">All records (view only)</option>${groups.map(g=>`<optgroup label="${esc(g)}">${T.filter(t=>t.group===g).map(t=>`<option value="${esc(t.key)}" ${t.key===pre?'selected':''}>${esc(t.label)}</option>`).join('')}</optgroup>`).join('')}</select></label>
+   <div class="faint full">Use this window for other files, for example approvals or notes. Keep the originals in their own system and record the reference here.</div>
+   ${can('files')?`<label class="f full" for="dcF">Files (PDF, image, Word, Excel; up to ${fsz(DOCMAX)} each)<input class="i" id="dcF" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.doc,.docx,.xls,.xlsx,.csv,.txt"></label>
+   <label class="f full" for="dcN">Note (optional)<input class="i" id="dcN" maxlength="200"></label>
+   <div class="full"><button class="btn pri" type="button" id="dcUp">Upload docs</button> <span class="faint" id="dcMsg" role="alert"></span></div>`:'<div class="faint full">You have view access: you can open and download documents but not upload.</div>'}
+   <div class="full" id="dcList"></div>`;
+  openModalC('Documents',body,`<span class="sp"></span><button class="btn" type="button" id="dcClose">Close</button>`);
+  $('#dcClose').onclick=closeModal;
+  const labOf=k=>(T.find(t=>t.key===k)||{}).label||'(record removed)';
+  function list(){
+    const k=$('#dcT').value,ds=Object.entries(D.docs||{}).map(([id,d])=>({...d,id})).filter(d=>!k||d.target===k).sort((a,b)=>(b.at||'').localeCompare(a.at||''));
+    $('#dcList').innerHTML=ds.length?`<table class="t" style="min-width:0"><thead><tr><th>File</th>${k?'':'<th>Record</th>'}<th>Added</th><th></th></tr></thead><tbody>${ds.map(d=>`<tr><td><b>${esc(d.name)}</b><div class="faint">${esc(fsz(d.size||0))}${d.note?' · '+esc(d.note):''}</div></td>${k?'':`<td>${esc(labOf(d.target))}</td>`}<td>${esc(fmtDT(d.at))}<div class="faint">${esc(d.byName||'')}</div></td><td style="white-space:nowrap"><button class="btn" type="button" data-v="${d.id}">${/^image\//.test(d.mime||'')?'View':'Download'}</button>${/^image\//.test(d.mime||'')?` <button class="btn" type="button" data-d="${d.id}">Download</button>`:''}${can('delete')?` <button class="btn" type="button" data-x="${d.id}">Delete</button>`:''}</td></tr>`).join('')}</tbody></table>`:'<div class="faint">No documents yet.</div>';
+    $('#dcList').querySelectorAll('[data-v],[data-d]').forEach(b=>b.onclick=async()=>{
+      const id=b.dataset.v||b.dataset.d,d=D.docs[id];b.disabled=true;
+      try{const u=await docGet(id);if(!u){toast('The file could not be found.');return}
+        if(b.dataset.v&&/^image\//.test(d.mime||''))lightbox(u);else{await dl.save({filename:d.name,data:dataToBlob(u)});toast('File ready.')}
+      }catch(e){if(!e||e.code!=='declined')toast('Could not open the file.')}finally{b.disabled=false}});
+    $('#dcList').querySelectorAll('[data-x]').forEach(b=>b.onclick=async()=>{
+      const id=b.dataset.x,d=D.docs[id];if(!confirm('Delete "'+d.name+'"?'))return;
+      try{await db.doc('docs/'+id).delete();await db.doc('docdata/'+id).delete();logAct('Document deleted',labOf(d.target),d.name);toast('Deleted.');setTimeout(list,150)}catch(e){toast('Could not delete.')}});
+  }
+  $('#dcT').onchange=list;list();
+  const up=$('#dcUp');if(up)up.onclick=async()=>{
+    const k=$('#dcT').value,fs=[...$('#dcF').files],msg=$('#dcMsg');
+    if(!k){msg.textContent='Choose the record first.';return}
+    if(!fs.length){msg.textContent='Choose a file.';return}
+    up.disabled=true;let ok=0,bad=[];
+    for(const f of fs){
+      try{let u=await readFile(f),mime=f.type||'application/octet-stream',name=f.name;
+        if(/^image\//.test(mime)&&mime!=='image/gif'){u=await imgShrink(u);mime='image/jpeg'}
+        if(u.length*0.75>DOCMAX){bad.push(f.name+' (too large)');continue}
+        const id=rid('d');
+        await db.doc('docdata/'+id).set({data:u});
+        await db.doc('docs/'+id).set({target:k,name,mime,size:Math.round(u.length*0.75),note:$('#dcN').value.trim(),at:new Date().toISOString(),by:ME.u,byName:ME.name});
+        logAct('Document uploaded',labOf(k),name);ok++}
+      catch(e){bad.push(f.name)}
+    }
+    up.disabled=false;$('#dcF').value='';msg.textContent=(ok?ok+' uploaded. ':'')+(bad.length?'Not uploaded: '+bad.join(', '):'');
+    setTimeout(list,200);
+  };
+}
+
+/* ---------- Lists: the Master Admin can add, rename, move and delete dropdown choices ---------- */
+const LST=[];
+function lstReg(r){r.def=r.kv?r.keys.map(k=>({k,l:r.labels[k]||k})):(r.arr?r.arr.slice():(r.store?r.store.read():[]));LST.push(r);return r}
+const lstAll=()=>(D.settings&&D.settings.lists)||{};
+function lstRead(r){
+  if(r.store&&!r.kv)return r.store.read();
+  const s=lstAll()[r.key];
+  if(r.kv)return s&&Array.isArray(s.items)&&s.items.length?s.items.map(x=>({k:x.k,l:x.l})):r.def.map(x=>({...x}));
+  return s&&Array.isArray(s.items)&&s.items.length?s.items.slice():r.def.slice();
+}
+function lstSync(){LST.forEach(r=>{const v=lstRead(r);
+  if(r.kv){r.keys.splice(0,r.keys.length,...v.map(x=>x.k));v.forEach(x=>{r.labels[x.k]=x.l;(r.labels2||[]).forEach((m,mi)=>{if(x.k in m||(mi===0&&!(r.locked||[]).includes(x.k)))m[x.k]=x.l})})}
+  else if(r.arr)r.arr.splice(0,r.arr.length,...v)})}
+const lstVal=(r,it)=>r.kv?it.l:it;
+function lstUsed(r,it){const val=r.kv?it.k:it;let n=0;(r.uses||[]).forEach(([c,f])=>Object.values(D[c]||{}).forEach(x=>{if(x&&x[f]===val)n++}));return n}
+async function lstWrite(r,items,msg){
+  if(r.store&&!r.kv)await r.store.write(items);
+  else await db.doc('settings/lists').set({...lstAll(),[r.key]:{items,updatedAt:new Date().toISOString(),updatedBy:ME.name}});
+  logAct('List changed',r.title,msg);
+}
+async function lstMass(r,oldV,newV){
+  const jobs=[];(r.uses||[]).forEach(([c,f])=>Object.entries(D[c]||{}).forEach(([id,x])=>{if(x&&x[f]===oldV)jobs.push([c,id,f])}));
+  for(let i=0;i<jobs.length;i+=20)await Promise.all(jobs.slice(i,i+20).map(([c,id,f])=>db.doc(c+'/'+id).update({[f]:newV})));
+  return jobs.length;
+}
+UI.lst=null;
+function listsView(){
+  if(!can('admin'))return '<div class="empty">Only a Master Admin can manage lists.</div>';
+  const box=r=>{const items=lstRead(r),ed=UI.lst&&UI.lst.k===r.key?UI.lst.i:-1;
+    return `<div class="lbox" data-lk="${esc(r.key)}"><h3>${esc(r.title)}</h3><div class="lsub">${esc(r.hint||'')}</div>
+    <div class="tbox" style="max-height:none"><table class="t tight" style="min-width:0"><thead><tr><th>Choice</th><th class="n">In use</th><th></th></tr></thead><tbody>${items.length?items.map((it,i)=>{const v=lstVal(r,it),n=lstUsed(r,it);
+      return `<tr>${ed===i?`<td><input class="i" data-lstin value="${esc(v)}" maxlength="60"></td><td class="n">${n}</td><td class="act"><button class="btn sm pri" type="button" data-lst="save" data-i="${i}">Save</button> <button class="btn sm" type="button" data-lst="cancel">Cancel</button></td>`
+      :`<td>${esc(v)}${r.kv&&(r.locked||[]).includes(it.k)?' <span class="faint">(built in)</span>':''}</td><td class="n">${n}</td><td class="act"><button class="btn sm" type="button" data-lst="up" data-i="${i}" aria-label="Move up" ${i?'':'disabled'}>↑</button> <button class="btn sm" type="button" data-lst="dn" data-i="${i}" aria-label="Move down" ${i<items.length-1?'':'disabled'}>↓</button> <button class="btn sm" type="button" data-lst="ren" data-i="${i}">Rename</button> <button class="btn sm danger" type="button" data-lst="del" data-i="${i}">Delete</button></td>`}</tr>`}).join(''):'<tr><td colspan="3" class="empty">No choices yet.</td></tr>'}</tbody></table></div>
+    <div class="addrow"><input class="i" data-lstnew placeholder="Add a new choice…" maxlength="60"><button class="btn pri" type="button" data-lst="add">Add</button><button class="btn" type="button" data-lst="reset">Reset to default</button></div><div class="err" data-lsterr role="alert"></div></div>`};
+  return `<div class="defbox"><b>Lists.</b> Every dropdown with fixed choices is managed here. <b>Add</b> a choice and it appears in the dropdown straight away. <b>Rename</b> updates every record that uses it. <b>Delete</b> works only when no record uses the choice. Only the Master Admin can change lists.</div><div class="lgrid">${LST.map(box).join('')}</div>`;
+}
+async function lstClick(e){
+  const b=e.target.closest('[data-lst]');if(!b||!can('admin'))return;
+  const bx=b.closest('[data-lk]'),r=LST.find(x=>x.key===bx.dataset.lk),err=bx.querySelector('[data-lsterr]'),act=b.dataset.lst,i=+b.dataset.i;
+  const say=t=>{err.textContent=t};say('');
+  const items=lstRead(r),dup=(v,skip)=>items.some((it,j)=>j!==skip&&lstVal(r,it).toLowerCase()===v.toLowerCase());
+  try{
+    if(act==='ren'){UI.lst={k:r.key,i};draw();const inp=document.querySelector('[data-lk="'+r.key+'"] [data-lstin]');if(inp){inp.focus();inp.select()}return}
+    if(act==='cancel'){UI.lst=null;draw();return}
+    if(act==='add'){const inp=bx.querySelector('[data-lstnew]'),v=inp.value.trim();if(!v){say('Type the new choice first.');return}if(dup(v,-1)){say('That choice already exists.');return}
+      const nv=r.kv?[...items,{k:'F'+Date.now().toString(36),l:v}]:[...items,v];await lstWrite(r,nv,'Added: '+v);toast('Added.');return}
+    if(act==='save'){const v=bx.querySelector('[data-lstin]').value.trim(),it=items[i],old=lstVal(r,it);
+      if(!v){say('The choice cannot be empty.');return}if(v!==old&&dup(v,i)){say('That choice already exists.');return}
+      if(v===old){UI.lst=null;draw();return}
+      const n=lstUsed(r,it);if(n&&!r.kv&&!confirm('Rename "'+old+'" to "'+v+'"? This also changes '+n+' record'+(n===1?'':'s')+'.'))return;
+      const nv=items.map((x,j)=>j===i?(r.kv?{k:x.k,l:v}:v):x);
+      b.disabled=true;await lstWrite(r,nv,'Renamed: '+old+' → '+v);if(!r.kv&&n)await lstMass(r,old,v);UI.lst=null;toast(n&&!r.kv?'Renamed. '+n+' record'+(n===1?'':'s')+' updated.':'Renamed.');draw();return}
+    if(act==='del'){const it=items[i],v=lstVal(r,it);
+      if(r.kv&&(r.locked||[]).includes(it.k)){say('"'+v+'" is built in and follows the account type. You can rename it but not delete it.');return}
+      const n=lstUsed(r,it);if(n){say('"'+v+'" is used by '+n+' record'+(n===1?'':'s')+'. Rename it, or change those records first.');return}
+      if(items.length<2&&!r.allowEmpty){say('Keep at least one choice.');return}
+      if(!confirm('Delete "'+v+'"?'))return;
+      await lstWrite(r,items.filter((x,j)=>j!==i),'Deleted: '+v);toast('Deleted.');return}
+    if(act==='up'||act==='dn'){const j=act==='up'?i-1:i+1;if(j<0||j>=items.length)return;const nv=items.slice();[nv[i],nv[j]]=[nv[j],nv[i]];await lstWrite(r,nv,'Moved: '+lstVal(r,items[i]));return}
+    if(act==='reset'){if(!confirm('Put "'+r.title+'" back to its original choices? Records keep what they already have.'))return;
+      await lstWrite(r,r.kv?r.def.map(x=>({...x})):r.def.slice(),'Reset to default');toast('Reset.');return}
+  }catch(x){say('Could not save. Try again.')}
+}
+document.addEventListener('click',lstClick);
+(function(){const s=document.createElement('style');s.textContent='.lgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}@media(max-width:1000px){.lgrid{grid-template-columns:minmax(0,1fr)}}.lbox{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px}.lbox h3{font-family:var(--head);font-size:16px;margin:0 0 2px}.lbox .lsub{color:var(--faint);font-size:12px;margin-bottom:10px}.lbox .addrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.lbox .addrow .i{flex:1 1 160px;width:auto}.lbox td.act{white-space:nowrap;text-align:right}.lbox .btn.danger{color:var(--red);border-color:var(--red)}.tbox table.t.tight td,.tbox table.t.tight th{padding:6px 8px}';document.head.appendChild(s)})();
+
+const PAGE_N=20;
+function paginate(){
+  const old=document.getElementById('pager');if(old)old.remove();
+  if(['access','lists','dash','set','alerts'].includes(UI.tab))return;
+  const tbs=document.querySelectorAll('#view .tbox table.t');if(tbs.length!==1)return;
+  const tb=tbs[0].querySelector('tbody');const trs=[...tb.children].filter(r=>!r.querySelector('td.empty'));const n=trs.length;
+  const key=[UI.tab,UI.m,UI.ag,UI.co,UI.kd,UI.st,UI.q,UI.pq,UI.pst,UI.hq,UI.gr,UI.rf,UI.rt].join('|');if(UI.pgKey!==key){UI.pgKey=key;UI.pg=0}
+  if(n<=PAGE_N)return;
+  const pages=Math.ceil(n/PAGE_N);UI.pg=Math.min(Math.max(UI.pg||0,0),pages-1);
+  trs.forEach((r,i)=>{r.style.display=Math.floor(i/PAGE_N)===UI.pg?'':'none'});
+  tbs[0].closest('.tbox').insertAdjacentHTML('afterend',`<div class="pager" id="pager"><span>${UI.pg*PAGE_N+1}–${Math.min(n,(UI.pg+1)*PAGE_N)} of ${n}</span><button class="btn sm" type="button" data-pg="-1" ${UI.pg===0?'disabled':''}>Previous</button><span>Page ${UI.pg+1} of ${pages}</span><button class="btn sm" type="button" data-pg="1" ${UI.pg>=pages-1?'disabled':''}>Next</button></div>`);
+  document.querySelectorAll('#pager [data-pg]').forEach(b=>b.onclick=()=>{UI.pg+=+b.dataset.pg;draw()})}
+
+/* ---------- MM2-01 · PSS request and expense tracking ---------- */
+const SLA={A:4,B:8,CLR:8,C:6,D:6,E:8,F1:8,F2:8};
+const SLA_TXT={A:'2–4',B:'5–8',CLR:'5–8',C:'3–6',D:'3–6',E:'5–8',F1:'5–8',F2:'5–8'};
+const REASONS0=["Waiting for approval","Missing documents","Funds not ready","Approver away","Other"];
+const LST_REASON=lstReg({key:'lateReasonsReq',title:'Late reason',hint:'Chosen when a request or clearing is late.',arr:REASONS0,uses:[['requests','reason']]});
+const isoToday=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+const pdate=s=>{if(!s)return null;const [y,m,d]=String(s).split('-').map(Number);return new Date(y,m-1,d)};
+function bdays(a,b){const x=pdate(a),y=pdate(b);if(!x||!y)return null;let n=0;const t=new Date(x);while(t<y){t.setDate(t.getDate()+1);const w=t.getDay();if(w!==0&&w!==6)n++}return n}
+const rows2=()=>Object.entries(D.requests||{}).map(([id,x])=>({...x,id}));
+function syncReqs(){const a=D.annots||{};const out={};Object.entries(D.mm4_rows||{}).forEach(([k,x])=>{out[k]={...x,reason:(a[k]||{}).reason||'',note:(a[k]||{}).note||''}});D.requests=out;}
+const isOpen=r=>r.status==='OPEN'||r.status==='RETURNED';
+function evalR(r){
+  const sla=SLA[r.route]||0,done=r.status==='DONE',today=isoToday();
+  const days=r.submittedOn?bdays(r.submittedOn,done&&r.completedOn?r.completedOn:today):null;
+  let tl;
+  if(!r.submittedOn)tl=r.status==='DRAFT'?'Draft':'No date';
+  else if(done)tl=days!==null&&days<=sla?'On time':'Late';
+  else if(isOpen(r))tl=days!==null&&days>sla?'Overdue':'Within SLA';
+  else tl='Closed';
+  if(r.route==='CLR'&&r.dueDate){
+    if(done&&r.completedOn)tl=r.completedOn<=r.dueDate?'On time':'Late';
+    else if(isOpen(r))tl=today>r.dueDate?'Overdue':'Within SLA';
+  }
+  const pastDue=!!(r.dueDate&&isOpen(r)&&today>r.dueDate);
+  return {tl,days,sla,pastDue};
+}
+const TL_CLS={'On time':'g','Within SLA':'x','Late':'r','Overdue':'r','Draft':'x','No date':'x','Closed':'x'};
+const tlPill=t=>`<span class="pill ${TL_CLS[t]||'x'}">${esc(t)}</span>`;
+const stPill3=s=>{const c={DONE:'g',OPEN:'a',RETURNED:'r',REJECTED:'r',WITHDRAWN:'x',DRAFT:'x'}[s]||'x';return `<span class="pill ${c}">${esc(s||'')}</span>`};
+const dayTxt=v=>v?esc(v):'<span class="faint">–</span>';
+function parseCsv(text){
+  const out=[];let row=[],cell='',q=false;
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){cell+='"';i++}else q=false}else cell+=c}
+    else if(c==='"')q=true;
+    else if(c===','){row.push(cell);cell=''}
+    else if(c==='\r'){}
+    else if(c==='\n'){row.push(cell);out.push(row);row=[];cell=''}
+    else cell+=c}
+  if(cell.length||row.length){row.push(cell);out.push(row)}
+  return out.filter(r=>r.some(x=>x.trim()!==''));
+}
+function mapRow(h,r){
+  const g=n=>{const i=h.indexOf(n);return i<0?'':(r[i]||'').trim()};
+  return {ref:g('Ref'),id:g('Record id'),route:g('Route'),routeName:g('Route name'),expense:g('Expense'),section:g('Section'),
+    status:g('Status'),requester:g('Requester'),company:g('Company'),purpose:g('Purpose'),submittedOn:g('Submitted on'),
+    completedOn:g('Completed on'),dueDate:g('Due date'),total:g('Total USD'),step:g('Current step'),
+    rejections:+g('Rejection events')||0,overBudget:g('Over budget')==='Yes',advance:g('Advance status'),
+    lastNote:g('Last note'),steps:g('Steps (step | date | by)')};
+}
+function reqSummary(){
+  const all=rows2();const ev=all.map(r=>({r,e:evalR(r)}));
+  const cnt=t=>ev.filter(x=>x.e.tl===t).length;
+  const clr=ev.filter(x=>x.r.route==='CLR');
+  const cl=t=>clr.filter(x=>x.e.tl===t).length;
+  return {
+    total:all.length,
+    done:all.filter(r=>r.status==='DONE').length,
+    open:all.filter(isOpen).length,
+    onTime:cnt('On time'),late:cnt('Late'),within:cnt('Within SLA'),overdue:cnt('Overdue'),
+    pastDue:ev.filter(x=>x.e.pastDue).length,
+    rej:all.reduce((s,r)=>s+(+r.rejections||0),0),
+    withRej:all.filter(r=>(+r.rejections||0)>0).length,
+    clrOn:cl('On time'),clrLate:cl('Late'),clrOver:cl('Overdue'),
+    overBudget:all.filter(r=>r.overBudget).length,
+    invOn:all.filter(r=>r.route==='A'&&r.status==='DONE'&&r.completedOn&&+r.completedOn.slice(8,10)<=25).length,
+    invLate:all.filter(r=>r.route==='A'&&r.status==='DONE'&&r.completedOn&&+r.completedOn.slice(8,10)>25).length,
+    ev
+  };
+}
+function dashView(){
+  const s=reqSummary();
+  const perRoute=Object.keys(SLA).map(k=>{const xs=s.ev.filter(x=>x.r.route===k&&x.e.tl!=='Draft'&&x.e.tl!=='No date');return {k,on:xs.filter(x=>x.e.tl==='On time'||x.e.tl==='Within SLA').length,bad:xs.filter(x=>x.e.tl==='Late'||x.e.tl==='Overdue').length}}).filter(x=>x.on+x.bad>0);
+  const bar=(label,v,max,col)=>`<div style="display:grid;grid-template-columns:minmax(120px,38%) 1fr auto;gap:10px;align-items:center;margin:7px 0"><span>${esc(label)}</span><span style="height:12px;background:var(--line2);border-radius:6px;overflow:hidden"><span style="display:block;height:100%;width:${max?Math.round(v/max*100):0}%;background:${col};border-radius:6px"></span></span><span class="mono">${v}</span></div>`;
+  const rmax=Math.max(1,...perRoute.map(x=>x.on+x.bad));
+  const na=alertList().length;
+  return `${na?`<div class="card" data-go="alerts" style="margin-bottom:16px;background:var(--amber-l);border-color:var(--amber)"><div class="k" style="color:var(--amber)">Alerts</div><div class="v">${na} alert${na===1?'':'s'}</div><div class="m">Overdue, late, or due within 3 days and not finished. Click to open.</div></div>`:''}<div class="cards">
+    <div class="card" data-go="req"><div class="k">Requests</div><div class="v">${s.total}</div><div class="m">${s.done} completed · ${s.open} open</div></div>
+    <div class="card" data-go="alerts"><div class="k">Overdue now</div><div class="v">${s.overdue}</div><div class="m">Open past the working-day target</div></div>
+    <div class="card" data-go="alerts"><div class="k">Late (completed)</div><div class="v">${s.late}</div><div class="m">Finished after the target</div></div>
+    <div class="card" data-go="alerts"><div class="k">Past due date</div><div class="v">${s.pastDue}</div><div class="m">Open and after the due date</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:4px">
+    <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px"><h3 style="margin:0 0 6px">On time vs late, by route</h3>${perRoute.length?perRoute.map(x=>bar(x.k+' · target '+SLA_TXT[x.k]+' days',x.on,rmax,'var(--green)')+bar('   late / overdue',x.bad,rmax,'var(--red)')).join(''):'<div class="faint">No submitted requests yet.</div>'}</div>
+    <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px"><h3 style="margin:0 0 6px">Clearing and returns</h3>
+      <div style="margin:7px 0">Clearings on time: <b>${s.clrOn}</b> · late: <b>${s.clrLate}</b> · overdue: <b>${s.clrOver}</b></div>
+      <div style="margin:7px 0">Monthly invoices done by the 25th: <b>${s.invOn}</b> · after: <b>${s.invLate}</b></div>
+      <div style="margin:7px 0">Returns and rejections: <b>${s.rej}</b> events on <b>${s.withRej}</b> requests</div>
+      <div style="margin:7px 0">Over budget requests: <b>${s.overBudget}</b></div></div>
+  </div>`;
+}
+function reqView(){
+  const q=(UI.q||'').trim().toLowerCase();
+  const list=rows2().map(r=>({r,e:evalR(r)})).filter(x=>(!UI.rs||x.r.status===UI.rs)&&(!UI.rt||x.e.tl===UI.rt)&&(!UI.ro||x.r.route===UI.ro)&&(!q||[x.r.ref,x.r.expense,x.r.company,x.r.requester,x.r.purpose,x.r.routeName].join(' ').toLowerCase().includes(q)))
+    .sort((a,b)=>(b.r.submittedOn||'').localeCompare(a.r.submittedOn||''));
+  const opt=(arr,v,label)=>`<option value="">${label}</option>`+arr.map(([k,l])=>`<option value="${esc(k)}" ${k===v?'selected':''}>${esc(l)}</option>`).join('');
+  const routes=Object.keys(SLA).map(k=>{const n=(rows2().find(r=>r.route===k)||{}).routeName||k;return [k,k+' · '+n]});
+  const sts=['DRAFT','OPEN','RETURNED','REJECTED','WITHDRAWN','DONE'].map(x=>[x,x]);
+  const tls=['On time','Late','Within SLA','Overdue','Closed','Draft','No date'].map(x=>[x,x]);
+  setTimeout(()=>{const f=$('#rq');if(f)f.oninput=e=>{UI.q=e.target.value;UI.keep='rq';draw()}},0);
+  return `<div class="toolbar">
+    <label class="f" style="flex:1;min-width:200px">Search<input class="i" id="rq" type="search" value="${esc(UI.q||'')}" placeholder="Ref, expense, company, requester…"></label>
+    <label class="f">Status<select class="i" id="rs">${opt(sts,UI.rs,'All')}</select></label>
+    <label class="f">Timeliness<select class="i" id="rt">${opt(tls,UI.rt,'All')}</select></label>
+    <label class="f">Route<select class="i" id="ro">${opt(routes,UI.ro,'All')}</select></label>
+    ${can('export')?'<button class="btn" id="xReq" type="button">Excel</button>':''}
+  </div>
+  <div class="tbox"><table class="t" style="min-width:1200px"><thead><tr><th>Ref</th><th>Route</th><th>Expense</th><th>Company</th><th>Requester</th><th>Status</th><th>Submitted</th><th>Completed</th><th>Due</th><th>Days</th><th>Target</th><th>Timeliness</th><th class="n">Rejections</th><th>Reason</th></tr></thead><tbody>${
+    list.length?list.map(x=>`<tr class="row" tabindex="0" data-k="${esc(x.r.id)}"><td class="mono">${esc(x.r.ref||'(draft)')}</td><td>${esc(x.r.route||'')}</td><td class="wrap">${esc(x.r.expense||'')}</td><td class="wrap">${esc(x.r.company||'')}</td><td>${esc(x.r.requester||'')}</td><td>${stPill3(x.r.status)}</td><td>${dayTxt(x.r.submittedOn)}</td><td>${dayTxt(x.r.completedOn)}</td><td>${dayTxt(x.r.dueDate)}</td><td class="n">${x.e.days==null?'<span class="faint">–</span>':x.e.days}</td><td>${x.e.sla?x.e.sla+' days':''}</td><td>${tlPill(x.e.tl)}</td><td class="n">${x.r.rejections||0}</td><td class="wrap">${esc(x.r.reason||'')}</td></tr>`).join('')
+    :'<tr><td colspan="14" class="empty"><b>No requests match.</b>Requests from MM4-01 appear here automatically.</td></tr>'}</tbody></table></div>
+  <div class="faint" style="margin-top:8px">Showing ${list.length} of ${rows2().length} requests. Days are working days (Mon–Fri) from submission to completion, or to today if still open.</div>`;
+}
+function dueSoon(d){const t=Date.parse(d+'T00:00:00Z'),n=Date.parse(isoToday()+'T00:00:00Z');if(isNaN(t)||isNaN(n))return false;const k=Math.round((t-n)/864e5);return k>=0&&k<=3}
+function alertList(){return rows2().map(r=>({r,e:evalR(r)})).filter(x=>x.e.tl==='Overdue'||x.e.tl==='Late'||x.e.pastDue||(x.r.route==='CLR'&&x.e.tl==='Late')||(x.r.status!=='DONE'&&!!x.r.dueDate&&dueSoon(x.r.dueDate)))}
+function alertsView(){
+  const list=alertList()
+    .sort((a,b)=>String(a.r.dueDate||'').localeCompare(String(b.r.dueDate||'')));
+  return `<div class="defbox"><b>Alerts.</b> Requests that are overdue, finished late, past their due date, or due within 3 days and not finished. Click a row to add the reason.</div>
+  <div class="tbox"><table class="t" style="min-width:1100px"><thead><tr><th>Ref</th><th>Route</th><th>Expense</th><th>Requester</th><th>Status</th><th>Due</th><th>Days</th><th>Target</th><th>Timeliness</th><th>Current step</th><th>Reason</th></tr></thead><tbody>${
+    list.length?list.map(x=>`<tr class="row" tabindex="0" data-k="${esc(x.r.id)}"><td class="mono">${esc(x.r.ref||'')}</td><td>${esc(x.r.route||'')}</td><td class="wrap">${esc(x.r.expense||'')}</td><td>${esc(x.r.requester||'')}</td><td>${stPill3(x.r.status)}</td><td>${dayTxt(x.r.dueDate)}${x.e.pastDue?' <span class="pill r">past due</span>':''}</td><td class="n">${x.e.days==null?'–':x.e.days}</td><td>${x.e.sla?x.e.sla+' days':''}</td><td>${tlPill(x.e.tl)}</td><td class="wrap">${esc(x.r.step||'')}</td><td class="wrap">${esc(x.r.reason||'')}</td></tr>`).join('')
+    :'<tr><td colspan="11" class="empty"><b>No alerts.</b>Nothing is overdue or late right now.</td></tr>'}</tbody></table></div>`;
+}
+function bindReq(){
+  const on=(id,ev,fn)=>{const e=$('#'+id);if(e)e[ev]=fn};
+  on('rs','onchange',e=>{UI.rs=e.target.value;draw()});
+  on('rt','onchange',e=>{UI.rt=e.target.value;draw()});
+  on('ro','onchange',e=>{UI.ro=e.target.value;draw()});
+  on('xReq','onclick',exportReq);
+}
+function bindRows(){
+  document.querySelectorAll('#view tr.row[data-k]').forEach(tr=>{const go=()=>reqModal(tr.dataset.k);tr.onclick=go;tr.onkeydown=e=>{if(e.key==='Enter')go()}});
+}
+function reqModal(id){
+  const r=D.requests[id];if(!r)return;
+  const ro=!can('edit'),dis=ro?' disabled':'';
+  const body=`<div class="grid2">
+    <label class="f">Ref<input class="i" value="${esc(r.ref||'(draft)')}" disabled></label>
+    <label class="f">Status<input class="i" value="${esc(r.status||'')}" disabled></label>
+    <label class="f" style="grid-column:1/-1">Expense<input class="i" value="${esc(r.expense||'')}" disabled></label>
+    <label class="f">Submitted<input class="i" value="${esc(r.submittedOn||'')}" disabled></label>
+    <label class="f">Completed<input class="i" value="${esc(r.completedOn||'')}" disabled></label>
+    <label class="f">Due date<input class="i" value="${esc(r.dueDate||'')}" disabled></label>
+    <label class="f">Timeliness<input class="i" value="${esc(evalR(r).tl)}" disabled></label>
+    <label class="f" style="grid-column:1/-1">Reason (when late)<input class="i" id="rReason" list="dlReason" value="${esc(r.reason||'')}"${dis}><datalist id="dlReason">${lstRead(LST_REASON).map(x=>`<option value="${esc(x)}">`).join('')}</datalist></label>
+    <label class="f" style="grid-column:1/-1">Notes<textarea class="i" id="rNote"${dis}>${esc(r.note||'')}</textarea></label>
+    <label class="f" style="grid-column:1/-1">Steps (from MM4-01)<textarea class="i" disabled>${esc((r.steps||'').split(' ; ').join('\n'))}</textarea></label>
+    <div class="err" id="rErr" role="alert" style="grid-column:1/-1"></div></div>`;
+  openModalC('Request · '+(r.ref||'draft'),body,ro?`<span class="sp"></span><button class="btn" type="button" id="rClose">Close</button>`:`<span class="sp"></span><button class="btn" type="button" id="rCancel">Cancel</button><button class="btn pri" type="button" id="rSave">Save</button>`,{});
+  if(ro){$('#rClose').onclick=closeModal;return}
+  $('#rCancel').onclick=closeModal;
+  $('#rSave').onclick=async()=>{try{await db.collection('annots').doc(id).set({reason:$('#rReason').value.trim(),note:$('#rNote').value.trim(),by:ME.name,at:new Date().toISOString()});await logAct('Edit request',r.ref||id,r.expense||'');closeModal();toast('Saved.')}catch(e){$('#rErr').textContent='Could not save. Try again.'}};
+}
+function exportReq(){
+  const H=['Ref','Route','Route name','Expense','Section','Status','Requester','Company','Purpose','Submitted on','Completed on','Due date','Total USD','Current step','Days','Target days','Timeliness','Rejection events','Reason','Notes'];
+  const out=rows2().map(r=>{const e=evalR(r);return [r.ref,r.route,r.routeName,r.expense,r.section,r.status,r.requester,r.company,r.purpose,r.submittedOn,r.completedOn,r.dueDate,r.total,r.step,e.days==null?'':e.days,e.sla,e.tl,r.rejections||0,r.reason||'',r.note||''];});
+  const csv='﻿'+[H,...out].map(rw=>rw.map(v=>{v=v==null?'':String(v);return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(',')).join('\r\n');
+  saveFile('MM2-01_requests_'+isoToday()+'.csv',csv);
+}
+async function saveFile(name,text){
+  try{const cap=window.claude&&window.claude.use?await window.claude.use('downloads'):null;
+    if(cap){await cap.save({filename:name,data:text});toast('File ready.');return}}catch(e){}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));a.download=name;document.body.appendChild(a);a.click();a.remove();toast('File saved.');
+}
+function histView(){
+  const q=(UI.hq||'').toLowerCase(),hs=Object.values(D.log||{}).sort((a,b)=>(b.at||'').localeCompare(a.at||'')).filter(r=>!q||[r.name,r.action,r.target,r.detail].join(' ').toLowerCase().includes(q));
+  setTimeout(()=>{const h=$('#hq');if(h)h.oninput=e=>{UI.hq=e.target.value;UI.keep='hq';draw()}},0);
+  return `<div class="toolbar"><label class="f" style="flex:1;min-width:200px">Search<input class="i" id="hq" type="search" value="${esc(UI.hq||'')}" placeholder="Person, action, record…"></label><span class="faint">Last 200 changes</span></div><div class="tbox"><table class="t" style="min-width:760px"><thead><tr><th>When</th><th>User</th><th>Action</th><th>Record</th><th>Detail</th></tr></thead><tbody>${hs.length?hs.map(r=>`<tr><td>${esc(fmtDT(r.at))}</td><td>${esc(r.name||r.by||'')}</td><td>${esc(r.action||'')}</td><td>${esc(r.target||'')}</td><td class="wrap">${esc(r.detail||'')}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">No changes yet.</td></tr>'}</tbody></table></div>`;
+}
+function tabsHtml(){
+  const T=[['g','Monitor']];
+  if(menuOk('dash'))T.push(['dash','Dashboard']);
+  if(menuOk('req'))T.push(['req','All requests']);
+  if(menuOk('alerts'))T.push(['alerts','Alerts ('+alertList().length+')']);
+  if(menuOk('hist'))T.push(['hist','History']);
+  if(can('admin'))T.push(['g','Tools'],['users','Users'],['access','Access control'],['lists','Dropdown lists']);
+  return T.map(([k,l])=>k==='g'?`<div class="ng">${l}</div>`:`<button type="button" data-tab="${k}" ${UI.tab===k?'aria-current="page"':''}><span>${l}</span></button>`).join('')+'<div class="ng">Documents</div><button type="button" data-docs="1"><span>Upload docs</span></button>';
+}
+function draw(){
+  if(ME&&!menuOk(UI.tab)){const f=MENUS.find(m=>menuOk(m[0]));UI.tab=f?f[0]:'none'}
+  $('#nav').innerHTML=tabsHtml();
+  $('#todayTxt').textContent=fmtD(todayStr());
+  const t=UI.tab;
+  if(t==='none'){$('#pageTitle').textContent='No access';$('#pageSub').textContent='';$('#view').innerHTML='<div class="empty">Your position cannot open any menu. Ask a Master Admin.</div>';return}
+  $('#pageTitle').textContent=TITLES[t][0];$('#pageSub').textContent=TITLES[t][1];
+  const V={dash:dashView,req:reqView,alerts:alertsView,hist:histView,users:usersView,access:accessView,lists:listsView};
+  $('#view').innerHTML=V[t]();
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{UI.tab=b.dataset.tab;UI.q='';UI.rs='';UI.rt='';UI.ro='';UI.hq='';draw()});
+  document.querySelectorAll('#view .card[data-go]').forEach(el=>el.onclick=()=>{UI.tab=el.dataset.go==='req'?'req':'alerts';draw()});
+  if(t==='req'){bindReq();bindRows()}
+  if(t==='alerts')bindRows();
+  paginate();
+  if(UI.keep){const e=$('#'+UI.keep);if(e){e.focus();const n=e.value.length;e.setSelectionRange&&e.setSelectionRange(n,n)}UI.keep=null}
+}
+function refresh(){
+  if(!ME||Object.keys(READY).length<4)return;
+  if(!$('#ov'))draw();else{$('#nav').innerHTML=tabsHtml();document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{closeModal();UI.tab=b.dataset.tab;draw()})}
+}
+async function boot(){
+  db=makeDb();dl=makeDl();
+  let t;
+  const sub=(c,q)=>(q||db.collection(c)).onSnapshot(s=>{
+    const o={};s.docs.forEach(d=>o[d.id]=d.data());D[c]=o;READY[c]=1;if(c==='settings')lstSync();if(c==='mm4_rows'||c==='annots')syncReqs();
+    if(c==='users'){bootstrapAdmin();checkSession();const b=$('#loginBtn');if(!b.dataset.ready){b.disabled=false;b.textContent='Sign in';b.dataset.ready=1}}
+    clearTimeout(t);t=setTimeout(refresh,50)},()=>{READY[c]=1;if(c==='users'){$('#loginErr').textContent='Could not read the database.'}});
+  sub('mm4_rows');sub('annots');sub('settings');sub('users');sub('docs',db.collection('docs').orderBy('at','desc').limit(500));sub('log',db.collection('log').orderBy('at','desc').limit(200));
+  $('#nav').addEventListener('click',e=>{if(e.target.closest('[data-docs]'))docsModal()});
+  $('#loginForm').addEventListener('submit',doLogin);
+  $('#btnPw').onclick=()=>passwordModal(false);$('#btnOut').onclick=logout;
+  setInterval(()=>{if(ME&&!$('#ov'))draw()},3600*1000);
+}
+boot();
+
+})();
+</script>
+</body></html>

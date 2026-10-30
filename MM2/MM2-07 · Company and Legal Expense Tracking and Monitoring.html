@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MM2-07 · Company and Legal Expense Tracking and Monitoring</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600&display=swap">
+<style>
+:root{--paper:#F2F4F6;--surface:#FFFFFF;--ink:#17212C;--muted:#5E6B78;--faint:#8A96A3;--line:#DCE1E6;--line2:#EBEEF1;--steel:#23507A;--steel-d:#1A3D5E;--steel-l:#E6EEF5;--on-steel:#FFFFFF;--side:#132230;--side-2:#1C3043;--side-ink:#C8D4DF;--side-line:#2B435A;--red:#B42318;--red-l:#FDECEA;--amber:#B54708;--amber-l:#FEF3E2;--green:#067647;--green-l:#E7F6EC;--band:#EEF2F5;--shadow:0 8px 30px rgba(15,30,45,.22);--head:"Barlow Semi Condensed","Bahnschrift","Arial Narrow",sans-serif;--body:"Segoe UI","Inter",system-ui,-apple-system,Arial,sans-serif;--mono:ui-monospace,"SFMono-Regular",Consolas,Menlo,monospace}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--paper:#0E151C;--surface:#162029;--ink:#E6ECF1;--muted:#9AA8B5;--faint:#6F7E8C;--line:#2A3947;--line2:#223039;--steel:#6FA3D6;--steel-d:#8DB8E3;--steel-l:#1B3248;--on-steel:#0E151C;--side:#0A1118;--side-2:#14212C;--side-ink:#AEBBC8;--side-line:#243543;--red:#F07A6C;--red-l:#3A1A16;--amber:#E3A948;--amber-l:#33270F;--green:#5CC98A;--green-l:#15301F;--band:#1B2630;--shadow:0 8px 30px rgba(0,0,0,.5)}}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--paper);color:var(--ink);font:14px/1.45 var(--body);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--head);font-weight:600;margin:0;letter-spacing:.01em}
+h1{font-size:24px}h2{font-size:18px}h3{font-size:15px}
+:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
+.hidden{display:none!important}
+.mono{font-family:var(--mono);font-size:12.5px}
+.muted{color:var(--muted)}.faint{color:var(--faint)}
+.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:600;min-width:0}
+.i{width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:8px 10px;font-weight:400;font-size:14px;min-width:0}
+textarea.i{min-height:64px;resize:vertical}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:7px 12px;cursor:pointer;font-weight:600;font-size:13px;white-space:nowrap}
+.btn:hover{border-color:var(--steel)}
+.btn.pri{background:var(--steel);border-color:var(--steel);color:var(--on-steel)}
+.btn.pri:hover{background:var(--steel-d);border-color:var(--steel-d)}
+.btn.danger{color:var(--red);border-color:var(--red)}
+.btn.sm{padding:4px 9px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:default}
+.err{color:var(--red);font-size:13px;min-height:18px}
+#app{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh}
+aside{background:var(--side);color:var(--side-ink);display:flex;flex-direction:column;position:sticky;top:0;align-self:start;height:100vh;overflow:auto}
+.brand{padding:18px 18px 14px;border-bottom:1px solid var(--side-line)}
+.brand b{display:block;font:600 19px var(--head);color:#fff}
+.brand small{color:#8397AA}
+nav{padding:10px 8px;display:flex;flex-direction:column;gap:2px;flex:1}
+.ng{font:600 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:#6F8499;padding:12px 10px 4px}
+nav button{all:unset;box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;color:var(--side-ink);font-size:13.5px}
+nav button:hover{background:var(--side-2)}
+nav button[aria-current="page"]{background:var(--steel);color:var(--on-steel);font-weight:600}
+nav .ct{font:11px var(--mono);opacity:.8}
+.side-foot{padding:14px 18px;border-top:1px solid var(--side-line);font-size:12.5px}
+.side-foot .btns{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.side-foot .btn{background:transparent;color:var(--side-ink);border-color:var(--side-line)}
+main{padding:22px clamp(16px,3vw,36px) 48px;min-width:0}
+.topbar{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;margin-bottom:16px}
+.topbar .sub{color:var(--muted);font-size:13px}
+.sync{margin-left:auto;font:12px var(--mono);color:var(--muted)}
+@media (max-width:860px){#app{grid-template-columns:1fr}aside{position:static;height:auto}nav{flex-direction:row;overflow-x:auto;padding:8px;flex:none}.ng{display:none}nav button{white-space:nowrap}}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:12px}
+.toolbar .f{min-width:130px}
+.toolbar .sp{flex:1}
+.sumstrip{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.chip{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 14px;min-width:120px}
+.chip span{display:block;font:600 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.chip b{font:600 22px var(--head);font-variant-numeric:tabular-nums}
+.chip.bad b{color:var(--red)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:6px;min-height:96px}
+.card .k{font:600 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.card .v{font:600 26px var(--head);font-variant-numeric:tabular-nums}
+.card .m{font-size:12.5px;color:var(--muted)}
+@media(max-width:1000px){.cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.cards{grid-template-columns:1fr}}
+.xgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media(max-width:900px){.xgrid{grid-template-columns:1fr}}
+.xcard{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;min-width:0}
+.xcard h3{margin:0 0 10px;font:600 16px var(--head)}
+.tbox{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:auto;max-height:calc(100vh - 260px)}
+table.t{border-collapse:collapse;width:100%;min-width:760px;font-size:13px}
+table.t th{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);background:var(--band);white-space:nowrap;position:sticky;top:0;z-index:3}
+table.t td{padding:8px 10px;border-bottom:1px solid var(--line2);vertical-align:top}
+table.t td.n,table.t th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.row{cursor:pointer}
+tr.row:hover td{background:var(--steel-l)}
+.pill{display:inline-flex;align-items:center;gap:5px;font:600 11.5px var(--body);padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.g{color:var(--green);background:var(--green-l)}
+.pill.a{color:var(--amber);background:var(--amber-l)}
+.pill.r{color:var(--red);background:var(--red-l)}
+.pill.x{color:var(--muted);background:var(--band)}
+.pill.s{color:var(--steel);background:var(--steel-l)}
+.code{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--steel)}
+.empty{padding:36px 16px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--ink);font:600 20px var(--head);margin-bottom:6px}
+.defbox{background:var(--steel-l);border-left:3px solid var(--steel);border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.5}
+.note{font-size:12.5px;color:var(--muted);margin-top:10px}
+.ov{position:fixed;inset:0;background:rgba(10,18,26,.55);display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow:auto;z-index:50}
+.modal{background:var(--surface);border-radius:10px;width:100%;max-width:760px;box-shadow:var(--shadow);margin:auto 0}
+.modal header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.modal header .faint{font-size:13px}
+.modal .x{all:unset;cursor:pointer;font-size:22px;line-height:1;padding:2px 8px;color:var(--muted)}
+.modal .body{padding:16px 18px;display:grid;gap:16px}
+.modal footer{display:flex;flex-wrap:wrap;gap:8px;padding:12px 18px;border-top:1px solid var(--line);align-items:center}
+.modal footer .sp{flex:1}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kv div>span:first-child{display:block;font:600 10.5px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:8px;font-size:13px;z-index:80}
+#login{min-height:100vh;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
+.login-art{background:var(--side);color:#fff;padding:48px clamp(24px,5vw,64px);display:flex;flex-direction:column;justify-content:space-between;gap:32px}
+.login-art h1{font-size:clamp(28px,4vw,40px);color:#fff;margin-top:14px;line-height:1.1}
+.login-art p{color:#A9B9C9;max-width:44ch;margin:14px 0 0}
+.login-art .eb{color:#8397AA;font-size:13px}
+.codes{display:flex;flex-wrap:wrap;gap:8px}
+.codes span{font:600 12px var(--mono);letter-spacing:.06em;border:1px solid #2B435A;color:#C8D4DF;padding:4px 9px;border-radius:4px}
+.login-form{display:flex;align-items:center;justify-content:center;padding:32px 16px}
+.login-form form{width:100%;max-width:340px;display:flex;flex-direction:column;gap:14px}
+.hint{font-size:12px;color:var(--muted);margin:0}
+@media (max-width:760px){#login{grid-template-columns:1fr}}
+.sect-h{font:600 18px var(--head);margin:4px 0 10px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}.sect-h .faint{font:500 13px var(--body)}
+</style>
+</head>
+<body>
+<div id="login">
+  <div class="login-art">
+    <div>
+      <div class="eb">IR Group · PSS Department</div>
+      <h1>MM2-07 · Company and Legal Expense Tracking and Monitoring</h1>
+      <p>Every company expense and legal expense is recorded against its company from MM1-06, with its due date, payments, invoice and alerts for overdue or unpaid items.</p>
+    </div>
+    <div class="codes"><span>EXPENSES</span><span>COMPANIES</span><span>DASHBOARD</span><span>ALERTS</span></div>
+  </div>
+  <div class="login-form">
+    <form id="loginForm" autocomplete="on">
+      <h2>Sign in</h2>
+      <label class="f" for="lu">Username<input class="i" id="lu" autocomplete="username" required></label>
+      <label class="f" for="lp">Password<input class="i" id="lp" type="password" autocomplete="current-password" required></label>
+      <div class="err" id="loginErr" role="alert"></div>
+      <button class="btn pri" id="loginBtn" type="submit" style="justify-content:center;padding:10px" disabled>Connecting…</button>
+      <p class="hint">Ask your Admin for an account. Sign-in locks the page; it is not bank-grade security.</p>
+      <p class="hint">Version 0.1 · 30 Oct 2026 · Sample data only</p>
+    </form>
+  </div>
+</div>
+<div id="app" class="hidden">
+  <aside>
+    <div class="brand"><b>MM2-07 · Expenses</b><small>IR Group · PSS Department</small></div>
+    <nav id="nav" aria-label="Company and legal expenses"></nav>
+    <div class="side-foot"><div id="who"></div><div class="btns"><button class="btn sm" id="btnOut" type="button">Sign out</button></div></div>
+  </aside>
+  <main>
+    <div class="topbar"><h1 id="pageTitle"></h1><span class="sub" id="pageSub"></span><span class="sync" id="todayTxt"></span></div>
+    <section id="view"></section>
+  </main>
+</div>
+<div id="modalRoot"></div><div id="toastRoot"></div>
+<script>
+
+/* ---- standalone sample store (in-memory; resets on reload) ---- */
+const SAMPLE={"companies": {"CO-A": {"name": "DUMMY Company A", "project": "DUMMY Project A", "stage": "Active", "owner": "DUMMY Rep 01", "repFee": 1500, "repDay": 5, "rent": 800, "rentDay": 5, "regs": {"MOC": {"status": "Active", "activeDate": "2024-03-01", "payType": "Annual", "fee": 150, "nextDue": "2026-12-15", "note": "DUMMY note"}, "GDT": {"status": "Active", "activeDate": "2024-03-01", "payType": "Monthly", "fee": 80, "nextDue": "2026-11-10", "note": "DUMMY note"}, "NSSF": {"status": "Active", "activeDate": "2024-03-01", "payType": "Monthly", "fee": 120, "nextDue": "2026-11-05", "note": "DUMMY note"}, "Patent tax": {"status": "Active", "activeDate": "2024-06-01", "payType": "Annual", "fee": 400, "nextDue": "2026-11-25", "note": "DUMMY note"}, "CamDigiKey web": {"status": "Active", "activeDate": "2025-01-01", "payType": "One time", "fee": 60, "nextDue": "2026-10-20", "note": "DUMMY note"}}}, "CO-B": {"name": "DUMMY Company B", "project": "DUMMY Project B", "stage": "Active", "owner": "DUMMY Rep 02", "repFee": 1200, "repDay": 5, "rent": 650, "rentDay": 10, "regs": {"NSSF": {"status": "Active", "activeDate": "2024-05-01", "payType": "Monthly", "fee": 150, "nextDue": "2026-11-05", "note": "DUMMY note"}, "GDT": {"status": "Active", "activeDate": "2024-05-01", "payType": "Monthly", "fee": 90, "nextDue": "2026-11-10", "note": "DUMMY note"}, "MoLVT": {"status": "Active", "activeDate": "2024-05-01", "payType": "Annual", "fee": 200, "nextDue": "2026-12-01", "note": "DUMMY note"}, "MPTC": {"status": "Active", "activeDate": "2025-02-01", "payType": "One time", "fee": 90, "nextDue": "2026-10-28", "note": "DUMMY note"}, "ACAR": {"status": "Suspended", "activeDate": "2024-05-01", "suspendDate": "2026-08-15", "payType": "Monthly", "fee": 50, "nextDue": "2026-11-15", "note": "DUMMY note"}}}, "CO-C": {"name": "DUMMY Company C", "project": "DUMMY Project A", "stage": "Setup", "owner": "DUMMY Rep 03", "repFee": 900, "repDay": 5, "rent": 0, "rentDay": 0, "regs": {"MOC": {"status": "Active", "activeDate": "2026-09-01", "payType": "One time", "fee": 100, "nextDue": "2026-11-02", "note": "DUMMY note"}}}, "CO-D": {"name": "DUMMY Company D", "project": "DUMMY Project B", "stage": "Active", "owner": "DUMMY Rep 04", "repFee": 1800, "repDay": 28, "rent": 950, "rentDay": 15, "regs": {"MoLVT": {"status": "Active", "activeDate": "2025-01-01", "payType": "Annual", "fee": 200, "nextDue": "2026-11-20", "note": "DUMMY note"}, "NSSF": {"status": "Active", "activeDate": "2025-01-01", "payType": "Monthly", "fee": 130, "nextDue": "2026-11-05", "note": "DUMMY note"}, "Patent tax": {"status": "Active", "activeDate": "2025-01-01", "payType": "One time", "fee": 500, "nextDue": "2026-10-01", "note": "DUMMY note"}, "MoH": {"status": "Active", "activeDate": "2025-01-01", "payType": "Monthly", "fee": 75, "nextDue": "2026-11-15", "note": "DUMMY note"}, "GDT": {"status": "Active", "activeDate": "2025-01-01", "payType": "Monthly", "fee": 90, "nextDue": "2026-11-10", "note": "DUMMY note"}}}, "CO-E": {"name": "DUMMY Company E", "project": "DUMMY Project A", "stage": "Closed", "owner": "DUMMY Rep 05", "repFee": 0, "repDay": 0, "rent": 0, "rentDay": 0, "regs": {"MOC": {"status": "Closed", "activeDate": "2024-01-01", "closeDate": "2026-06-30", "payType": "Annual", "fee": 150, "nextDue": "2026-12-15", "note": "DUMMY note"}}}}, "expenses": {"sample_exp_30": {"ref": "EXP-0001", "companyCode": "CO-E", "group": "Legal expense", "category": "MOC", "payee": "DUMMY Authority: MOC", "amount": 150, "paidAmount": 0, "currency": "USD", "dueDate": "2026-06-30", "invoiceNo": "", "note": "DUMMY closed balance", "obKey": "", "payments": [], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_03": {"ref": "EXP-0002", "companyCode": "CO-A", "group": "Company expense", "category": "Rep fee", "payee": "DUMMY Rep", "amount": 1500, "paidAmount": 1500, "currency": "USD", "dueDate": "2026-09-05", "invoiceNo": "DUMMY-INV-1003", "note": "DUMMY note", "obKey": "CO-A|Rep fee|2026-09", "payments": [{"at": "2026-09-05T03:00:00.000Z", "date": "2026-09-05", "amount": 1500, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_04": {"ref": "EXP-0003", "companyCode": "CO-A", "group": "Company expense", "category": "Office rent", "payee": "DUMMY Landlord", "amount": 800, "paidAmount": 800, "currency": "USD", "dueDate": "2026-09-05", "invoiceNo": "DUMMY-INV-1004", "note": "DUMMY note", "obKey": "CO-A|Office rent|2026-09", "payments": [{"at": "2026-09-05T03:00:00.000Z", "date": "2026-09-05", "amount": 800, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_08": {"ref": "EXP-0004", "companyCode": "CO-A", "group": "Legal expense", "category": "NSSF", "payee": "DUMMY Authority: NSSF", "amount": 120, "paidAmount": 120, "currency": "USD", "dueDate": "2026-09-05", "invoiceNo": "DUMMY-INV-1008", "note": "DUMMY note", "obKey": "CO-A|NSSF|2026-09", "payments": [{"at": "2026-09-05T03:00:00.000Z", "date": "2026-09-05", "amount": 120, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_10": {"ref": "EXP-0005", "companyCode": "CO-B", "group": "Company expense", "category": "Rep fee", "payee": "DUMMY Rep", "amount": 1200, "paidAmount": 1200, "currency": "USD", "dueDate": "2026-09-05", "invoiceNo": "DUMMY-INV-1010", "note": "DUMMY note", "obKey": "CO-B|Rep fee|2026-09", "payments": [{"at": "2026-09-05T03:00:00.000Z", "date": "2026-09-05", "amount": 1200, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_12": {"ref": "EXP-0006", "companyCode": "CO-B", "group": "Legal expense", "category": "NSSF", "payee": "DUMMY Authority: NSSF", "amount": 150, "paidAmount": 150, "currency": "USD", "dueDate": "2026-09-05", "invoiceNo": "DUMMY-INV-1012", "note": "DUMMY note", "obKey": "CO-B|NSSF|2026-09", "payments": [{"at": "2026-09-05T03:00:00.000Z", "date": "2026-09-05", "amount": 150, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_17": {"ref": "EXP-0007", "companyCode": "CO-C", "group": "Company expense", "category": "Rep fee", "payee": "DUMMY Rep", "amount": 900, "paidAmount": 900, "currency": "USD", "dueDate": "2026-09-05", "invoiceNo": "DUMMY-INV-1017", "note": "DUMMY note", "obKey": "CO-C|Rep fee|2026-09", "payments": [{"at": "2026-09-05T03:00:00.000Z", "date": "2026-09-05", "amount": 900, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_22": {"ref": "EXP-0008", "companyCode": "CO-D", "group": "Legal expense", "category": "NSSF", "payee": "DUMMY Authority: NSSF", "amount": 130, "paidAmount": 130, "currency": "USD", "dueDate": "2026-09-05", "invoiceNo": "DUMMY-INV-1022", "note": "DUMMY note", "obKey": "CO-D|NSSF|2026-09", "payments": [{"at": "2026-09-05T03:00:00.000Z", "date": "2026-09-05", "amount": 130, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_06": {"ref": "EXP-0009", "companyCode": "CO-A", "group": "Legal expense", "category": "GDT", "payee": "DUMMY Authority: GDT", "amount": 80, "paidAmount": 80, "currency": "USD", "dueDate": "2026-09-10", "invoiceNo": "DUMMY-INV-1006", "note": "DUMMY note", "obKey": "CO-A|GDT|2026-09", "payments": [{"at": "2026-09-10T03:00:00.000Z", "date": "2026-09-10", "amount": 80, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_11": {"ref": "EXP-0010", "companyCode": "CO-B", "group": "Company expense", "category": "Office rent", "payee": "DUMMY Landlord", "amount": 650, "paidAmount": 650, "currency": "USD", "dueDate": "2026-09-10", "invoiceNo": "DUMMY-INV-1011", "note": "DUMMY note", "obKey": "CO-B|Office rent|2026-09", "payments": [{"at": "2026-09-10T03:00:00.000Z", "date": "2026-09-10", "amount": 650, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_14": {"ref": "EXP-0011", "companyCode": "CO-B", "group": "Legal expense", "category": "GDT", "payee": "DUMMY Authority: GDT", "amount": 90, "paidAmount": 90, "currency": "USD", "dueDate": "2026-09-10", "invoiceNo": "DUMMY-INV-1014", "note": "DUMMY note", "obKey": "CO-B|GDT|2026-09", "payments": [{"at": "2026-09-10T03:00:00.000Z", "date": "2026-09-10", "amount": 90, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_25": {"ref": "EXP-0012", "companyCode": "CO-D", "group": "Legal expense", "category": "GDT", "payee": "DUMMY Authority: GDT", "amount": 90, "paidAmount": 90, "currency": "USD", "dueDate": "2026-09-10", "invoiceNo": "DUMMY-INV-1024", "note": "DUMMY note", "obKey": "CO-D|GDT|2026-09", "payments": [{"at": "2026-09-10T03:00:00.000Z", "date": "2026-09-10", "amount": 90, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_15": {"ref": "EXP-0013", "companyCode": "CO-B", "group": "Legal expense", "category": "ACAR", "payee": "DUMMY Authority: ACAR", "amount": 50, "paidAmount": 50, "currency": "USD", "dueDate": "2026-09-15", "invoiceNo": "DUMMY-INV-1015", "note": "DUMMY note", "obKey": "CO-B|ACAR|2026-09", "payments": [{"at": "2026-09-15T03:00:00.000Z", "date": "2026-09-15", "amount": 50, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_20": {"ref": "EXP-0014", "companyCode": "CO-D", "group": "Company expense", "category": "Office rent", "payee": "DUMMY Landlord", "amount": 950, "paidAmount": 950, "currency": "USD", "dueDate": "2026-09-15", "invoiceNo": "DUMMY-INV-1020", "note": "DUMMY note", "obKey": "CO-D|Office rent|2026-09", "payments": [{"at": "2026-09-15T03:00:00.000Z", "date": "2026-09-15", "amount": 950, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_24": {"ref": "EXP-0015", "companyCode": "CO-D", "group": "Legal expense", "category": "MoH", "payee": "DUMMY Authority: MoH", "amount": 75, "paidAmount": 75, "currency": "USD", "dueDate": "2026-09-15", "invoiceNo": "DUMMY-INV-1023", "note": "DUMMY note", "obKey": "CO-D|MoH|2026-09", "payments": [{"at": "2026-09-15T03:00:00.000Z", "date": "2026-09-15", "amount": 75, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_29": {"ref": "EXP-0016", "companyCode": "CO-E", "group": "Legal expense", "category": "Notary", "payee": "DUMMY Notary 01", "amount": 150, "paidAmount": 150, "currency": "USD", "dueDate": "2026-09-20", "invoiceNo": "", "note": "DUMMY note", "obKey": "", "payments": [{"at": "2026-09-20T03:00:00.000Z", "date": "2026-09-20", "amount": 150, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_19": {"ref": "EXP-0017", "companyCode": "CO-D", "group": "Company expense", "category": "Rep fee", "payee": "DUMMY Rep", "amount": 1800, "paidAmount": 1800, "currency": "USD", "dueDate": "2026-09-28", "invoiceNo": "DUMMY-INV-1019", "note": "DUMMY note", "obKey": "CO-D|Rep fee|2026-09", "payments": [{"at": "2026-09-28T03:00:00.000Z", "date": "2026-09-28", "amount": 1800, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_27": {"ref": "EXP-0018", "companyCode": "CO-D", "group": "Legal expense", "category": "Legal fee", "payee": "DUMMY Law Firm A", "amount": 2500, "paidAmount": 1000, "currency": "USD", "dueDate": "2026-10-01", "invoiceNo": "DUMMY-INV-2007", "note": "DUMMY partial payment", "obKey": "", "payments": [{"at": "2026-10-01T03:00:00.000Z", "date": "2026-10-01", "amount": 1000, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_01": {"ref": "EXP-0019", "companyCode": "CO-A", "group": "Company expense", "category": "Rep fee", "payee": "DUMMY Rep", "amount": 1500, "paidAmount": 1500, "currency": "USD", "dueDate": "2026-10-05", "invoiceNo": "DUMMY-INV-1001", "note": "DUMMY note", "obKey": "CO-A|Rep fee|2026-10", "payments": [{"at": "2026-10-05T03:00:00.000Z", "date": "2026-10-05", "amount": 1500, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_02": {"ref": "EXP-0020", "companyCode": "CO-A", "group": "Company expense", "category": "Office rent", "payee": "DUMMY Landlord", "amount": 800, "paidAmount": 800, "currency": "USD", "dueDate": "2026-10-05", "invoiceNo": "DUMMY-INV-1002", "note": "DUMMY note", "obKey": "CO-A|Office rent|2026-10", "payments": [{"at": "2026-10-05T03:00:00.000Z", "date": "2026-10-05", "amount": 800, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_07": {"ref": "EXP-0021", "companyCode": "CO-A", "group": "Legal expense", "category": "NSSF", "payee": "DUMMY Authority: NSSF", "amount": 120, "paidAmount": 120, "currency": "USD", "dueDate": "2026-10-05", "invoiceNo": "DUMMY-INV-1007", "note": "DUMMY note", "obKey": "CO-A|NSSF|2026-10", "payments": [{"at": "2026-10-05T03:00:00.000Z", "date": "2026-10-05", "amount": 120, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_16": {"ref": "EXP-0022", "companyCode": "CO-C", "group": "Company expense", "category": "Rep fee", "payee": "DUMMY Rep", "amount": 900, "paidAmount": 900, "currency": "USD", "dueDate": "2026-10-05", "invoiceNo": "DUMMY-INV-1016", "note": "DUMMY note", "obKey": "CO-C|Rep fee|2026-10", "payments": [{"at": "2026-10-05T03:00:00.000Z", "date": "2026-10-05", "amount": 900, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_21": {"ref": "EXP-0023", "companyCode": "CO-D", "group": "Legal expense", "category": "NSSF", "payee": "DUMMY Authority: NSSF", "amount": 130, "paidAmount": 130, "currency": "USD", "dueDate": "2026-10-05", "invoiceNo": "DUMMY-INV-1021", "note": "DUMMY note", "obKey": "CO-D|NSSF|2026-10", "payments": [{"at": "2026-10-05T03:00:00.000Z", "date": "2026-10-05", "amount": 130, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_05": {"ref": "EXP-0024", "companyCode": "CO-A", "group": "Legal expense", "category": "GDT", "payee": "DUMMY Authority: GDT", "amount": 80, "paidAmount": 80, "currency": "USD", "dueDate": "2026-10-10", "invoiceNo": "DUMMY-INV-1005", "note": "DUMMY note", "obKey": "CO-A|GDT|2026-10", "payments": [{"at": "2026-10-10T03:00:00.000Z", "date": "2026-10-10", "amount": 80, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_09": {"ref": "EXP-0025", "companyCode": "CO-B", "group": "Company expense", "category": "Office rent", "payee": "DUMMY Landlord", "amount": 650, "paidAmount": 300, "currency": "USD", "dueDate": "2026-10-10", "invoiceNo": "DUMMY-INV-1009", "note": "DUMMY note", "obKey": "CO-B|Office rent|2026-10", "payments": [{"at": "2026-10-10T03:00:00.000Z", "date": "2026-10-10", "amount": 300, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_13": {"ref": "EXP-0026", "companyCode": "CO-B", "group": "Legal expense", "category": "GDT", "payee": "DUMMY Authority: GDT", "amount": 90, "paidAmount": 45, "currency": "USD", "dueDate": "2026-10-10", "invoiceNo": "DUMMY-INV-1013", "note": "DUMMY note", "obKey": "CO-B|GDT|2026-10", "payments": [{"at": "2026-10-10T03:00:00.000Z", "date": "2026-10-10", "amount": 45, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_18": {"ref": "EXP-0027", "companyCode": "CO-D", "group": "Company expense", "category": "Office rent", "payee": "DUMMY Landlord", "amount": 950, "paidAmount": 950, "currency": "USD", "dueDate": "2026-10-15", "invoiceNo": "DUMMY-INV-1018", "note": "DUMMY note", "obKey": "CO-D|Office rent|2026-10", "payments": [{"at": "2026-10-15T03:00:00.000Z", "date": "2026-10-15", "amount": 950, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_23": {"ref": "EXP-0028", "companyCode": "CO-D", "group": "Legal expense", "category": "MoH", "payee": "DUMMY Authority: MoH", "amount": 75, "paidAmount": 75, "currency": "USD", "dueDate": "2026-10-15", "invoiceNo": "", "note": "DUMMY note", "obKey": "CO-D|MoH|2026-10", "payments": [{"at": "2026-10-15T03:00:00.000Z", "date": "2026-10-15", "amount": 75, "by": "DUMMY seed", "note": "DUMMY payment"}], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_28": {"ref": "EXP-0029", "companyCode": "CO-D", "group": "Legal expense", "category": "Court or filing fee", "payee": "DUMMY Court Office", "amount": 320, "paidAmount": 0, "currency": "USD", "dueDate": "2026-11-15", "invoiceNo": "", "note": "DUMMY note", "obKey": "", "payments": [], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}, "sample_exp_26": {"ref": "EXP-0030", "companyCode": "CO-A", "group": "Legal expense", "category": "Legal fee", "payee": "DUMMY Law Firm B", "amount": 600, "paidAmount": 0, "currency": "USD", "dueDate": "2026-11-20", "invoiceNo": "", "note": "DUMMY note", "obKey": "", "payments": [], "createdBy": "DUMMY seed", "createdAt": "2026-10-01T02:00:00.000Z", "updatedAt": "2026-10-30T02:00:00.000Z", "updatedBy": "DUMMY seed"}}, "settings": {}, "users": {"admin": {"u": "admin", "name": "DUMMY Administrator", "role": "Admin", "salt": "5a1c9e0d7b3f4a2e8c6d1b0a9f8e7d6c", "hash": "3964459de3bbee61ce43893620de885769a0246ba1ffab20329fb097c8bba254", "mustChange": false, "active": true, "lastLogin": null}}, "log": {}};
+function makeLocal(seed){
+  const store={};Object.keys(seed).forEach(c=>{store[c]={};Object.keys(seed[c]).forEach(k=>store[c][k]=JSON.parse(JSON.stringify(seed[c][k])))});
+  const subs={};
+  const segs=p=>String(p).split('/').filter(Boolean);
+  const snapFor=(c,opts)=>{let entries=Object.entries(store[c]||{});
+    if(opts&&opts.order){entries.sort((a,b)=>{const x=a[1][opts.order.f],y=b[1][opts.order.f];return (x<y?-1:x>y?1:0)*(opts.order.desc?-1:1)})}
+    if(opts&&opts.limit)entries=entries.slice(0,opts.limit);
+    return{docs:entries.map(([id,v])=>({id,data:()=>JSON.parse(JSON.stringify(v)),exists:true}))}};
+  const notify=c=>(subs[c]||[]).forEach(f=>f());
+  const mkQuery=(c,opts)=>({
+    orderBy:(f,d)=>mkQuery(c,Object.assign({},opts,{order:{f,desc:d==='desc'}})),
+    limit:n=>mkQuery(c,Object.assign({},opts,{limit:n})),
+    get:async()=>snapFor(c,opts),
+    onSnapshot:(cb,err)=>{const f=()=>cb(snapFor(c,opts));(subs[c]=subs[c]||[]).push(f);Promise.resolve().then(f);return()=>{subs[c]=(subs[c]||[]).filter(x=>x!==f)}}
+  });
+  const mkDoc=p=>{const s=segs(p);const c=s.slice(0,-1).join('/'),id=s[s.length-1];
+    return{id,path:p,
+      get:async()=>({exists:!!(store[c]&&store[c][id]),id,data:()=>store[c]&&store[c][id]?JSON.parse(JSON.stringify(store[c][id])):undefined}),
+      set:async d=>{store[c]=store[c]||{};store[c][id]=JSON.parse(JSON.stringify(d));notify(c)},
+      update:async d=>{store[c]=store[c]||{};store[c][id]=Object.assign({},store[c][id]||{},JSON.parse(JSON.stringify(d)));notify(c)},
+      delete:async()=>{if(store[c])delete store[c][id];notify(c)},
+      onSnapshot:(cb)=>{const f=()=>cb({exists:!!(store[c]&&store[c][id]),data:()=>store[c]&&store[c][id]});(subs[c]=subs[c]||[]).push(f);Promise.resolve().then(f);return()=>{}}};};
+  return{
+    collection:c=>Object.assign(mkQuery(c,{}),{doc:id=>mkDoc(c+'/'+id)}),
+    doc:p=>mkDoc(p)
+  };
+}
+
+(function(){
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const todayStr=()=>ymd(new Date());
+const fmtD=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||'');return m?`${+m[3]} ${MON[+m[2]-1]} ${m[1]}`:''};
+const fmtDT=iso=>{if(!iso)return '';const d=new Date(iso);if(isNaN(d))return '';return `${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())}`};
+const money=n=>'$'+Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const dayDiff=(a,b)=>Math.round((new Date(a+'T00:00:00')-new Date(b+'T00:00:00'))/86400000);
+const dayOf=s=>+String(s||'').slice(8,10);
+const clampDay=d=>Math.min(28,Math.max(1,+d||1));
+const prevMonth=m=>{const y=+m.slice(0,4),mo=+m.slice(5,7);return ymd(new Date(y,mo-2,1)).slice(0,7)};
+const rid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const opt=(v,l,sel)=>`<option value="${esc(v)}" ${sel?'selected':''}>${esc(l)}</option>`;
+function toast(t){const r=$('#toastRoot');r.innerHTML=`<div class="toast" role="status">${esc(t)}</div>`;clearTimeout(toast.t);toast.t=setTimeout(()=>r.innerHTML='',3000)}
+const store={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
+
+/* ---------- lists (from MM1-06) and rules ---------- */
+const REGS=['MOC','GDT','MoLVT','NSSF','CamDigiKey web','ACAR','MPTC','MoH','Patent tax'];
+const PAYT=['One time','Monthly','Annual'];
+const GROUPS=['Company expense','Legal expense'];
+const CO_CATS=['Rep fee','Office rent','Deposit','Utilities','Other'];
+const LEGAL_CATS=[...REGS,'Legal fee','Court or filing fee','Notary','Lawyer retainer','Other'];
+const ALLCATS=[...new Set([...CO_CATS,...LEGAL_CATS])];
+const STATUSES=['Overdue','Due soon','Partly paid','Upcoming','Unpaid','Paid'];
+const ALERT={overdueUrgent:7,dueSoon:3,legalUrgent:14,annualSoon:30};
+
+let db=null,ME=null,UI={tab:'dash',q:'',grp:'',co:'',st:'',ty:'',pt:''};
+const D={companies:{},expenses:{},settings:{},users:{},log:{}};
+const READY={};
+const coName=c=>{const x=D.companies[c];return x?`${c} · ${x.name}`:c};
+const balOf=e=>Math.max(0,(+e.amount||0)-(+e.paidAmount||0));
+const expList=()=>Object.entries(D.expenses).map(([id,e])=>({...e,id})).sort((a,b)=>(a.dueDate||'').localeCompare(b.dueDate||''));
+const coList=()=>Object.entries(D.companies).map(([id,c])=>({...c,id})).sort((a,b)=>a.id.localeCompare(b.id));
+const monthOf=s=>(s||'').slice(0,7);
+const nowMonth=()=>todayStr().slice(0,7);
+function can(p){if(!ME)return false;if(p==='view')return true;if(p==='edit')return ME.role!=='Viewer';if(p==='admin')return ME.role==='Admin';return false}
+const rl=r=>r==='Admin'?'Master Admin':r;
+
+function status(e){
+  if(balOf(e)<=0&&(+e.amount||0)>0)return 'Paid';
+  const d=dayDiff(todayStr(),e.dueDate);
+  if((+e.paidAmount||0)>0)return d>0?'Overdue':'Partly paid';
+  if(d>0)return 'Overdue';if(d>=-ALERT.dueSoon)return 'Due soon';return 'Unpaid';
+}
+const stPill=s=>({Paid:'<span class="pill g">Paid</span>','Partly paid':'<span class="pill s">Partly paid</span>','Due soon':'<span class="pill a">Due soon</span>',Upcoming:'<span class="pill x">Upcoming</span>',Unpaid:'<span class="pill x">Unpaid</span>',Overdue:'<span class="pill r">Overdue</span>'})[s]||esc(s);
+
+/* ---------- obligations: what must be paid, generated from MM1-06 ---------- */
+function obligations(){
+  const t=todayStr(),cm=t.slice(0,7),pm=prevMonth(cm),out=[];
+  coList().forEach(c=>{
+    if(c.stage==='Closed')return;
+    const push=(reg,payType,period,due,amount,extra)=>{if(!(amount>0)||!due)return;out.push({key:`${c.id}|${reg}|${period}`,co:c.id,reg,payType,period,due,amount,...extra})};
+    [cm,pm].forEach(p=>{
+      if(c.repFee>0)push('Rep fee','Monthly',p,`${p}-${pad(clampDay(c.repDay||5))}`,c.repFee,{kind:'Company',status:'Active'});
+      if(c.rent>0)push('Office rent','Monthly',p,`${p}-${pad(clampDay(c.rentDay||1))}`,c.rent,{kind:'Company',status:'Active'});
+    });
+    REGS.forEach(reg=>{
+      const r=(c.regs||{})[reg];
+      if(!r||!r.status||r.status==='Closed'||!r.nextDue||!(+r.fee>0))return;
+      const fee=+r.fee,ex={kind:'Registration',status:r.status};
+      if(r.payType==='Monthly'){[cm,pm].forEach(p=>{if(r.activeDate&&p<r.activeDate.slice(0,7))return;push(reg,'Monthly',p,`${p}-${pad(clampDay(dayOf(r.nextDue)))}`,fee,ex)})}
+      else if(r.payType==='Annual')push(reg,'Annual',r.nextDue.slice(0,4),r.nextDue,fee,ex);
+      else push(reg,'One time','once',r.nextDue,fee,ex);
+    });
+  });
+  return out;
+}
+const paidFor=key=>expList().filter(e=>e.obKey===key).reduce((s,e)=>s+(+e.paidAmount||0),0);
+function oblStatus(o,paid){
+  if(paid>=o.amount-0.001)return 'Paid';
+  const d=dayDiff(todayStr(),o.due);
+  if(d>0)return 'Overdue';
+  if(d>=-ALERT.dueSoon)return paid>0?'Partly paid':'Due soon';
+  return paid>0?'Partly paid':'Upcoming';
+}
+const oblRows=()=>obligations().map(o=>{const paid=paidFor(o.key);return {...o,paid,bal:Math.max(0,o.amount-paid),st:oblStatus(o,paid),linked:expList().find(e=>e.obKey===o.key)||null}});
+
+/* ---------- alerts ---------- */
+function alertList(){
+  const out=[],t=todayStr();
+  oblRows().forEach(o=>{
+    const late=dayDiff(t,o.due),base={co:o.co,cat:o.reg,ref:'',open:`data-obl="${esc(o.key)}"`};
+    if(o.st==='Paid')return;
+    if(o.st==='Overdue'){
+      const sev=(late>ALERT.overdueUrgent||(o.status==='Suspended'))?'r':'a';
+      out.push({...base,sev,kind:o.status==='Suspended'?'Suspended, payment overdue':'Overdue',detail:`${o.payType} ${o.period} · ${late} days late · balance ${money(o.bal)}`});
+    }else if(o.st==='Due soon'){
+      out.push({...base,sev:'a',kind:'Due soon',detail:`${o.payType} · due ${fmtD(o.due)} · balance ${money(o.bal)}`});
+    }else if(o.payType==='Annual'&&-late>ALERT.dueSoon&&-late<=ALERT.annualSoon){
+      out.push({...base,sev:'a',kind:'Annual payment coming up',detail:`Due ${fmtD(o.due)} (${-late} days) · ${money(o.bal)}`});
+    }
+  });
+  expList().forEach(e=>{
+    const b=balOf(e),late=dayDiff(t,e.dueDate),base={ref:e.ref,co:e.companyCode,cat:e.category,open:`data-exp="${esc(e.id)}"`};
+    if(!e.obKey){
+      if(b>0&&late>0)out.push({...base,sev:late>ALERT.overdueUrgent?'r':'a',kind:'Overdue',detail:`${late} days overdue · balance ${money(b)}`});
+      else if(b>0&&late>=-ALERT.dueSoon)out.push({...base,sev:'a',kind:'Due soon',detail:`Due ${fmtD(e.dueDate)} · balance ${money(b)}`});
+      if(e.group==='Legal expense'&&b>0&&late>ALERT.legalUrgent)out.push({...base,sev:'r',kind:'Legal, overdue 14+ days',detail:`${late} days overdue · ${e.payee||'—'} · balance ${money(b)}`});
+    }
+    if((+e.paidAmount||0)>0&&!e.invoiceNo)out.push({...base,sev:'a',kind:'Paid without invoice no.',detail:`Paid ${money(e.paidAmount)} · add the invoice number`});
+  });
+  coList().forEach(c=>{
+    const regs=c.regs||{};
+    REGS.forEach(reg=>{
+      const r=regs[reg];
+      if(r&&r.status==='Closed'){
+        const open=expList().filter(e=>e.companyCode===c.id&&e.category===reg).reduce((s,e)=>s+balOf(e),0);
+        if(open>0)out.push({sev:'r',kind:'Closed registration, balance open',co:c.id,cat:reg,ref:'',open:`data-co="${esc(c.id)}"`,detail:`Closed ${fmtD(r.closeDate)} · balance ${money(open)}`});
+      }
+      if(r&&r.status&&r.status!=='Closed'&&(!r.nextDue||!(+r.fee>0)))out.push({sev:'a',kind:'Fee or next due not set',co:c.id,cat:reg,ref:'',open:`data-co="${esc(c.id)}"`,detail:'Set the fee and next due date in MM1-06'});
+    });
+    if(c.stage==='Active'){const m=REGS.filter(n=>!regs[n]||!regs[n].status).length;if(m)out.push({sev:'a',kind:'Authorities not set',co:c.id,cat:'Legal',ref:'',open:`data-co="${esc(c.id)}"`,detail:`${m} of ${REGS.length} authorities not set in MM1-06`})}
+  });
+  const rank={r:0,a:1};return out.sort((a,b)=>rank[a.sev]-rank[b.sev]);
+}
+const alertCard=()=>{const L=alertList(),u=L.filter(a=>a.sev==='r').length;
+  return `<div class="card" data-go="alerts" role="button" tabindex="0" style="cursor:pointer"><span class="k">Open alerts</span><span class="v" ${u?'style="color:var(--red)"':''}>${L.length}</span><span class="m">${u?u+' urgent · ':''}Click to see them</span></div>`};
+
+/* ---------- modal ---------- */
+function openModal(title,sub,body,footer,wide){
+  $('#modalRoot').innerHTML=`<div class="ov" id="ov"><div class="modal${wide?' wide':''}" role="dialog" aria-modal="true" aria-label="${esc(title)}"><header><div><h2>${esc(title)}</h2>${sub?`<div class="faint">${sub}</div>`:''}</div><button class="x" type="button" id="mx" aria-label="Close">×</button></header><div class="body">${body}</div>${footer?`<footer>${footer}</footer>`:''}</div></div>`;
+  $('#mx').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal()});
+  document.onkeydown=e=>{if(e.key==='Escape')closeModal()};
+}
+const closeModal=()=>{$('#modalRoot').innerHTML='';document.onkeydown=null;if(ME)draw()};
+async function logAct(action,target,detail){try{await db.collection('log').doc(rid('l')).set({at:new Date().toISOString(),by:ME?ME.u:'',name:ME?ME.name:'',action,target,detail:detail||''})}catch(e){}}
+
+/* ---------- expense modal (view, add, edit); pre = prefill from an obligation ---------- */
+function expModal(id,pre){
+  const isNew=!id;
+  const base={group:'Company expense',category:'Rep fee',currency:'USD',amount:0,paidAmount:0,payments:[],dueDate:todayStr(),companyCode:'',invoiceNo:'',note:'',payee:''};
+  const e=isNew?{...base,...(pre||{})}:{...D.expenses[id]};
+  if(!isNew&&!D.expenses[id])return;
+  const w=can('edit'),pays=e.payments||[];
+  const body=`<div class="kv"><div><span>Ref</span><b class="code">${esc(e.ref||'NEW')}</b></div><div><span>Status</span>${isNew?'—':stPill(status(e))}</div><div><span>Balance</span><b>${money(balOf(e))}</b></div><div><span>Due</span>${esc(fmtD(e.dueDate))}</div></div>
+  ${isNew||w?`<div class="grid2">
+    <label class="f">Company<select class="i" id="e_co">${coList().map(c=>opt(c.id,`${c.id} · ${c.name}`,e.companyCode===c.id)).join('')}</select></label>
+    <label class="f">Group<select class="i" id="e_grp">${GROUPS.map(g=>opt(g,g,e.group===g)).join('')}</select></label>
+    <label class="f">Category<select class="i" id="e_cat">${ALLCATS.map(c=>opt(c,c,e.category===c)).join('')}</select></label>
+    <label class="f">Payee<input class="i" id="e_payee" value="${esc(e.payee||'')}"></label>
+    <label class="f">Amount (USD)<input class="i" id="e_amt" type="number" min="0" step="0.01" value="${esc(e.amount||0)}"></label>
+    <label class="f">Due date<input class="i" id="e_due" type="date" value="${esc(e.dueDate||'')}"></label>
+    <label class="f">Invoice number<input class="i" id="e_inv" value="${esc(e.invoiceNo||'')}"></label>
+    <label class="f" style="grid-column:1/-1">Note<textarea class="i" id="e_note">${esc(e.note||'')}</textarea></label>
+  </div><div class="err" id="eErr" role="alert"></div>`:`<div class="kv"><div><span>Company</span>${esc(coName(e.companyCode))}</div><div><span>Group</span>${esc(e.group)}</div><div><span>Category</span>${esc(e.category)}</div><div><span>Payee</span>${esc(e.payee||'—')}</div><div><span>Amount</span>${money(e.amount)}</div><div><span>Invoice</span>${esc(e.invoiceNo||'—')}</div></div><div class="note" style="margin-top:0">${esc(e.note||'')}</div>`}
+  ${e.obKey?`<div class="note" style="margin-top:0">Linked to obligation: <span class="code">${esc(e.obKey)}</span></div>`:''}
+  ${isNew?'':`<div><h3>Payments</h3><div class="tbox" style="margin-top:8px;max-height:220px"><table class="t" style="min-width:520px"><thead><tr><th>Date</th><th class="n">Amount</th><th>By</th><th>Note</th></tr></thead><tbody>${pays.length?pays.map(p=>`<tr><td>${esc(fmtDT(p.at))}</td><td class="n">${money(p.amount)}</td><td>${esc(p.by||'')}</td><td>${esc(p.note||'')}</td></tr>`).join(''):'<tr><td colspan="4" class="empty">No payments yet.</td></tr>'}</tbody></table></div></div>`}`;
+  const foot=`<button class="btn" id="mClose">Close</button><span class="sp"></span>${!isNew&&w&&balOf(e)>0?'<button class="btn" id="eePay">Record payment</button>':''}${w?'<button class="btn pri" id="eSave">Save</button>':''}${!isNew&&can('admin')?'<button class="btn danger" id="eDel">Delete</button>':''}`;
+  openModal(isNew?'Add expense':e.ref,isNew?'Company or legal expense':esc(coName(e.companyCode)),body,foot,true);
+  $('#mClose').onclick=closeModal;
+  const pb=$('#eePay');if(pb)pb.onclick=()=>payModal(id);
+  const sv=$('#eSave');
+  if(sv)sv.onclick=async()=>{
+    const err=$('#eErr');err.textContent='';
+    const v={companyCode:$('#e_co').value,group:$('#e_grp').value,category:$('#e_cat').value,payee:$('#e_payee').value.trim(),amount:Math.round((+$('#e_amt').value||0)*100)/100,dueDate:$('#e_due').value,invoiceNo:$('#e_inv').value.trim(),note:$('#e_note').value.trim()};
+    if(!v.companyCode){err.textContent='Choose the company.';return}
+    if(!(v.amount>0)){err.textContent='Enter the amount.';return}
+    if(!v.dueDate){err.textContent='Enter the due date.';return}
+    if(v.amount<(+e.paidAmount||0)){err.textContent='Amount cannot be less than what has been paid.';return}
+    try{
+      if(isNew){const ref='EXP-'+String(expList().length+1).padStart(4,'0');
+        await db.doc('expenses/'+rid('x')).set({...v,ref,obKey:e.obKey||'',currency:'USD',paidAmount:0,payments:[],createdBy:ME.name,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),updatedBy:ME.name});
+        await logAct('Expense added',ref,`${v.companyCode} · ${v.category} · ${money(v.amount)}`);
+      }else{
+        await db.doc('expenses/'+id).update({...v,updatedAt:new Date().toISOString(),updatedBy:ME.name});
+        await logAct('Expense changed',e.ref,`${v.category} · ${money(v.amount)}`);
+      }
+      closeModal();toast('Saved.');
+    }catch(x){err.textContent='Could not save.'}
+  };
+  const del=$('#eDel');
+  if(del)del.onclick=async()=>{if(del.dataset.s!=='1'){del.dataset.s='1';del.textContent='Click again to delete';return}
+    try{await db.doc('expenses/'+id).delete();await logAct('Expense deleted',e.ref,'');closeModal();toast('Deleted.')}catch(x){toast('Could not delete.')}};
+}
+function payModal(id){
+  const e=D.expenses[id];if(!e)return;
+  openModal('Record payment',`${esc(e.ref)} · ${esc(coName(e.companyCode))}`,
+  `<div class="kv"><div><span>Amount due</span>${money(e.amount)}</div><div><span>Paid so far</span>${money(e.paidAmount)}</div><div><span>Balance</span><b>${money(balOf(e))}</b></div></div>
+  <div class="grid2">
+    <label class="f">Amount paid (USD)<input class="i" id="p_amt" type="number" min="0" step="0.01" value="${balOf(e).toFixed(2)}"></label>
+    <label class="f">Date paid<input class="i" id="p_date" type="date" value="${todayStr()}"></label>
+    <label class="f" style="grid-column:1/-1">Note<input class="i" id="p_note" placeholder="For example: bank transfer ref"></label>
+  </div><div class="err" id="pErr" role="alert"></div>`,
+  `<button class="btn" id="mClose">Cancel</button><span class="sp"></span><button class="btn pri" id="pSave">Save payment</button>`);
+  $('#mClose').onclick=closeModal;
+  $('#pSave').onclick=async()=>{
+    const err=$('#pErr');const amt=Math.round((+$('#p_amt').value||0)*100)/100;
+    if(!(amt>0)){err.textContent='Enter the amount paid.';return}
+    if(amt>balOf(e)+0.001){err.textContent='This is more than the balance.';return}
+    const payments=[...(e.payments||[]),{at:new Date().toISOString(),date:$('#p_date').value,amount:amt,by:ME.name,note:$('#p_note').value.trim()}];
+    try{await db.doc('expenses/'+id).update({paidAmount:Math.round(((+e.paidAmount||0)+amt)*100)/100,payments,updatedAt:new Date().toISOString(),updatedBy:ME.name});
+      await logAct('Payment recorded',e.ref,money(amt));closeModal();toast('Payment saved.')}catch(x){err.textContent='Could not save.'}
+  };
+}
+
+/* ---------- views ---------- */
+function sectionCards(list,label){
+  const due=list.filter(o=>monthOf(o.due)===nowMonth());
+  const sum=(a,f)=>a.reduce((s,o)=>s+f(o),0);
+  const over=list.filter(o=>o.st==='Overdue');
+  return `<div class="cards">
+    <div class="card"><span class="k">Due this month</span><span class="v">${money(sum(due,o=>o.amount))}</span><span class="m">${due.length} payment${due.length===1?'':'s'}</span></div>
+    <div class="card"><span class="k">Paid this month</span><span class="v">${money(sum(due,o=>o.paid))}</span><span class="m">Against the amount due</span></div>
+    <div class="card"><span class="k">Overdue</span><span class="v" style="color:var(--red)">${money(sum(over,o=>o.bal))}</span><span class="m">${over.length} payment${over.length===1?'':'s'} past due</span></div>
+    <div class="card"><span class="k">Outstanding</span><span class="v">${money(sum(list.filter(o=>o.st!=='Paid'),o=>o.bal))}</span><span class="m">${label}: all open payments</span></div>
+  </div>`;
+}
+function dashView(){
+  const R=oblRows(),CO=R.filter(o=>o.kind==='Company'),LG=R.filter(o=>o.kind==='Registration');
+  const coRows=coList().map(c=>{const x=CO.filter(o=>o.co===c.id);return {c,out:x.filter(o=>o.st!=='Paid').reduce((s,o)=>s+o.bal,0),over:x.filter(o=>o.st==='Overdue').length}});
+  const types=REGS.map(n=>{const x=LG.filter(o=>o.reg===n),open=x.filter(o=>o.st!=='Paid');
+    const pts=[...new Set(coList().map(c=>(c.regs||{})[n]&&c.regs[n].payType).filter(Boolean))].join(' / ')||'—';
+    return {n,pts,open:open.length,over:open.filter(o=>o.st==='Overdue').length,out:open.reduce((s,o)=>s+o.bal,0)}}).filter(t=>t.pts!=='—');
+  return `<h2 class="sect-h">Company expenses <span class="faint">Rep fee and office rent</span></h2>${sectionCards(CO,'Company')}
+   <div class="xcard"><h3>By company</h3><div class="tbox" style="border:0;max-height:none"><table class="t" style="min-width:0"><thead><tr><th>Company</th><th class="n">Overdue</th><th class="n">Outstanding</th></tr></thead><tbody>${coRows.map(r=>`<tr class="row" data-co="${esc(r.c.id)}"><td>${esc(r.c.id)} · ${esc(r.c.name)}</td><td class="n">${r.over?`<span style="color:var(--red)">${r.over}</span>`:'0'}</td><td class="n">${money(r.out)}</td></tr>`).join('')}</tbody></table></div></div>
+   <h2 class="sect-h" style="margin-top:22px">Legal expenses <span class="faint">Authorities from MM1-06</span></h2>${sectionCards(LG,'Legal')}
+   <div class="xcard"><h3>By legal expense type</h3><div class="tbox" style="border:0;max-height:none"><table class="t" style="min-width:640px"><thead><tr><th>Type</th><th>Payment</th><th class="n">Open</th><th class="n">Overdue</th><th class="n">Outstanding</th></tr></thead><tbody>${types.map(t=>`<tr class="row" data-ty="${esc(t.n)}"><td><b>${esc(t.n)}</b></td><td>${esc(t.pts)}</td><td class="n">${t.open}</td><td class="n">${t.over?`<span style="color:var(--red)">${t.over}</span>`:'0'}</td><td class="n">${money(t.out)}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">No legal payments yet.</td></tr>'}</tbody></table></div></div>
+   <div class="xcard" style="margin-top:14px"><h3>Needs attention</h3>${alertList().slice(0,6).map(a=>`<div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line2)">${a.sev==='r'?'<span class="pill r">Urgent</span>':'<span class="pill a">Check</span>'}<span><b>${esc(a.kind)}</b> · ${esc(a.co)} ${esc(a.cat)}<div class="faint" style="font-size:12.5px">${esc(a.detail)}</div></span></div>`).join('')||'<div class="empty"><b>No alerts</b>Everything is within the rules.</div>'}</div>`;
+}
+function lmView(){
+  const R=oblRows(),m=nowMonth();
+  const cell=(c,n)=>{
+    const r=(c.regs||{})[n];
+    if(!r||!r.status)return '<span class="faint">Not set</span>';
+    if(r.status==='Closed')return '<span class="faint">Closed</span>';
+    const o=R.find(x=>x.co===c.id&&x.reg===n&&(x.payType!=='Monthly'||x.period===m));
+    if(!o)return '<span class="faint">No payment</span>';
+    const act=o.linked?` <button class="btn sm" data-open="${esc(o.linked.id)}">Open</button>`:(can('edit')&&o.st!=='Paid'?` <button class="btn sm" data-rec="${esc(o.key)}">Record</button>`:'');
+    return `<div>${stPill(o.st)}${o.status==='Suspended'?' <span class="pill a">Suspended</span>':''}<div class="faint" style="font-size:11.5px;margin-top:3px">${esc(o.payType)} · ${esc(fmtD(o.due))}</div>${act}</div>`;
+  };
+  return `<div class="defbox"><b>How to read this:</b> each row is a company, each column an authority from MM1-06. Cells show this month's status for monthly payments and the current status for annual and one-time payments.</div>
+  <div class="tbox"><table class="t" style="min-width:${260+150*REGS.length}px"><thead><tr><th>Company</th><th>Stage</th>${REGS.map(n=>`<th>${esc(n)}</th>`).join('')}<th class="n">Open</th></tr></thead><tbody>${coList().map(c=>{const open=R.filter(o=>o.co===c.id&&o.kind==='Registration'&&o.st!=='Paid').length;return `<tr><td><b>${esc(c.id)}</b><div class="faint">${esc(c.name)}</div></td><td>${esc(c.stage||'')}</td>${REGS.map(n=>`<td>${cell(c,n)}</td>`).join('')}<td class="n">${open}</td></tr>`}).join('')}</tbody></table></div>`;
+}
+function oblView(){
+  let R=oblRows();
+  const q=UI.q.toLowerCase();
+  R=R.filter(o=>(!UI.co||o.co===UI.co)&&(!UI.ty||o.reg===UI.ty)&&(!UI.st||o.st===UI.st)&&(!UI.pt||o.payType===UI.pt)&&(!q||[o.co,o.reg,o.period].join(' ').toLowerCase().includes(q)));
+  R.sort((a,b)=>(a.due||'').localeCompare(b.due||''));
+  const tot=R.reduce((s,o)=>s+o.amount,0),outs=R.filter(o=>o.st!=='Paid').reduce((s,o)=>s+o.bal,0);
+  const types=[...new Set(oblRows().map(o=>o.reg))].sort();
+  return `<div class="sumstrip"><div class="chip"><span>Payments</span><b>${R.length}</b></div><div class="chip"><span>Amount</span><b>${money(tot)}</b></div><div class="chip ${outs?'bad':''}"><span>Outstanding</span><b>${money(outs)}</b></div></div>
+  <div class="toolbar">
+   <label class="f" style="flex:1;min-width:180px">Search<input class="i" id="fq" type="search" value="${esc(UI.q)}" placeholder="Company, type, period…"></label>
+   <label class="f">Company<select class="i" id="fc"><option value="">All</option>${coList().map(c=>opt(c.id,c.id+' · '+c.name,UI.co===c.id)).join('')}</select></label>
+   <label class="f">Type<select class="i" id="fty"><option value="">All</option>${types.map(t=>opt(t,t,UI.ty===t)).join('')}</select></label>
+   <label class="f">Payment<select class="i" id="fpt"><option value="">All</option>${['Monthly','Annual','One time'].map(p=>opt(p,p,UI.pt===p)).join('')}</select></label>
+   <label class="f">Status<select class="i" id="fs"><option value="">All</option>${STATUSES.map(s=>opt(s,s,UI.st===s)).join('')}</select></label>
+  </div>
+  <div class="tbox"><table class="t" style="min-width:1120px"><thead><tr><th>Due</th><th>Company</th><th>Type</th><th>Payment</th><th>Period</th><th class="n">Amount</th><th class="n">Paid</th><th class="n">Balance</th><th>Status</th><th></th></tr></thead><tbody>${R.length?R.map(o=>`<tr><td>${esc(fmtD(o.due))}</td><td>${esc(o.co)}</td><td><b>${esc(o.reg)}</b>${o.status==='Suspended'?' <span class="pill a">Suspended</span>':''}</td><td>${esc(o.payType)}</td><td>${esc(o.period==='once'?'One time':o.period)}</td><td class="n">${money(o.amount)}</td><td class="n">${money(o.paid)}</td><td class="n">${money(o.bal)}</td><td>${stPill(o.st)}</td><td>${o.linked?`<button class="btn sm" data-open="${esc(o.linked.id)}">Open</button>`:(can('edit')?`<button class="btn sm pri" data-rec="${esc(o.key)}">Record</button>`:'')}</td></tr>`).join(''):'<tr><td colspan="10" class="empty"><b>No payments</b>Obligations appear here from the registrations set in MM1-06.</td></tr>'}</tbody></table></div>
+  <div class="note">Monthly payments cover this month and last month. Annual and one-time payments stay until they are paid. Press Record to create the expense, then Record payment when the money is sent.</div>`;
+}
+function regView(){
+  const R=oblRows();
+  return `<div class="defbox"><b>Source:</b> the legal expense types come from the Registrations list in MM1-06 (MOC, GDT, MoLVT, NSSF, CamDigiKey web, ACAR, MPTC, MoH, Patent tax). Each company has its own status, fee, next due date and payment type (One time, Monthly or Annual).</div>
+  <div class="tbox"><table class="t" style="min-width:960px"><thead><tr><th>Type</th><th class="n">Active</th><th class="n">Suspended</th><th class="n">Closed</th><th class="n">Not set</th><th>Payment</th><th class="n">Open payments</th><th class="n">Outstanding</th></tr></thead><tbody>${REGS.map(n=>{
+    const cs=coList(),st=k=>cs.filter(c=>(c.regs||{})[n]&&c.regs[n].status===k).length;
+    const pts=[...new Set(cs.map(c=>(c.regs||{})[n]&&c.regs[n].payType).filter(Boolean))].join(' / ')||'—';
+    const x=R.filter(o=>o.reg===n&&o.st!=='Paid');
+    return `<tr><td><b>${esc(n)}</b></td><td class="n">${st('Active')}</td><td class="n">${st('Suspended')}</td><td class="n">${st('Closed')}</td><td class="n">${cs.filter(c=>!(c.regs||{})[n]||!c.regs[n].status).length}</td><td>${esc(pts)}</td><td class="n">${x.length}</td><td class="n">${money(x.reduce((s,o)=>s+o.bal,0))}</td></tr>`}).join('')}</tbody></table></div>
+  <div class="note">Authority list only. Open each company’s registrations in Obligations or in MM1-06 to change them.</div>`;
+}
+function expView(){
+  const q=UI.q.toLowerCase();
+  const rows=expList().filter(e=>(!UI.grp||e.group===UI.grp)&&(!UI.co||e.companyCode===UI.co)&&(!UI.st||status(e)===UI.st)&&(!q||[e.ref,e.payee,e.category,e.invoiceNo,e.companyCode,e.note].join(' ').toLowerCase().includes(q)));
+  const tot=rows.reduce((s,e)=>s+(+e.amount||0),0),outs=rows.reduce((s,e)=>s+balOf(e),0);
+  return `<div class="sumstrip"><div class="chip"><span>Shown</span><b>${rows.length}</b></div><div class="chip"><span>Billed</span><b>${money(tot)}</b></div><div class="chip ${outs?'bad':''}"><span>Outstanding</span><b>${money(outs)}</b></div></div>
+  <div class="toolbar">
+   <label class="f" style="flex:1;min-width:200px">Search<input class="i" id="fq" type="search" value="${esc(UI.q)}" placeholder="Ref, payee, category, invoice…"></label>
+   <label class="f">Group<select class="i" id="fg"><option value="">All</option>${GROUPS.map(g=>opt(g,g,UI.grp===g)).join('')}</select></label>
+   <label class="f">Company<select class="i" id="fc"><option value="">All</option>${coList().map(c=>opt(c.id,c.id+' · '+c.name,UI.co===c.id)).join('')}</select></label>
+   <label class="f">Status<select class="i" id="fs"><option value="">All</option>${STATUSES.map(s=>opt(s,s,UI.st===s)).join('')}</select></label>
+   <span class="sp"></span>${can('edit')?'<button class="btn pri" id="addExp">Add expense</button>':''}</div>
+  <div class="tbox"><table class="t" style="min-width:1200px"><thead><tr><th>Ref</th><th>Due</th><th>Company</th><th>Group</th><th>Category</th><th>Payee</th><th class="n">Amount</th><th class="n">Paid</th><th class="n">Balance</th><th>Invoice</th><th>From</th><th>Status</th></tr></thead><tbody>${rows.length?rows.map(e=>`<tr class="row" tabindex="0" data-exp="${esc(e.id)}"><td class="code">${esc(e.ref)}</td><td>${esc(fmtD(e.dueDate))}</td><td>${esc(e.companyCode)}</td><td>${esc(e.group)}</td><td>${esc(e.category)}</td><td>${esc(e.payee||'')}</td><td class="n">${money(e.amount)}</td><td class="n">${money(e.paidAmount)}</td><td class="n">${money(balOf(e))}</td><td>${esc(e.invoiceNo||'—')}</td><td>${e.obKey?'<span class="pill s">Obligation</span>':'<span class="pill x">Manual</span>'}</td><td>${stPill(status(e))}</td></tr>`).join(''):'<tr><td colspan="12" class="empty"><b>No expenses</b>Add an expense, or record one from Obligations.</td></tr>'}</tbody></table></div>
+  <div class="note">Click a row to see its payments. Balance and status update when a payment is recorded.</div>`;
+}
+function coView(){
+  const L=expList();
+  return `<div class="defbox"><b>Source:</b> company code, name, project, stage, owner, fees, rent and registrations come from the Company Database (MM1-06). They are shown here for reference.</div>
+  <div class="tbox"><table class="t" style="min-width:1100px"><thead><tr><th>Code</th><th>Company name</th><th>Project</th><th>Stage</th><th>Owner / representative</th><th class="n">Rep fee / month</th><th>Rep fee day</th><th class="n">Rent / month</th><th>Rent day</th><th class="n">Authorities active</th><th class="n">Open expenses</th></tr></thead><tbody>${coList().map(c=>`<tr><td class="code">${esc(c.id)}</td><td>${esc(c.name)}</td><td>${esc(c.project||'')}</td><td>${esc(c.stage||'')}</td><td>${esc(c.owner||'')}</td><td class="n">${money(c.repFee)}</td><td>${c.repFee?'Day '+esc(c.repDay||5):'—'}</td><td class="n">${money(c.rent)}</td><td>${c.rent?'Day '+esc(c.rentDay||1):'—'}</td><td class="n">${Object.values(c.regs||{}).filter(r=>r&&r.status==='Active').length} of ${REGS.length}</td><td class="n">${L.filter(e=>e.companyCode===c.id&&balOf(e)>0).length}</td></tr>`).join('')}</tbody></table></div>`;
+}
+function alertsView(){
+  const L=alertList();
+  return `<div class="sumstrip"><div class="chip ${L.length?'bad':''}"><span>Open alerts</span><b>${L.length}</b></div><div class="chip"><span>Urgent</span><b>${L.filter(a=>a.sev==='r').length}</b></div><div class="chip"><span>Check</span><b>${L.filter(a=>a.sev==='a').length}</b></div></div>
+  <div class="defbox"><b>Rules.</b> Payments overdue (urgent after ${ALERT.overdueUrgent} days, or any suspended registration) · payments due within ${ALERT.dueSoon} days · annual payments due within ${ALERT.annualSoon} days · legal expenses overdue ${ALERT.legalUrgent}+ days · closed registrations with money still owed · paid expenses with no invoice number · active companies with authorities not set in MM1-06. Click a row to open it.</div>
+  <div class="tbox"><table class="t" style="min-width:900px"><thead><tr><th>Level</th><th>Alert</th><th>Ref</th><th>Company</th><th>Type</th><th>Detail</th></tr></thead><tbody>${L.length?L.map(a=>`<tr class="row" tabindex="0" ${a.open}><td>${a.sev==='r'?'<span class="pill r">Urgent</span>':'<span class="pill a">Check</span>'}</td><td>${esc(a.kind)}</td><td class="code">${esc(a.ref||'—')}</td><td>${esc(a.co)}</td><td>${esc(a.cat)}</td><td>${esc(a.detail)}</td></tr>`).join(''):'<tr><td colspan="6" class="empty"><b>No alerts</b>Everything is within the rules.</td></tr>'}</tbody></table></div>`;
+}
+
+/* ---------- nav, draw, bind ---------- */
+const TITLES={dash:['Dashboard','Company expenses and legal expenses, each in its own section'],lm:['Legal by company','Each company and its authorities, paid or not, for this month'],alerts:['Alerts','Monitoring and tracking: what is overdue, due soon or missing'],obl:['Obligations','Every payment due from the registrations and company fees in MM1-06'],reg:['Legal expense types','The authorities each company must pay, from MM1-06'],exp:['Expenses','Every expense with its due date, payments and invoice'],co:['Companies','Company codes from MM1-06']};
+const VIEWS={lm:lmView,dash:dashView,alerts:alertsView,obl:oblView,reg:regView,exp:expView,co:coView};
+function tabsHtml(){
+  const n=alertList().length;
+  const T=[['dash','Dashboard'],['alerts','Alerts',n||''],['lm','Legal by company'],['obl','Obligations'],['reg','Legal expense types'],['exp','Expenses'],['co','Companies']];
+  return T.map(([k,l,c])=>`<button type="button" data-tab="${k}" ${UI.tab===k?'aria-current="page"':''}><span>${l}</span>${c?`<span class="ct">${c}</span>`:''}</button>`).join('');
+}
+function draw(){
+  if(!ME)return;
+  $('#nav').innerHTML=tabsHtml();
+  $('#todayTxt').textContent=fmtD(todayStr());
+  const T=TITLES[UI.tab];$('#pageTitle').textContent=T[0];$('#pageSub').textContent=T[1];
+  $('#view').innerHTML=VIEWS[UI.tab]();
+  bind();
+}
+function bind(){
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{UI.tab=b.dataset.tab;draw()});
+  document.querySelectorAll('[data-go]').forEach(el=>{const go=()=>{UI.tab=el.dataset.go;draw()};el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter')go()}});
+  document.querySelectorAll('[data-exp]').forEach(el=>{if(el.closest('#modalRoot'))return;const go=()=>expModal(el.dataset.exp);el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter')go()}});
+  document.querySelectorAll('[data-open]').forEach(el=>el.onclick=()=>expModal(el.dataset.open));
+  document.querySelectorAll('[data-rec]').forEach(el=>el.onclick=()=>{
+    const o=oblRows().find(x=>x.key===el.dataset.rec);if(!o)return;
+    const pay=o.reg==='Rep fee'?'Representative':o.reg==='Office rent'?'Landlord':'Authority: '+o.reg;
+    expModal(null,{companyCode:o.co,group:o.kind==='Company'?'Company expense':'Legal expense',category:o.reg,payee:pay,amount:o.amount,dueDate:o.due,obKey:o.key,note:'Obligation '+o.payType+' '+(o.period==='once'?'one time':o.period)});
+  });
+  document.querySelectorAll('tr[data-co]').forEach(el=>el.onclick=()=>{UI.tab='co';draw()});
+  document.querySelectorAll('tr[data-ty]').forEach(el=>el.onclick=()=>{UI.tab='obl';UI.ty=el.dataset.ty;draw()});
+  const fq=$('#fq');if(fq){fq.oninput=e=>{UI.q=e.target.value;const p=fq.selectionStart;draw();const n=$('#fq');n.focus();n.setSelectionRange(p,p)}}
+  const bindSel=(id,key)=>{const el=$(id);if(el)el.onchange=e=>{UI[key]=e.target.value;draw()}};
+  bindSel('#fg','grp');bindSel('#fc','co');bindSel('#fs','st');bindSel('#fty','ty');bindSel('#fpt','pt');
+  const ad=$('#addExp');if(ad)ad.onclick=()=>expModal(null);
+}
+
+/* ---------- auth ---------- */
+async function sha(x){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(x));return [...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,'0')).join('')}
+const hashPw=(salt,pw)=>sha(salt+':'+pw);
+async function doLogin(ev){
+  ev.preventDefault();const u=$('#lu').value.trim().toLowerCase(),p=$('#lp').value;const err=$('#loginErr');err.textContent='';
+  const rec=D.users[u];
+  if(!rec||rec.active===false||await hashPw(rec.salt,p)!==rec.hash){err.textContent='Wrong username or password.';return}
+  ME={u,name:rec.name,role:rec.role};store.set('mm207_user',u);logAct('Sign in','','');
+  enterApp();
+}
+function enterApp(){
+  $('#login').classList.add('hidden');$('#app').classList.remove('hidden');
+  $('#who').innerHTML=`<b style="color:#fff">${esc(ME.name)}</b><br><small>${esc(rl(ME.role))} · ${esc(ME.u)}</small>`;
+  draw();
+}
+function logout(){logAct('Sign out','','');ME=null;store.del('mm207_user');$('#app').classList.add('hidden');$('#login').classList.remove('hidden');$('#lp').value='';closeModal()}
+function checkSession(){
+  const u=store.get('mm207_user');if(u&&D.users[u]&&D.users[u].active!==false){ME={u,name:D.users[u].name,role:D.users[u].role};enterApp()}
+}
+function refresh(){if(!ME)return;if(!$('#ov'))draw()}
+
+/* ---------- boot (standalone: sample store in memory) ---------- */
+function boot(){
+  db=makeLocal(SAMPLE);
+  let t;
+  const sub=c=>db.collection(c).onSnapshot(s=>{
+    const o={};s.docs.forEach(d=>o[d.id]=d.data());D[c]=o;READY[c]=1;
+    if(c==='users'){const b=$('#loginBtn');if(!b.dataset.ready){b.disabled=false;b.textContent='Sign in';b.dataset.ready=1}checkSession()}
+    clearTimeout(t);t=setTimeout(refresh,50)});
+  ['companies','expenses','settings','users','log'].forEach(sub);
+  $('#loginForm').addEventListener('submit',doLogin);
+  $('#btnOut').onclick=logout;
+}
+boot();
+})();
+
+</script>
+</body>
+</html>

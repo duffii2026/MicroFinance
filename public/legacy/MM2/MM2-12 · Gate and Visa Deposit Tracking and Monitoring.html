@@ -1,0 +1,602 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>MM2-12 +Gate and Visa Deposit Tracking and Monitoring</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600&display=swap");
+:root{--paper:#F2F4F6;--surface:#FFFFFF;--ink:#17212C;--muted:#5E6B78;--faint:#8A96A3;--line:#DCE1E6;--line2:#EBEEF1;--steel:#23507A;--steel-d:#1A3D5E;--steel-l:#E6EEF5;--on-steel:#FFFFFF;--side:#132230;--side-2:#1C3043;--side-ink:#C8D4DF;--side-line:#2B435A;--red:#B42318;--red-l:#FDECEA;--amber:#B54708;--amber-l:#FEF3E2;--green:#067647;--green-l:#E7F6EC;--band:#EEF2F5;--grand:#DDE8F2;color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--paper:#0E151C;--surface:#162029;--ink:#E6ECF1;--muted:#9AA8B5;--faint:#6F7E8C;--line:#2A3947;--line2:#223039;--steel:#6FA3D6;--steel-d:#8DB8E3;--steel-l:#1B3248;--on-steel:#0E151C;--side:#0A1118;--side-2:#14212C;--side-ink:#AEBBC8;--side-line:#243543;--red:#F07A6C;--red-l:#3A1A16;--amber:#E3A948;--amber-l:#33270F;--green:#5CC98A;--green-l:#15301F;--band:#1B2630;--grand:#1F3A52;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#0E151C;--surface:#162029;--ink:#E6ECF1;--muted:#9AA8B5;--faint:#6F7E8C;--line:#2A3947;--line2:#223039;--steel:#6FA3D6;--steel-d:#8DB8E3;--steel-l:#1B3248;--on-steel:#0E151C;--side:#0A1118;--side-2:#14212C;--side-ink:#AEBBC8;--side-line:#243543;--red:#F07A6C;--red-l:#3A1A16;--amber:#E3A948;--amber-l:#33270F;--green:#5CC98A;--green-l:#15301F;--band:#1B2630;--grand:#1F3A52;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--paper);color:var(--ink);font:14px/1.45 "Segoe UI",Inter,system-ui,-apple-system,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+h1,h2{font-family:"Barlow Semi Condensed","Bahnschrift",Arial Narrow,sans-serif;font-weight:600;margin:0;letter-spacing:.01em;text-wrap:balance}
+h1{font-size:24px}h2{font-size:18px}
+:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
+.hidden{display:none!important}
+.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:600;min-width:0}
+.i{width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:8px 10px;font-weight:400;font-size:14px;min-width:0}
+.i:disabled{background:var(--paper);color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:7px 12px;cursor:pointer;font-weight:600;font-size:13px}
+.btn:hover{border-color:var(--steel)}
+.btn.pri{background:var(--steel);border-color:var(--steel);color:var(--on-steel)}
+.btn.pri:hover{background:var(--steel-d);border-color:var(--steel-d)}
+.btn.sm{padding:4px 9px;font-size:12px}
+.btn.danger{color:var(--red);border-color:var(--red)}
+.btn:disabled{opacity:.5;cursor:default}
+.err{color:var(--red);font-size:13px;min-height:18px}
+.hint{font-size:12px;color:var(--muted)}
+.faint{color:var(--faint);font-size:12px}
+/* login (same layout as MM2-07) */
+#login{min-height:100vh;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
+.login-art{background:var(--side);color:#fff;padding:48px clamp(24px,5vw,64px);display:flex;flex-direction:column;justify-content:space-between;gap:32px}
+.login-art h1{font-size:clamp(28px,4vw,40px);color:#fff;margin-top:14px;line-height:1.1}
+.login-art p{color:#A9B9C9;max-width:44ch;margin:14px 0 0}
+.login-art .eb{color:#8397AA;font-size:13px}
+.codes{display:flex;flex-wrap:wrap;gap:8px}
+.codes span{font:600 12px ui-monospace,Consolas,monospace;letter-spacing:.06em;border:1px solid #2B435A;color:#C8D4DF;padding:4px 9px;border-radius:4px}
+.login-form{display:flex;align-items:center;justify-content:center;padding:32px 16px;background:var(--paper)}
+.login-form form{width:100%;max-width:340px;display:flex;flex-direction:column;gap:14px}
+.login-form h2{color:var(--ink)}
+@media (max-width:760px){#login{grid-template-columns:1fr}.login-art{padding:28px 16px;gap:18px}}
+/* app shell */
+#app{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh}
+aside{background:var(--side);color:var(--side-ink);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{padding:18px 18px 14px;border-bottom:1px solid var(--side-line)}
+.brand b{display:block;font:600 19px "Barlow Semi Condensed",Arial Narrow,sans-serif;color:#fff}
+.brand small{color:#8397AA}
+nav{padding:10px 8px;display:flex;flex-direction:column;gap:2px;flex:1}
+.ng{font:600 10.5px ui-monospace,Consolas,monospace;letter-spacing:.12em;text-transform:uppercase;color:#6F8499;padding:12px 10px 4px}
+nav button{all:unset;box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;color:var(--side-ink);font-size:13.5px}
+nav button:hover{background:var(--side-2)}
+nav button:focus-visible{outline:2px solid #8DB8E3}
+nav button[aria-current="page"]{background:var(--steel);color:var(--on-steel);font-weight:600}
+.side-foot{padding:14px 18px;border-top:1px solid var(--side-line);font-size:12.5px}
+.side-foot b{color:#fff}
+.sbtn{margin-top:8px;background:transparent;color:var(--side-ink);border:1px solid var(--side-line);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px}
+main{padding:22px clamp(16px,3vw,36px) 48px;min-width:0}
+.topbar{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;margin-bottom:16px}
+.topbar .sub{color:var(--muted);font-size:13px}
+.topbar .sync{margin-left:auto;font:12px ui-monospace,Consolas,monospace;color:var(--muted)}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:12px}
+.toolbar .sp{flex:1}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:6px}
+.card .k{font:600 11px ui-monospace,Consolas,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.card .v{font:600 26px "Barlow Semi Condensed",Arial Narrow,sans-serif;font-variant-numeric:tabular-nums}
+.card .m{font-size:12.5px;color:var(--muted)}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow-x:auto;max-height:calc(100vh - 260px)}
+table.t{border-collapse:collapse;width:100%;min-width:760px;font-size:13px}
+table.t th{font:600 11px ui-monospace,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);background:var(--band);white-space:nowrap;position:sticky;top:0;z-index:3}
+table.t td{padding:8px 10px;border-bottom:1px solid var(--line2);vertical-align:middle}
+table.t td.n,table.t th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+table.t td .i{min-width:110px}
+table.t tr.row{cursor:pointer}
+table.t tr.row:hover td{background:var(--steel-l)}
+table.t tr.grp td{background:var(--band);font:600 11px ui-monospace,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.mono{font-family:ui-monospace,Consolas,monospace}
+.pill{display:inline-flex;align-items:center;gap:5px;font:600 11.5px "Segoe UI",system-ui,sans-serif;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.g{color:var(--green);background:var(--green-l)}
+.pill.a{color:var(--amber);background:var(--amber-l)}
+.pill.r{color:var(--red);background:var(--red-l)}
+.pill.x{color:var(--muted);background:var(--band)}
+.defbox{background:var(--steel-l);border-left:3px solid var(--steel);border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.5}
+.note{font-size:12.5px;color:var(--muted);margin:10px 0}
+.empty{padding:36px 16px;text-align:center;color:var(--muted)}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;margin-bottom:16px}
+.cgrid h2{font-size:15px;margin-bottom:2px}
+.ax{font-size:11px;fill:var(--muted)}
+.lg{display:flex;align-items:center;gap:8px;font-size:13px;margin:4px 0}
+.lg i{display:inline-block;width:10px;height:10px;border-radius:3px}
+.ct{font:600 11px ui-monospace,Consolas,monospace;background:var(--red);color:#fff;border-radius:999px;padding:1px 7px;min-width:22px;text-align:center}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:14px}
+/* modal */
+#modalRoot:empty{display:none}
+.ov{position:fixed;inset:0;background:rgba(10,17,24,.45);display:grid;place-items:center;padding:16px;z-index:50}
+.modal{background:var(--surface);border:1px solid var(--line);border-radius:10px;width:100%;max-width:460px;max-height:90vh;overflow:auto}
+.modal header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}
+.modal .mb{padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal .mb .full{grid-column:1/-1}
+.modal footer{display:flex;align-items:center;gap:8px;padding:12px 16px;border-top:1px solid var(--line)}
+@media (max-width:560px){.modal .mb{grid-template-columns:1fr}}
+@media (max-width:860px){
+  #app{grid-template-columns:1fr}
+  aside{position:static;height:auto}
+  nav{flex-direction:row;overflow-x:auto;padding:8px;flex:none}
+  .ng{display:none}
+  nav button{white-space:nowrap}
+}
+</style>
+
+<div id="login" class="hidden">
+  <div class="login-art">
+    <div>
+      <div class="eb">IR Group · PSS Department</div>
+      <h1>MM2-12 +Gate and Visa Deposit Tracking and Monitoring</h1>
+      <p>Tracks +Gate OTP costs and Visa deposits: each month's amount, whether the request was raised, and whether it was paid on time.</p>
+    </div>
+    <div class="codes"><span>DASHBOARD</span><span>MONTHLY ENTRIES</span><span>ACCOUNTS</span><span>USERS</span></div>
+  </div>
+  <div class="login-form">
+    <form id="loginForm" autocomplete="on">
+      <h2>Sign in</h2>
+      <label class="f" for="lu">Username<input class="i" id="lu" autocomplete="username" required></label>
+      <label class="f" for="lp">Password<input class="i" id="lp" type="password" autocomplete="current-password" required></label>
+      <div class="err" id="loginErr" role="alert"></div>
+      <button class="btn pri" id="loginBtn" type="submit" style="justify-content:center;padding:10px" disabled>Connecting…</button>
+      <p class="hint" style="margin:0">Ask your Admin for an account. Sign-in locks the page; it is not bank-grade security.</p>
+    </form>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <aside>
+    <div class="brand"><b>MM2-12 +Gate and Visa Deposit Tracking and Monitoring</b><small>IR Group · PSS Department</small></div>
+    <nav id="nav" aria-label="+Gate and Visa deposit tracking"></nav>
+    <div class="side-foot" id="who"></div>
+  </aside>
+  <main>
+    <div class="topbar"><h1 id="title"></h1><span class="sub" id="sub"></span><span class="sync" id="today"></span></div>
+    <div id="view"><div class="empty">Loading…</div></div>
+  </main>
+</div>
+<div id="modalRoot"></div>
+
+<script>
+
+function makeLocal(seed){
+  const S=JSON.parse(JSON.stringify(seed));const subs=[];
+  const emit=()=>subs.forEach(f=>{try{f()}catch(e){}});
+  const dref=(c,id)=>({
+    id,
+    get:async()=>{const d=(S[c]||{})[id];return {exists:!!d,data:()=>d?JSON.parse(JSON.stringify(d)):undefined}},
+    set:async v=>{S[c]=S[c]||{};S[c][id]=JSON.parse(JSON.stringify(v));emit()},
+    update:async v=>{S[c]=S[c]||{};S[c][id]={...(S[c][id]||{}),...JSON.parse(JSON.stringify(v))};emit()},
+    delete:async()=>{if(S[c])delete S[c][id];emit()}
+  });
+  const col=c=>({
+    doc:id=>dref(c,id),
+    orderBy(){return this},limit(){return this},
+    onSnapshot(cb){const run=()=>cb({docs:Object.entries(S[c]||{}).map(([id,d])=>({id,data:()=>JSON.parse(JSON.stringify(d))}))});subs.push(run);run();return()=>{}}
+  });
+  return {collection:col,doc:p=>{const i=p.indexOf('/');return dref(p.slice(0,i),p.slice(i+1))}};
+}
+const SAMPLE={"accounts": {"dummy_visa_03": {"active": true, "createdAt": "2026-10-23T00:00:00.000Z", "kind": "visa", "name": "DUMMY Visa Account 03", "project": "DUMMY Project C"}, "dummy_gate_02": {"active": true, "createdAt": "2026-10-23T00:00:00.000Z", "kind": "gate", "name": "DUMMY +Gate Account 02", "project": "DUMMY Project B"}, "dummy_visa_02": {"active": true, "createdAt": "2026-10-23T00:00:00.000Z", "kind": "visa", "name": "DUMMY Visa Account 02", "project": "DUMMY Project B"}, "dummy_gate_03": {"active": false, "createdAt": "2026-10-23T00:00:00.000Z", "kind": "gate", "name": "DUMMY +Gate Account 03 (off)", "project": "DUMMY Project A"}, "dummy_gate_01": {"active": true, "createdAt": "2026-10-23T00:00:00.000Z", "kind": "gate", "name": "DUMMY +Gate Account 01", "project": "DUMMY Project A"}, "dummy_visa_01": {"active": true, "createdAt": "2026-10-23T00:00:00.000Z", "kind": "visa", "name": "DUMMY Visa Account 01", "project": "DUMMY Project A"}}, "entries": {"2026-08_dummy_visa_02": {"accountId": "dummy_visa_02", "amount": "2600.00", "deposit": "3000", "kind": "visa", "month": "2026-08", "paidOn": "2026-09-14", "requestBy": "2026-09-10", "requested": true, "updatedBy": "DUMMY"}, "2026-09_dummy_gate_03": {"accountId": "dummy_gate_03", "amount": "62.00", "kind": "gate", "month": "2026-09", "paidOn": "2026-10-09", "requestBy": "2026-10-05", "requested": true, "tax": "6.20", "updatedBy": "DUMMY"}, "2026-10_dummy_gate_01": {"accountId": "dummy_gate_01", "amount": "150.00", "kind": "gate", "month": "2026-10", "requestBy": "2026-10-25", "requested": true, "tax": "15.00", "updatedBy": "DUMMY"}, "2026-09_dummy_visa_01": {"accountId": "dummy_visa_01", "amount": "4100.00", "deposit": "4000", "kind": "visa", "month": "2026-09", "paidOn": "2026-10-12", "requestBy": "2026-10-10", "requested": true, "updatedBy": "DUMMY"}, "2026-08_dummy_gate_02": {"accountId": "dummy_gate_02", "amount": "95.00", "kind": "gate", "month": "2026-08", "requestBy": "2026-09-05", "requested": false, "tax": "9.50", "updatedBy": "DUMMY"}, "2026-10_dummy_visa_02": {"accountId": "dummy_visa_02", "amount": "1500.00", "deposit": "3200", "kind": "visa", "month": "2026-10", "requestBy": "2026-11-10", "requested": true, "updatedBy": "DUMMY"}, "2026-08_dummy_visa_01": {"accountId": "dummy_visa_01", "amount": "3800.00", "deposit": "5000", "kind": "visa", "month": "2026-08", "paidOn": "2026-09-09", "requestBy": "2026-09-10", "requested": true, "updatedBy": "DUMMY"}, "2026-07_dummy_visa_01": {"accountId": "dummy_visa_01", "amount": "3500.00", "deposit": "4000", "kind": "visa", "month": "2026-07", "paidOn": "2026-08-08", "requestBy": "2026-08-10", "requested": true, "updatedBy": "DUMMY"}, "2026-08_dummy_gate_01": {"accountId": "dummy_gate_01", "amount": "125.00", "kind": "gate", "month": "2026-08", "paidOn": "2026-09-09", "requestBy": "2026-09-05", "requested": true, "tax": "12.50", "updatedBy": "DUMMY"}, "2026-10_dummy_visa_03": {"accountId": "dummy_visa_03", "amount": "380.00", "deposit": "450", "kind": "visa", "month": "2026-10", "requestBy": "2026-10-30", "requested": true, "updatedBy": "DUMMY"}, "2026-07_dummy_gate_01": {"accountId": "dummy_gate_01", "amount": "120.00", "kind": "gate", "month": "2026-07", "paidOn": "2026-08-03", "requestBy": "2026-08-05", "requested": true, "tax": "12.00", "updatedBy": "DUMMY"}, "2026-09_dummy_visa_02": {"accountId": "dummy_visa_02", "amount": "2800.00", "deposit": "3500", "kind": "visa", "month": "2026-09", "requestBy": "2026-10-10", "requested": false, "updatedBy": "DUMMY"}, "2026-09_dummy_gate_02": {"accountId": "dummy_gate_02", "amount": "100.00", "kind": "gate", "month": "2026-09", "paidOn": "2026-10-07", "requestBy": "2026-10-05", "requested": true, "tax": "10.00", "updatedBy": "DUMMY"}, "2026-10_dummy_visa_01": {"accountId": "dummy_visa_01", "amount": "2900.00", "deposit": "4500", "kind": "visa", "month": "2026-10", "requestBy": "2026-10-10", "requested": true, "updatedBy": "DUMMY"}, "2026-10_dummy_gate_02": {"accountId": "dummy_gate_02", "amount": "105.00", "kind": "gate", "month": "2026-10", "requestBy": "2026-11-05", "requested": false, "tax": "10.50", "updatedBy": "DUMMY"}, "2026-09_dummy_gate_01": {"accountId": "dummy_gate_01", "amount": "135.00", "kind": "gate", "month": "2026-09", "paidOn": "2026-10-04", "requestBy": "2026-10-05", "requested": true, "tax": "13.50", "updatedBy": "DUMMY"}, "2026-07_dummy_visa_02": {"accountId": "dummy_visa_02", "amount": "2200.00", "deposit": "2500", "kind": "visa", "month": "2026-07", "paidOn": "2026-08-10", "requestBy": "2026-08-10", "requested": true, "updatedBy": "DUMMY"}, "2026-07_dummy_gate_02": {"accountId": "dummy_gate_02", "amount": "90.00", "kind": "gate", "month": "2026-07", "paidOn": "2026-08-04", "requestBy": "2026-08-05", "requested": true, "tax": "9.00", "updatedBy": "DUMMY"}, "2026-09_dummy_visa_03": {"accountId": "dummy_visa_03", "amount": "410.00", "deposit": "450", "kind": "visa", "month": "2026-09", "paidOn": "2026-10-08", "requestBy": "2026-10-10", "requested": true, "updatedBy": "DUMMY"}, "2026-08_dummy_gate_03": {"accountId": "dummy_gate_03", "amount": "60.00", "kind": "gate", "month": "2026-08", "paidOn": "2026-09-02", "requestBy": "2026-09-05", "requested": true, "tax": "6.00", "updatedBy": "DUMMY"}, "2026-07_dummy_gate_03": {"accountId": "dummy_gate_03", "amount": "95.00", "kind": "gate", "month": "2026-07", "paidOn": "2026-08-04", "requestBy": "2026-08-05", "requested": true, "tax": "9.50", "updatedBy": "DUMMY"}, "2026-07_dummy_visa_03": {"accountId": "dummy_visa_03", "amount": "350.00", "deposit": "400", "kind": "visa", "month": "2026-07", "paidOn": "2026-08-08", "requestBy": "2026-08-10", "requested": true, "updatedBy": "DUMMY"}, "2026-08_dummy_visa_03": {"accountId": "dummy_visa_03", "amount": "410.00", "deposit": "500", "kind": "visa", "month": "2026-08", "paidOn": "2026-09-09", "requestBy": "2026-09-10", "requested": true, "updatedBy": "DUMMY"}, "2026-10_dummy_gate_03": {"accountId": "dummy_gate_03", "amount": "110.00", "kind": "gate", "month": "2026-10", "requestBy": "2026-11-05", "requested": false, "tax": "11.00", "updatedBy": "DUMMY"}}, "settings": {}, "users": {}};
+(async function(){
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const todayStr=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+const curM=()=>todayStr().slice(0,7);
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const monthLabel=ym=>ym?`${MON[+ym.slice(5)-1]} ${ym.slice(0,4)}`:'';
+const fmtD=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||'');return m?`${+m[3]} ${MON[+m[2]-1]} ${m[1]}`:''};
+const fmtDT=s=>{const d=new Date(s);return isNaN(d)?'':`${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())}`};
+const num=v=>{const n=parseFloat(String(v==null?'':v).replace(/,/g,''));return isNaN(n)?0:n};
+const money=n=>Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const KIND={gate:'+Gate (OTP cost)',visa:'Visa deposit account'};
+const LBL={none:'No entry',paid:'Paid on time',late:'Late',notpaid:'Not paid yet'};
+const PCLS={none:'x',paid:'g',late:'r',notpaid:'a'};
+const rl=r=>r==='Admin'?'Master Admin':r;
+const store={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
+const MENUS=[['dash','Dashboard, +Gate and Visa'],['mon','Monthly entries'],['needs','Needs attention'],['acc','Accounts']];
+const ACTS=[['edit','Enter data, change accounts and turn them on or off']];
+const MENU_NAME={dash:'Dashboard',mon:'Monthly entries',acc:'Accounts'};
+
+let db=null;
+try{db=await window.claude.use('db')}catch(e){}
+if(!db){db=makeLocal(SAMPLE)}
+
+const D={accounts:{},entries:{},users:{},positions:null};
+const READY={users:false};
+const UI={tab:'dash',m:curM(),kind:'',msg:'',force:false};
+let ME=null,boot=false;
+const toast=t=>{UI.msg=t;draw();setTimeout(()=>{UI.msg='';draw()},2500)};
+
+const sha=async x=>{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(x));return [...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,'0')).join('')};
+const hashPw=(salt,pw)=>sha(salt+':'+pw);
+const newSalt=()=>[...crypto.getRandomValues(new Uint8Array(12))].map(x=>x.toString(16).padStart(2,'0')).join('');
+
+function posDefs(){
+  const d={Editor:{menus:['dash','mon','needs','acc'],acts:['edit']},Viewer:{menus:['dash','mon','needs','acc'],acts:[]}};
+  if(D.positions)Object.keys(D.positions).forEach(k=>{if(k!=='Admin')d[k]={menus:D.positions[k].menus||[],acts:D.positions[k].acts||[]}});
+  return d;
+}
+const can=p=>{if(!ME)return false;if(ME.role==='Admin')return true;if(p==='admin')return false;const q=posDefs()[ME.role];if(!q)return false;return p.startsWith('m:')?q.menus.includes(p.slice(2)):q.acts.includes(p)};
+const canTab=k=>{if(k==='users'||k==='access')return can('admin');return can('m:'+((k==='gate'||k==='visa')?'dash':k))};
+
+db.collection('accounts').onSnapshot(s=>{D.accounts={};s.docs.forEach(d=>D.accounts[d.id]=d.data());draw()},()=>{});
+db.collection('entries').onSnapshot(s=>{D.entries={};s.docs.forEach(d=>D.entries[d.id]=d.data());draw()},()=>{});
+db.collection('settings').onSnapshot(s=>{D.positions=null;s.docs.forEach(d=>{if(d.id==='positions')D.positions=d.data().list||null});draw()},()=>{});
+db.collection('users').onSnapshot(async s=>{
+  D.users={};s.docs.forEach(d=>D.users[d.id]=d.data());
+  if(!READY.users){READY.users=true;const b=$('#loginBtn');b.disabled=false;b.textContent='Sign in'}
+  if(!Object.keys(D.users).length&&!boot){boot=true;const salt=newSalt();try{await db.doc('users/admin').set({u:'admin',name:'Administrator',role:'Admin',salt,hash:await hashPw(salt,'admin123'),mustChange:true,active:true,lastLogin:null})}catch(e){}}
+  checkSession();draw();
+},()=>{});
+
+function accList(all){return Object.entries(D.accounts).map(([id,a])=>({...a,id})).filter(a=>all||a.active!==false).sort((x,y)=>(x.kind||'').localeCompare(y.kind||'')||(x.name||'').localeCompare(y.name||''))}
+const entryOf=(a,ym)=>D.entries[ym+'_'+a.id]||{};
+const spendOf=(a,e)=>a.kind==='gate'?num(e.amount)+num(e.tax):num(e.amount);
+function stOf(e){
+  if(!e||!Object.keys(e).length)return 'none';
+  if(e.paidOn)return (e.requestBy&&e.paidOn>e.requestBy)?'late':'paid';
+  if(e.requestBy&&todayStr()>e.requestBy)return 'late';
+  return 'notpaid';
+}
+const ALERT_DAYS=3;
+const ymdUTC=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||'');return m?Date.UTC(+m[1],+m[2]-1,+m[3]):null};
+const daysTo=s=>{const t=ymdUTC(s),n=ymdUTC(todayStr());return t==null?null:Math.round((t-n)/86400000)};
+const dueText=s=>{const d=daysTo(s);if(d==null)return '';return d<0?`${-d} day${-d===1?'':'s'} late`:d===0?'Due today':`In ${d} day${d===1?'':'s'}`};
+function alertReasons(e){
+  if(!e||!Object.keys(e).length)return [];
+  const st=stOf(e),r=[];
+  if(st==='late')r.push('late');
+  if(st==='notpaid'){const d=daysTo(e.requestBy);if(d!=null&&d>=0&&d<=ALERT_DAYS)r.push('soon')}
+  if(!e.requested&&st!=='paid')r.push('noreq');
+  return r;
+}
+const ALR={late:['Late','r'],soon:['Due soon','a'],noreq:['Request not raised','a']};
+function alertRows(){
+  const act=new Set(accList(false).map(a=>a.id));const out=[];
+  Object.entries(D.entries).forEach(([id,e])=>{if(!act.has(e.accountId))return;const rs=alertReasons(e);if(rs.length)out.push({...e,id,a:D.accounts[e.accountId],rs})});
+  return out.sort((x,y)=>(x.requestBy||'9999').localeCompare(y.requestBy||'9999'));
+}
+const pill=st=>`<span class="pill ${PCLS[st]}">${LBL[st]}</span>`;
+function monthsWithData(){const s=new Set();Object.values(D.entries).forEach(e=>{if(e.month)s.add(e.month)});return [...s].sort()}
+const emptyBox=t=>`<div class="box"><div class="empty">${t}</div></div>`;
+
+/* ---------- Dashboard ---------- */
+function chartsHtml(accs){
+  const ids=new Set(accs.map(a=>a.id));
+  const ents=Object.values(D.entries).filter(e=>ids.has(e.accountId));
+  if(!ents.length)return '';
+  const ms=monthsWithData();
+  const byMonth=ms.map(m=>{let sp=0,dp=0;accs.forEach(a=>{const e=entryOf(a,m);sp+=spendOf(a,e);if(a.kind==='visa')dp+=num(e.deposit)});return {m,sp,dp}});
+  const W=520,H=210,P=34,n=Math.max(1,byMonth.length),bw=(W-2*P)/n;
+  const mx=Math.max(1,...byMonth.map(x=>Math.max(x.sp,x.dp)));
+  const yS=v=>(v/mx)*(H-2*P);
+  const bars=byMonth.map((x,i)=>{const x0=P+i*bw+bw*0.15,w=bw*0.32,hs=yS(x.sp),hd=yS(x.dp);
+    return `<rect x="${x0.toFixed(1)}" y="${(H-P-hs).toFixed(1)}" width="${w.toFixed(1)}" height="${hs.toFixed(1)}" fill="var(--steel)"><title>${monthLabel(x.m)} spent ${money(x.sp)}</title></rect>`+
+      (x.dp?`<rect x="${(x0+w+2).toFixed(1)}" y="${(H-P-hd).toFixed(1)}" width="${w.toFixed(1)}" height="${hd.toFixed(1)}" fill="var(--green)"><title>${monthLabel(x.m)} deposited ${money(x.dp)}</title></rect>`:'')+
+      `<text x="${(x0+w).toFixed(1)}" y="${H-P+15}" text-anchor="middle" class="ax">${MON[+x.m.slice(5)-1]}</text>`}).join('');
+  const barChart=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Deposit and spent by month"><line x1="${P}" x2="${W-P}" y1="${H-P}" y2="${H-P}" stroke="var(--line)"/>${bars}</svg>`;
+  let run=0;const cum=byMonth.map(x=>run+=x.sp);const cmx=Math.max(1,...cum);
+  const cx=i=>P+i*bw+bw/2, cy=v=>H-P-(v/cmx)*(H-2*P);
+  const pts=cum.map((v,i)=>`${cx(i).toFixed(1)},${cy(v).toFixed(1)}`).join(' ');
+  const lineChart=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Cumulative spent by month"><line x1="${P}" x2="${W-P}" y1="${H-P}" y2="${H-P}" stroke="var(--line)"/><polyline points="${pts}" fill="none" stroke="var(--steel)" stroke-width="2.5"/>${cum.map((v,i)=>`<circle cx="${cx(i).toFixed(1)}" cy="${cy(v).toFixed(1)}" r="3.5" fill="var(--steel)"><title>${monthLabel(byMonth[i].m)}: ${money(v)}</title></circle><text x="${cx(i).toFixed(1)}" y="${H-P+15}" text-anchor="middle" class="ax">${MON[+byMonth[i].m.slice(5)-1]}</text>`).join('')}</svg>`;
+  const cnt={paid:0,late:0,notpaid:0};ents.forEach(e=>{const s=stOf(e);if(cnt[s]!==undefined)cnt[s]++});
+  const tot=cnt.paid+cnt.late+cnt.notpaid,CI=2*Math.PI*50;let off=0;
+  const COL={paid:'var(--green)',late:'var(--red)',notpaid:'var(--amber)'};
+  const arcs=Object.keys(cnt).map(k=>{const len=tot?cnt[k]/tot*CI:0;const s=`<circle cx="70" cy="70" r="50" fill="none" stroke="${COL[k]}" stroke-width="20" stroke-dasharray="${len.toFixed(2)} ${(CI-len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 70 70)"/>`;off+=len;return s}).join('');
+  const donut=`<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:8px"><svg width="140" height="140" viewBox="0 0 140 140" role="img" aria-label="Payment status">${tot?arcs:'<circle cx="70" cy="70" r="50" fill="none" stroke="var(--line2)" stroke-width="20"/>'}<text x="70" y="76" text-anchor="middle" style="font-size:20px;font-weight:600;fill:var(--ink)">${tot}</text></svg><div>${Object.keys(cnt).map(k=>`<div class="lg"><i style="background:${COL[k]}"></i>${LBL[k]}<b style="margin-left:auto;padding-left:14px">${cnt[k]}</b></div>`).join('')}</div></div>`;
+  const avgs=accs.map(a=>{const es=ms.map(m=>entryOf(a,m)).filter(e=>spendOf(a,e)>0);return {n:a.name,v:es.length?es.reduce((t,e)=>t+spendOf(a,e),0)/es.length:0}});
+  const amx=Math.max(1,...avgs.map(x=>x.v));
+  const abars=avgs.map(x=>`<div style="display:grid;grid-template-columns:minmax(90px,38%) 1fr auto;gap:10px;align-items:center;font-size:12.5px;margin:7px 0"><span>${esc(x.n)}</span><div style="height:12px;background:var(--line2);border-radius:6px;overflow:hidden"><span style="display:block;height:100%;width:${(x.v/amx*100).toFixed(1)}%;background:var(--steel)"></span></div><span style="font-variant-numeric:tabular-nums;color:var(--muted)">${money(x.v)}</span></div>`).join('');
+  return `<div class="cgrid">
+    <div class="card"><h2>Deposited and spent by month</h2><div class="note" style="margin:0 0 6px"><span class="lg" style="display:inline-flex;margin-right:12px"><i style="background:var(--steel)"></i>Spent</span><span class="lg" style="display:inline-flex"><i style="background:var(--green)"></i>Visa deposit</span></div>${barChart}</div>
+    <div class="card"><h2>Cumulative spent</h2><div class="note" style="margin:0 0 6px">Running total of spending across all months shown.</div>${lineChart}</div>
+    <div class="card"><h2>Payment status</h2><div class="note" style="margin:0">Every month entry for the accounts shown.</div>${donut}</div>
+    <div class="card"><h2>Average per month by account</h2><div class="note" style="margin:0 0 4px">Average spend across months with an entry.</div>${abars}</div>
+  </div>`}
+
+function dashView(){
+  const accs=accList(false).filter(a=>!UI.kind||a.kind===UI.kind);
+  if(!accs.length)return emptyBox(UI.kind?'No '+(UI.kind==='gate'?'+Gate':'Visa')+' accounts yet. Add them in Accounts.':'No accounts yet. Add your +Gate and Visa accounts in Accounts first.');
+  let monthSpent=0,cumSpent=0,late=0,monthDeposit=0;
+  const rows=accs.map(a=>{
+    const ents=monthsWithData().map(m=>entryOf(a,m)).filter(e=>Object.keys(e).length);
+    const cur=entryOf(a,UI.m);
+    const cum=ents.reduce((t,e)=>t+spendOf(a,e),0);
+    const n=ents.filter(e=>spendOf(a,e)>0).length;
+    const avg=n?cum/n:0;
+    const dep=a.kind==='visa'?ents.reduce((t,e)=>t+num(e.deposit),0):null;
+    const spentMonth=spendOf(a,cur);
+    const st=stOf(cur);
+    const lateN=ents.filter(e=>stOf(e)==='late').length;
+    monthSpent+=spentMonth;cumSpent+=cum;late+=lateN;
+    if(a.kind==='visa')monthDeposit+=num(cur.deposit);
+    return `<tr>
+      <td><b>${esc(a.name)}</b><div style="color:var(--muted);font-size:12px">${esc(KIND[a.kind]||a.kind)}${a.project?' · '+esc(a.project):''}</div></td>
+      <td class="n">${a.kind==='visa'?money(cur.deposit):'–'}</td>
+      <td class="n">${money(spentMonth)}</td>
+      <td class="n">${money(cum)}</td>
+      <td class="n">${money(avg)}</td>
+      <td class="n">${a.kind==='visa'?money(dep-cum):'–'}</td>
+      <td>${pill(st)}</td>
+      <td>${cur.requested?'Yes':'<span style="color:var(--muted)">No</span>'}</td>
+      <td class="n">${lateN}</td>
+    </tr>`}).join('');
+  return `
+   <div class="toolbar"><label class="f">Month<input class="i" type="month" id="fm" value="${UI.m}"></label></div>
+   ${alertRows().length?`<div class="defbox" style="background:var(--amber-l);border-left-color:var(--amber);display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span><b>${alertRows().length} alert${alertRows().length===1?'':'s'}.</b> Some requests are late, due soon or not raised.</span><button class="btn sm" type="button" data-goto="needs">Open Needs attention</button></div>`:''}
+   <div class="cards">
+     <div class="card"><span class="k">Accounts</span><span class="v">${accs.length}</span><span class="m">Active</span></div>
+     <div class="card"><span class="k">Deposited</span><span class="v">${money(monthDeposit)}</span><span class="m">${monthLabel(UI.m)}</span></div>
+     <div class="card"><span class="k">Spent</span><span class="v">${money(monthSpent)}</span><span class="m">${monthLabel(UI.m)}</span></div>
+     <div class="card"><span class="k">Cumulative spent</span><span class="v">${money(cumSpent)}</span><span class="m">All months</span></div>
+     <div class="card"><span class="k">Late entries</span><span class="v" style="color:${late?'var(--red)':'inherit'}">${late}</span><span class="m">All months</span></div>
+   </div>
+   ${chartsHtml(accs)}
+   <div class="box"><table class="t"><thead><tr>
+     <th>Account</th><th class="n">Deposit (month)</th><th class="n">Spent / cost (month)</th><th class="n">Cumulative</th><th class="n">Average per month</th><th class="n">Balance (visa)</th><th>Status</th><th>Request raised</th><th class="n">Late months</th>
+   </tr></thead><tbody>${rows}</tbody></table></div>
+   <p class="note">+Gate cost = OTP amount + tax. Visa spent = actual online payments by the hosting provider. Balance = total deposits minus total spent.</p>`;
+}
+
+/* ---------- Monthly entries ---------- */
+function monView(){
+  const accs=accList(false),ed=can('edit'),d=ed?'':'disabled';
+  if(!accs.length)return emptyBox('No accounts yet. Add accounts in Accounts first.');
+  const rows=accs.map(a=>{
+    const e=entryOf(a,UI.m),st=stOf(e),id=a.id;
+    const c1=a.kind==='visa'
+      ?`<label class="f">Deposit<input class="i" data-f="deposit" value="${esc(e.deposit??'')}" inputmode="decimal" ${d}></label>`
+      :`<label class="f">OTP amount<input class="i" data-f="amount" value="${esc(e.amount??'')}" inputmode="decimal" ${d}></label>`;
+    const c2=a.kind==='visa'
+      ?`<label class="f">Actual spent<input class="i" data-f="amount" value="${esc(e.amount??'')}" inputmode="decimal" ${d}></label>`
+      :`<label class="f">Tax<input class="i" data-f="tax" value="${esc(e.tax??'')}" inputmode="decimal" ${d}></label>`;
+    return `<tr data-row="${id}">
+      <td><b>${esc(a.name)}</b><div style="color:var(--muted);font-size:12px">${esc(KIND[a.kind]||a.kind)}</div></td>
+      <td>${c1}</td><td>${c2}</td>
+      <td><label class="f">Request by<input class="i" type="date" data-f="requestBy" value="${esc(e.requestBy||'')}" ${d}></label></td>
+      <td><label class="f" style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" data-f="requested" ${e.requested?'checked':''} ${d}> Raised</label></td>
+      <td><label class="f">Paid on<input class="i" type="date" data-f="paidOn" value="${esc(e.paidOn||'')}" ${d}></label></td>
+      <td>${pill(st)}</td>
+      <td>${ed?`<button class="btn pri sm" data-save="${id}" type="button">Save</button>`:'<span class="faint">View only</span>'}</td>
+    </tr>`}).join('');
+  return `
+   <div class="toolbar"><label class="f">Month<input class="i" type="month" id="fm" value="${UI.m}"></label></div>
+   <div class="box"><table class="t" style="min-width:980px"><thead><tr>
+     <th>Account</th><th>Deposit / OTP amount</th><th>Actual spent / Tax</th><th>Request by</th><th>Request</th><th>Paid on</th><th>Status</th><th></th>
+   </tr></thead><tbody>${rows}</tbody></table></div>
+   <p class="note">Status: Paid on time, Late (paid after the request-by date, or still unpaid past it), Not paid yet, or No entry.</p>`;
+}
+
+/* ---------- Needs attention ---------- */
+function needView(){
+  const rows=alertRows();
+  if(!rows.length)return emptyBox('No alerts. Nothing is late, due within '+ALERT_DAYS+' days, or missing a request.');
+  const trs=rows.map(x=>`<tr>
+    <td><b>${esc(x.a?x.a.name:'(removed account)')}</b><div class="faint">${esc(KIND[x.a?x.a.kind:'']||'')}</div></td>
+    <td>${monthLabel(x.month)}</td>
+    <td class="n">${x.a?money(spendOf(x.a,x)):'–'}</td>
+    <td>${fmtD(x.requestBy)||'–'}</td>
+    <td>${dueText(x.requestBy)||'–'}</td>
+    <td>${x.rs.map(r=>`<span class="pill ${ALR[r][1]}">${ALR[r][0]}</span>`).join(' ')}</td></tr>`).join('');
+  return `<div class="defbox"><b>${rows.length} alert${rows.length===1?'':'s'}.</b> Shown when a request is late, due within ${ALERT_DAYS} days and not paid, or not yet raised.</div>
+    <div class="box"><table class="t"><thead><tr><th>Account</th><th>Month</th><th class="n">Amount</th><th>Request by</th><th>When</th><th>Alert</th></tr></thead><tbody>${trs}</tbody></table></div>`;
+}
+
+/* ---------- Accounts ---------- */
+function accView(){
+  const all=accList(true),ed=can('edit');
+  const rows=all.map(a=>`<tr>
+     <td><b>${esc(a.name)}</b></td><td>${esc(KIND[a.kind]||a.kind)}</td><td>${esc(a.project||'–')}</td>
+     <td>${a.active===false?'<span class="pill x">Off</span>':'<span class="pill g">On</span>'}</td>
+     <td>${ed?`<button class="btn sm" data-toggle="${a.id}" type="button">${a.active===false?'Turn on':'Turn off'}</button>`:''}</td></tr>`).join('');
+  const form=ed?`<div class="panel"><h2 style="margin-bottom:10px">New account</h2>
+     <div class="toolbar" style="margin:0">
+       <label class="f" style="flex:1 1 180px">Name<input class="i" id="an" maxlength="60" placeholder="For example +Gate account 1"></label>
+       <label class="f" style="flex:0 1 200px">Type<select class="i" id="ak"><option value="gate">+Gate (OTP cost)</option><option value="visa">Visa deposit account</option></select></label>
+       <label class="f" style="flex:1 1 160px">Project (optional)<input class="i" id="ap" maxlength="40"></label>
+       <button class="btn pri" id="aadd" type="button">Add account</button>
+     </div><div class="err" id="aerr"></div></div>`:'<p class="note">View only. Editors can add or change accounts.</p>';
+  return `${form}<div class="box"><table class="t"><thead><tr><th>Name</th><th>Type</th><th>Project</th><th>Status</th><th></th></tr></thead>
+   <tbody>${rows||'<tr><td colspan="5" class="empty">No accounts yet.</td></tr>'}</tbody></table></div>`;
+}
+
+/* ---------- Users ---------- */
+function usersView(){
+  if(!can('admin'))return '<div class="empty">Only the Master Admin can manage users.</div>';
+  const rows=Object.entries(D.users).map(([id,u])=>({...u,id})).sort((a,b)=>a.id.localeCompare(b.id)).map(r=>`<tr class="row" tabindex="0" data-u="${esc(r.id)}">
+    <td class="mono">${esc(r.u||r.id)}</td><td>${esc(r.name)}</td><td>${esc(rl(r.role))}</td>
+    <td>${r.active===false?'<span class="pill x">Disabled</span>':'<span class="pill g">Active</span>'}</td>
+    <td>${r.lastLogin?esc(fmtDT(r.lastLogin)):'<span class="faint">Never</span>'}</td></tr>`).join('');
+  return `<div class="toolbar"><span class="sp"></span><button class="btn pri" id="btnAddU" type="button">+ Add user</button></div>
+   <div class="box"><table class="t" style="min-width:600px"><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Status</th><th>Last sign-in</th></tr></thead><tbody>${rows}</tbody></table></div>
+   <p class="note">Click a user to edit. New users must choose their own password at first sign-in.</p>`;
+}
+
+function userModal(id){
+  const isNew=!id;const r=isNew?{u:'',name:'',role:'Editor',active:true}:D.users[id];
+  if(!r)return;
+  const roles=['Admin',...Object.keys(posDefs())];
+  openModal(isNew?'Add user':'Edit user',`
+   <label class="f">Username<input class="i" id="u_u" value="${esc(r.u)}" ${isNew?'':'disabled'} autocomplete="off"></label>
+   <label class="f">Full name<input class="i" id="u_n" value="${esc(r.name)}"></label>
+   <label class="f">Role<select class="i" id="u_r">${roles.map(x=>`<option value="${esc(x)}" ${x===r.role?'selected':''}>${esc(rl(x))}</option>`).join('')}</select></label>
+   <label class="f">Status<select class="i" id="u_a"><option value="1" ${r.active!==false?'selected':''}>Active</option><option value="0" ${r.active===false?'selected':''}>Disabled</option></select></label>
+   <label class="f full">${isNew?'Temporary password (at least 6 characters)':'Reset password (leave blank to keep)'}<input class="i" id="u_p" type="text" autocomplete="off"></label>`,
+   `<span class="err" id="mErr" style="flex:1"></span><button class="btn" type="button" id="mCancel">Cancel</button><button class="btn pri" type="button" id="mSave" data-u="${esc(id||'')}" data-new="${isNew?1:0}">Save</button>`);
+}
+async function saveUser(id,isNew){
+  const err=$('#mErr');
+  const u=(isNew?$('#u_u').value:id).trim().toLowerCase(),name=$('#u_n').value.trim(),role=$('#u_r').value,active=$('#u_a').value==='1',pw=$('#u_p').value;
+  const r=isNew?{}:D.users[id];
+  if(!/^[a-z0-9._-]{3,30}$/.test(u)){err.textContent='Username: 3 to 30 letters, numbers, dot, dash or underscore.';return}
+  if(!name){err.textContent='Enter a name.';return}
+  if(isNew&&D.users[u]){err.textContent='That username exists.';return}
+  if(isNew&&pw.length<6){err.textContent='Temporary password needs 6 or more characters.';return}
+  if(!isNew&&pw&&pw.length<6){err.textContent='Reset password needs 6 or more characters.';return}
+  if(!isNew&&u===ME.u&&!active){err.textContent='You cannot disable yourself.';return}
+  if(!isNew&&r.role==='Admin'&&(role!=='Admin'||!active)){const others=Object.entries(D.users).filter(([k,x])=>x.role==='Admin'&&x.active!==false&&k!==u).length;if(others===0){err.textContent='Keep at least one active Master Admin.';return}}
+  const doc={...(isNew?{lastLogin:null,mustChange:true}:{lastLogin:r.lastLogin||null,mustChange:!!r.mustChange,salt:r.salt,hash:r.hash}),u,name,role,active};
+  if(pw){doc.salt=newSalt();doc.hash=await hashPw(doc.salt,pw);doc.mustChange=true}
+  try{await db.doc('users/'+u).set(doc);closeModal();toast('Saved.')}catch(e){err.textContent='Could not save. Try again.'}
+}
+
+/* ---------- Access control ---------- */
+function accessView(){
+  if(!can('admin'))return '<div class="empty">Only the Master Admin can change access.</div>';
+  const defs=posDefs(),names=Object.keys(defs),cnt=n=>Object.values(D.users).filter(u=>u.role===n).length;
+  const cell=(n,t,k,on)=>`<td style="text-align:center"><input type="checkbox" class="ac" data-n="${esc(n)}" data-t="${t}" data-k="${k}" ${on?'checked':''} aria-label="${esc(n)}"></td>`;
+  const row=(label,t,k)=>`<tr><td>${esc(label)}</td><td style="text-align:center"><input type="checkbox" checked disabled aria-label="Master Admin"></td>${names.map(n=>cell(n,t,k,(t==='m'?defs[n].menus:defs[n].acts).includes(k))).join('')}</tr>`;
+  const head=names.map(n=>`<th style="text-align:center">${esc(n)}<div class="faint">${cnt(n)} user${cnt(n)===1?'':'s'}</div>${['Editor','Viewer'].includes(n)?'':`<a href="#" data-delpos="${esc(n)}" style="font-size:12px">Remove</a>`}</th>`).join('');
+  return `<div class="defbox"><b>How it works.</b> Each column is a position. Tick what that position can open and do, then press <b>Save access</b>. Give a position to a person in <b>Users</b>. The Master Admin always has everything.</div>
+  <div class="box"><table class="t" style="min-width:${360+120*names.length}px"><thead><tr><th>Permission</th><th style="text-align:center">Master Admin<div class="faint">${cnt('Admin')} user${cnt('Admin')===1?'':'s'}</div></th>${head}</tr></thead>
+  <tbody><tr class="grp"><td colspan="${names.length+2}">Menus they can open</td></tr>${MENUS.map(m=>row(m[1],'m',m[0])).join('')}
+  <tr class="grp"><td colspan="${names.length+2}">What they can do</td></tr>${ACTS.map(a=>row(a[1],'a',a[0])).join('')}</tbody></table></div>
+  <div class="toolbar" style="margin-top:12px"><label class="f" style="flex:0 1 260px">New position<input class="i" id="posNew" maxlength="30" placeholder="For example Finance"></label><button class="btn" type="button" id="posAdd">+ Add position</button><span class="sp"></span><span class="err" id="acErr"></span><button class="btn pri" type="button" id="acSave">Save access</button></div>`;
+}
+function readAccess(){
+  const o={};Object.keys(posDefs()).forEach(n=>o[n]={menus:[],acts:[]});
+  document.querySelectorAll('input.ac').forEach(c=>{const q=o[c.dataset.n];if(q&&c.checked)(c.dataset.t==='m'?q.menus:q.acts).push(c.dataset.k)});
+  return o;
+}
+async function putPositions(list,msg){
+  const err=$('#acErr');
+  try{await db.doc('settings/positions').set({list,updatedAt:new Date().toISOString(),updatedBy:ME.name});toast(msg);return true}catch(e){if(err)err.textContent='Could not save.';return false}
+}
+
+/* ---------- Force password ---------- */
+function forceView(){
+  return `<div class="panel" style="max-width:420px"><h2 style="margin-bottom:12px">Choose a new password</h2>
+   <div style="display:flex;flex-direction:column;gap:12px">
+     <label class="f">New password (at least 6 characters)<input class="i" id="pw1" type="password" autocomplete="new-password"></label>
+     <label class="f">Repeat new password<input class="i" id="pw2" type="password" autocomplete="new-password"></label>
+     <div class="err" id="pwErr" role="alert"></div>
+     <div><button class="btn pri" type="button" id="pwSave">Save password</button></div>
+   </div></div>`;
+}
+
+/* ---------- Modal ---------- */
+function openModal(title,body,footer){
+  $('#modalRoot').innerHTML=`<div class="ov" id="ov"><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><header><h2>${esc(title)}</h2><button class="btn sm" type="button" id="mx" aria-label="Close">×</button></header><div class="mb">${body}</div><footer>${footer}</footer></div></div>`;
+}
+function closeModal(){$('#modalRoot').innerHTML=''}
+
+/* ---------- Auth ---------- */
+function enterApp(){
+  $('#login').classList.add('hidden');$('#app').classList.remove('hidden');
+  $('#who').innerHTML=`<b>${esc(ME.name)}</b><br><small>${esc(rl(ME.role))} · ${esc(ME.u)}</small><div><button class="sbtn" id="out" type="button">Sign out</button></div>`;
+  draw();
+}
+function logout(){ME=null;UI.force=false;store.del('mm212_user');$('#app').classList.add('hidden');$('#login').classList.remove('hidden');$('#lp').value='';closeModal()}
+function checkSession(){
+  if(ME){const rec=D.users[ME.u];if(!rec||rec.active===false){logout();return}ME.role=rec.role;ME.name=rec.name;return}
+  const u=store.get('mm212_user');
+  if(u&&D.users[u]&&D.users[u].active!==false&&!D.users[u].mustChange){ME={u,name:D.users[u].name,role:D.users[u].role};enterApp()}
+  else if(!ME&&$('#app').classList.contains('hidden')){$('#login').classList.remove('hidden')}
+}
+window.__mfsModuleSignIn=function(user){const u=String(user&&user.u||'').trim().toLowerCase();if(!u)return;const current=D.users[u]||{};D.users[u]={...current,u,name:user.name||current.name||u,role:user.role||current.role||'Viewer',active:true,mustChange:false};ME={u,name:D.users[u].name,role:D.users[u].role};store.set('mm212_user',u);enterApp()};
+
+/* ---------- Shell ---------- */
+const GROUPS=[['Monitor',[['dash','Dashboard'],['gate','+Gate'],['visa','Visa'],['mon','Monthly entries'],['needs','Needs attention']]],['Setup',[['acc','Accounts']]],['Tools',[['users','Users'],['access','Access control']]]];
+const TITLES={dash:['Dashboard','Deposits, spend, cumulative and average for each account'],mon:['Monthly entries','Enter each month’s deposit, OTP cost and payment status'],needs:['Needs attention','Late, due-soon and not-raised requests'],acc:['Accounts','Add or turn off +Gate and Visa accounts'],users:['Users','Who can sign in and what role they have'],access:['Access control','Which menus and actions each position can use']};
+function navHtml(){
+  return GROUPS.map(([g,items])=>{
+    const vis=items.filter(([k])=>canTab(k));if(!vis.length)return '';
+    return `<div class="ng">${g}</div>`+vis.map(([k,l])=>{
+      const isKind=k==='gate'||k==='visa';
+      const cur=isKind?(UI.tab==='dash'&&UI.kind===k):(k==='dash'?(UI.tab==='dash'&&!UI.kind):UI.tab===k);
+      const badge=k==='needs'?`<span class="ct">${alertRows().length}</span>`:'';
+      return `<button type="button" ${isKind?`data-kind="${k}"`:`data-tab="${k}"`} aria-current="${cur?'page':'false'}"><span>${l}</span>${badge}</button>`;
+    }).join('');
+  }).join('');
+}
+function draw(){
+  if(!ME){return}
+  if(UI.force){$('#nav').innerHTML='';$('#title').textContent='Choose a new password';$('#sub').textContent='Required at first sign-in';$('#today').textContent='';$('#view').innerHTML=forceView();return}
+  if(!canTab(UI.tab)&&!((UI.tab==='gate'||UI.tab==='visa')&&canTab(UI.tab))){UI.tab='dash';UI.kind=''}
+  $('#nav').innerHTML=navHtml();
+  const KT={gate:'+Gate',visa:'Visa'};
+  const kindOn=UI.tab==='dash'&&UI.kind;
+  $('#title').textContent=kindOn?KT[UI.kind]+' accounts':TITLES[UI.tab][0];
+  $('#sub').textContent=kindOn?'Dashboard showing only '+KT[UI.kind]+' accounts':TITLES[UI.tab][1];
+  $('#today').textContent=(UI.msg?UI.msg+' · ':'')+monthLabel(curM())+' · '+todayStr();
+  const V={dash:dashView,mon:monView,needs:needView,acc:accView,users:usersView,access:accessView};
+  $('#view').innerHTML=can('m:dash')||UI.tab!=='dash'?(V[UI.tab]?V[UI.tab]():'<div class="empty">You do not have access to this page.</div>'):'<div class="empty">You do not have access to this page.</div>';
+}
+
+/* ---------- Events ---------- */
+$('#nav').addEventListener('click',e=>{
+  const k=e.target.closest('[data-kind]');
+  if(k){UI.tab='dash';UI.kind=k.dataset.kind;draw();return}
+  const b=e.target.closest('[data-tab]');if(!b)return;
+  UI.tab=b.dataset.tab;UI.kind='';draw();
+});
+document.addEventListener('change',e=>{if(e.target.id==='fm'&&e.target.value){UI.m=e.target.value;draw()}});
+document.addEventListener('submit',async e=>{
+  if(e.target.id!=='loginForm')return;
+  e.preventDefault();
+  const u=$('#lu').value.trim().toLowerCase(),p=$('#lp').value,err=$('#loginErr');err.textContent='';
+  const rec=D.users[u];
+  if(!rec||rec.active===false||await hashPw(rec.salt,p)!==rec.hash){err.textContent='Wrong username or password.';return}
+  ME={u,name:rec.name,role:rec.role};store.set('mm212_user',u);
+  try{await db.doc('users/'+u).update({lastLogin:new Date().toISOString()})}catch(x){}
+  if(rec.mustChange)UI.force=true;
+  enterApp();
+});
+document.addEventListener('click',async e=>{
+  const t=e.target;
+  if(t.closest('#out')){logout();return}
+  const gt=t.closest('[data-goto]');
+  if(gt){UI.tab=gt.dataset.goto;UI.kind='';draw();return}
+  if(t.id==='pwSave'){
+    const err=$('#pwErr');const p1=$('#pw1').value,p2=$('#pw2').value;
+    if(p1.length<6){err.textContent='Use at least 6 characters.';return}
+    if(p1!==p2){err.textContent='The two passwords do not match.';return}
+    if(p1==='admin123'){err.textContent='Choose a different password.';return}
+    const salt=newSalt();
+    try{await db.doc('users/'+ME.u).update({salt,hash:await hashPw(salt,p1),mustChange:false});UI.force=false;toast('Password changed.')}catch(x){err.textContent='Could not save. Try again.'}
+    return;
+  }
+  if(t.id==='mx'||t.id==='mCancel'){closeModal();return}
+  if(t.id==='ov'){closeModal();return}
+  const row=t.closest('tr.row[data-u]');
+  if(row&&!t.closest('button')){if(can('admin'))userModal(row.dataset.u);return}
+  if(t.id==='btnAddU'){if(can('admin'))userModal(null);return}
+  if(t.id==='mSave'){if(can('admin'))saveUser(t.dataset.u,t.dataset.new==='1');return}
+  const s=t.closest('[data-save]');
+  if(s){
+    if(!can('edit'))return;
+    const id=s.dataset.save,r=document.querySelector(`[data-row="${id}"]`),a=D.accounts[id];if(!r||!a)return;
+    const v={};r.querySelectorAll('[data-f]').forEach(i=>{v[i.dataset.f]=i.type==='checkbox'?i.checked:i.value});
+    const vals={...entryOf({id,...a},UI.m),...v,accountId:id,month:UI.m,kind:a.kind,updatedAt:new Date().toISOString(),updatedBy:ME.name};
+    if(!v.paidOn)delete vals.paidOn;
+    try{await db.doc('entries/'+UI.m+'_'+id).set(vals);toast('Saved.')}catch(x){toast('Could not save. Try again.')}
+    return;
+  }
+  const tg=t.closest('[data-toggle]');
+  if(tg){if(!can('edit'))return;const id=tg.dataset.toggle,a=D.accounts[id];try{await db.doc('accounts/'+id).update({active:a.active===false})}catch(x){}return}
+  if(t.id==='aadd'){
+    if(!can('edit'))return;
+    const name=$('#an').value.trim(),kind=$('#ak').value,project=$('#ap').value.trim(),er=$('#aerr');er.textContent='';
+    if(!name){er.textContent='Type a name for the account.';return}
+    const id='a'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+    try{await db.doc('accounts/'+id).set({name,kind,project,active:true,createdAt:new Date().toISOString()});$('#an').value='';$('#ap').value='';toast('Account added.')}catch(x){er.textContent='Could not save. Try again.'}
+    return;
+  }
+  if(t.id==='acSave'){
+    if(!can('admin'))return;
+    const list=readAccess();
+    await putPositions(list,'Access saved.');
+    return;
+  }
+  if(t.id==='posAdd'){
+    if(!can('admin'))return;
+    const err=$('#acErr');err.textContent='';const v=$('#posNew').value.trim();
+    if(!v){err.textContent='Type the position name.';return}
+    const names=Object.keys(posDefs());
+    if(names.some(n=>n.toLowerCase()===v.toLowerCase())||/^(master admin|admin)$/i.test(v)){err.textContent='That position already exists.';return}
+    const list=readAccess();list[v]={menus:[],acts:[]};
+    if(await putPositions(list,'Position added: '+v))$('#posNew').value='';
+    return;
+  }
+  const dp=t.closest('[data-delpos]');
+  if(dp){
+    e.preventDefault();if(!can('admin'))return;
+    const n=dp.dataset.delpos,err=$('#acErr');err.textContent='';
+    if(Object.values(D.users).some(u=>u.role===n)){err.textContent=n+' still has users. Move them to another position first.';return}
+    const list=readAccess();delete list[n];
+    await putPositions(list,'Position removed: '+n);
+    return;
+  }
+});
+draw();
+})();
+</script>
+
+</body></html>

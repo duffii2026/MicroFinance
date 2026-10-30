@@ -1,0 +1,1315 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>MM2-06 · CP Account In Service Database</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600&display=swap">
+<style>
+
+/* Layout: dark navy sidebar + paper work area, same family as CPA Control. Grouped ledgers read like the Excel sheets (band, rows, sub-total, grand total). */
+:root{
+  --paper:#F2F4F6;--surface:#FFFFFF;--ink:#17212C;--muted:#5E6B78;--faint:#8A96A3;--line:#DCE1E6;--line2:#EBEEF1;
+  --steel:#23507A;--steel-d:#1A3D5E;--steel-l:#E6EEF5;--on-steel:#FFFFFF;
+  --side:#132230;--side-2:#1C3043;--side-ink:#C8D4DF;--side-line:#2B435A;
+  --red:#B42318;--red-l:#FDECEA;--amber:#B54708;--amber-l:#FEF3E2;--green:#067647;--green-l:#E7F6EC;
+  --band:#EEF2F5;--grand:#DDE8F2;--shadow:0 8px 30px rgba(15,30,45,.22);
+  --head:"Barlow Semi Condensed","Bahnschrift","DIN Alternate","Roboto Condensed","Arial Narrow",sans-serif;
+  --body:"Segoe UI","Inter",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular",Consolas,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#0E151C;--surface:#162029;--ink:#E6ECF1;--muted:#9AA8B5;--faint:#6F7E8C;--line:#2A3947;--line2:#223039;
+    --steel:#6FA3D6;--steel-d:#8DB8E3;--steel-l:#1B3248;--on-steel:#0E151C;
+    --side:#0A1118;--side-2:#14212C;--side-ink:#AEBBC8;--side-line:#243543;
+    --red:#F07A6C;--red-l:#3A1A16;--amber:#E3A948;--amber-l:#33270F;--green:#5CC98A;--green-l:#15301F;
+    --band:#1B2630;--grand:#1F3A52;--shadow:0 8px 30px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#0E151C;--surface:#162029;--ink:#E6ECF1;--muted:#9AA8B5;--faint:#6F7E8C;--line:#2A3947;--line2:#223039;
+  --steel:#6FA3D6;--steel-d:#8DB8E3;--steel-l:#1B3248;--on-steel:#0E151C;
+  --side:#0A1118;--side-2:#14212C;--side-ink:#AEBBC8;--side-line:#243543;
+  --red:#F07A6C;--red-l:#3A1A16;--amber:#E3A948;--amber-l:#33270F;--green:#5CC98A;--green-l:#15301F;
+  --band:#1B2630;--grand:#1F3A52;--shadow:0 8px 30px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--paper);color:var(--ink);font:14px/1.45 var(--body);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--head);font-weight:600;margin:0;letter-spacing:.01em;text-wrap:balance}
+h1{font-size:24px}h2{font-size:18px}h3{font-size:15px}
+:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
+.hidden{display:none!important}
+.mono{font-family:var(--mono);font-size:12.5px}
+.muted{color:var(--muted)}.faint{color:var(--faint)}
+small{font-size:11.5px}
+
+/* controls */
+.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:600;min-width:0}
+.i{width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:8px 10px;font-weight:400;font-size:14px;min-width:0}
+.i:disabled{background:var(--paper);color:var(--muted)}
+textarea.i{min-height:64px;resize:vertical}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:7px 12px;cursor:pointer;font-weight:600;font-size:13px}
+.btn:hover{border-color:var(--steel)}
+.btn.pri{background:var(--steel);border-color:var(--steel);color:var(--on-steel)}
+.btn.pri:hover{background:var(--steel-d);border-color:var(--steel-d)}
+.btn.danger{color:var(--red);border-color:var(--red)}
+.btn.sm{padding:4px 9px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:default}
+.err{color:var(--red);font-size:13px;min-height:18px}
+.hint{font-size:12px;color:var(--muted)}
+
+/* app shell */
+#app{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh}
+aside{background:var(--side);color:var(--side-ink);display:flex;flex-direction:column;position:sticky;top:env(safe-area-inset-top,0px);align-self:start;height:100vh;max-height:100vh;overflow:auto}
+.brand{padding:18px 18px 14px;border-bottom:1px solid var(--side-line)}
+.brand b{display:block;font:600 19px var(--head);color:#fff}
+.brand small{color:#8397AA}
+nav{padding:10px 8px;display:flex;flex-direction:column;gap:2px;flex:1}
+.ng{font:600 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:#6F8499;padding:12px 10px 4px}
+nav button{all:unset;box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;color:var(--side-ink);font-size:13.5px}
+nav a.navlink{box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;color:var(--side-ink);font-size:13.5px;text-decoration:none}
+nav a.navlink:hover{background:var(--side-2)}
+nav a.navlink:focus-visible{outline:2px solid #8DB8E3}
+nav button:hover{background:var(--side-2)}
+nav button:focus-visible{outline:2px solid #8DB8E3}
+nav button[aria-current="page"]{background:var(--steel);color:var(--on-steel);font-weight:600}
+nav .ct{font:11px var(--mono);opacity:.7}
+.side-foot{padding:14px 18px;border-top:1px solid var(--side-line);font-size:12.5px}
+.side-foot .btns{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.side-foot .btn{background:transparent;color:var(--side-ink);border-color:var(--side-line)}
+main{padding:22px clamp(16px,3vw,36px) 48px;min-width:0}
+.topbar{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;margin-bottom:16px}
+.topbar .sub{color:var(--muted);font-size:13px}
+.sync{margin-left:auto;font:12px var(--mono);color:var(--muted)}
+@media (max-width:860px){
+  #app{grid-template-columns:1fr}
+  aside{position:static;max-height:none;height:auto}
+  nav{flex-direction:row;overflow-x:auto;padding:8px;flex:none}
+  .ng{display:none}
+  nav button{white-space:nowrap}
+  .side-foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 16px}
+  .side-foot .btns{margin-top:0}
+}
+
+/* toolbar + summary */
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:12px}
+.toolbar .f{min-width:120px}
+.toolbar .grow{flex:1 1 220px}
+.toolbar .sp{flex:1}
+.sumstrip{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.chip{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 14px;min-width:120px}
+.chip span{display:block;font:600 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.chip b{font:600 22px var(--head);font-variant-numeric:tabular-nums}
+.chip.big b{font-size:28px;color:var(--steel)}
+
+/* tables */
+.tbox{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:auto;max-height:calc(100vh - 230px)}
+.pager{display:flex;align-items:center;gap:8px;justify-content:flex-end;margin:8px 0;font-size:13px;color:var(--muted)}
+.pager .btn[disabled]{opacity:.4;cursor:default}
+table.t{border-collapse:collapse;width:100%;min-width:760px;font-size:13px}
+table.t th{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);background:var(--band);white-space:nowrap;position:sticky;top:0;z-index:3;box-shadow:0 1px 0 var(--line)}
+table.t td{padding:8px 10px;border-bottom:1px solid var(--line2);vertical-align:top}
+table.t td.n,table.t th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.n small{display:block;color:var(--muted);font-size:10.5px}
+td.neg{color:var(--red)}
+tr.row{cursor:pointer}
+tr.row:hover td{background:var(--steel-l)}
+tr.row:focus-visible{outline:2px solid var(--steel);outline-offset:-2px}
+tr.band td{background:var(--band);font:600 13px var(--head);letter-spacing:.04em;text-transform:uppercase;color:var(--steel);padding:7px 10px;border-bottom:1px solid var(--line)}
+tr.band td span{font:11px var(--mono);color:var(--muted);text-transform:none;letter-spacing:0;margin-left:8px}
+tr.sub td{background:var(--steel-l);font-weight:600;border-bottom:1px solid var(--line)}
+tr.grand td{background:var(--grand);font:600 14px var(--head);border-bottom:0}
+td.rem{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+td.wrap{max-width:300px}
+.pill{display:inline-flex;align-items:center;gap:5px;font:600 11.5px var(--body);padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.g{color:var(--green);background:var(--green-l)}
+.pill.a{color:var(--amber);background:var(--amber-l)}
+.pill.x{color:var(--muted);background:var(--band)}
+.tag{font:600 11px var(--mono);padding:2px 7px;border-radius:4px;background:var(--band);color:var(--muted);white-space:nowrap}
+.tag.in{background:var(--green-l);color:var(--green)}.tag.out{background:var(--amber-l);color:var(--amber)}
+.bank{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.bank i{width:9px;height:9px;border-radius:2px;display:inline-block}
+.stale{color:var(--amber)}
+.empty{padding:36px 16px;text-align:center;color:var(--muted)}
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;padding:5px 10px;border:1px solid var(--line,#ccc);border-radius:8px;cursor:pointer}
+.chk input{margin:0}
+.defbox{background:var(--steel-l);border-left:3px solid var(--steel);border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.5}
+.defbox b{font-weight:700}
+.note{font-size:12.5px;color:var(--muted);margin-top:10px}
+.warn{background:var(--amber-l);color:var(--amber);border-radius:6px;padding:8px 12px;font-size:13px;margin-top:10px}
+
+/* overview */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:6px;cursor:pointer;text-align:left}
+.card:hover{border-color:var(--steel)}
+.card .k{font:600 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.card .v{font:600 28px var(--head);font-variant-numeric:tabular-nums}
+.card .m{font-size:12.5px;color:var(--muted)}
+.ok{color:var(--green)}.bad{color:var(--red)}
+.sec{display:flex;flex-direction:column;gap:10px;margin-bottom:22px}
+.mini{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(10,18,26,.55);display:flex;align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 16px 16px;overflow:auto;z-index:50}
+.modal{background:var(--surface);border-radius:10px;width:100%;max-width:760px;box-shadow:var(--shadow);margin:auto 0}
+.modal header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.modal .x{all:unset;cursor:pointer;font-size:22px;line-height:1;padding:2px 8px;color:var(--muted)}
+.modal .x:focus-visible{outline:2px solid var(--steel)}
+.mb{padding:16px 18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.mb .full{grid-column:1/-1}
+.modal footer{display:flex;flex-wrap:wrap;gap:8px;padding:12px 18px;border-top:1px solid var(--line);align-items:center}
+.modal footer .sp{flex:1}
+@media (max-width:560px){.mb{grid-template-columns:1fr}}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pc{display:inline-flex;align-items:center;gap:4px;background:var(--steel-l);color:var(--steel);border-radius:999px;padding:3px 4px 3px 10px;font-size:12.5px;font-weight:600}
+.pc button{all:unset;cursor:pointer;padding:0 6px;font-size:15px;line-height:1}
+.addrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.addrow .i{flex:1 1 140px;width:auto}
+.hist{grid-column:1/-1;border:1px solid var(--line);border-radius:6px;overflow:auto}
+.hist table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:380px}
+.hist th,.hist td{padding:5px 8px;text-align:left;border-bottom:1px solid var(--line2)}
+.hist th{font:600 10.5px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--band)}
+.hist td.n,.hist th.n{text-align:right;font-variant-numeric:tabular-nums}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:8px;font-size:13px;z-index:80;max-width:calc(100vw - 32px)}
+.ck{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-bottom:1px solid var(--line2)}
+.ck:last-child{border-bottom:0}
+.ck input{margin-top:3px;width:17px;height:17px;flex:none}
+.ck.done .tx{color:var(--muted);text-decoration:line-through}
+.ck .ar{font:600 11px var(--mono);color:var(--steel);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* login */
+#login{min-height:100vh;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
+.login-art{background:var(--side);color:#fff;padding:48px clamp(24px,5vw,64px);display:flex;flex-direction:column;justify-content:space-between;gap:32px}
+.login-art h1{font-size:clamp(28px,4vw,40px);color:#fff;margin-top:14px;line-height:1.1}
+.login-art p{color:#A9B9C9;max-width:44ch;margin:14px 0 0}
+.login-art .eb{color:#8397AA;font-size:13px}
+.codes{display:flex;flex-wrap:wrap;gap:8px}
+.codes span{font:600 12px var(--mono);letter-spacing:.06em;border:1px solid #2B435A;color:#C8D4DF;padding:4px 9px;border-radius:4px}
+.login-form{display:flex;align-items:center;justify-content:center;padding:32px 16px}
+.login-form form{width:100%;max-width:340px;display:flex;flex-direction:column;gap:14px}
+@media (max-width:760px){#login{grid-template-columns:1fr}.login-art{padding:28px 16px;gap:18px}}
+
+
+/* Account in Service additions */
+.sumstrip .chip.bad b{color:var(--red)}
+.pill.r{color:var(--red);background:var(--red-l)}
+.days{font:600 18px var(--head);color:var(--red);font-variant-numeric:tabular-nums}
+.empty b{display:block;color:var(--ink);font:600 20px var(--head);margin-bottom:6px}
+.empty .acts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.grp{margin-bottom:18px}
+.grp>header{display:flex;gap:10px;align-items:baseline;margin-bottom:6px}
+.grp>header .c{font:600 11.5px var(--mono);color:var(--red)}
+.cell{display:inline-block;min-width:78px;text-align:center;border-radius:4px;padding:3px 6px;font:600 12px var(--mono);cursor:pointer;border:0}
+.cell.ok{background:var(--green-l);color:var(--green)}.cell.late{background:var(--red-l);color:var(--red)}
+.cell.warn{background:var(--amber-l);color:var(--amber)}.cell.none{background:var(--band);color:var(--muted)}
+.modal .body{padding:16px 18px;display:grid;gap:16px}
+.modal h2{font-size:18px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kv div>span:first-child{display:block;font:600 10.5px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.tl{display:grid;gap:12px}
+.rs{border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--paper)}
+.rs .meta{font:600 11.5px var(--mono);color:var(--muted);margin-bottom:6px}
+.rs p{margin:0;white-space:pre-wrap}
+.shots{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.shots img{height:84px;max-width:140px;object-fit:cover;border-radius:4px;border:1px solid var(--line);cursor:zoom-in;background:var(--band)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.lock{font:600 12px var(--mono);color:var(--muted);border:1px dashed var(--line);border-radius:5px;padding:8px 10px}
+.light{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:90;padding:16px}
+.light img{max-width:100%;max-height:100%;border-radius:4px}
+td.act{white-space:nowrap}
+
+/* Dashboard */
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:16px;align-items:start}
+.dp{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px 18px;min-width:0}
+.dsub{color:var(--muted);font-size:12.5px;margin:2px 0 12px}
+.dsvg{display:block;margin:4px auto 12px}
+.dleg{display:grid;gap:4px}
+.dl{display:grid;grid-template-columns:12px minmax(0,1fr) auto 44px;gap:8px;align-items:center;font-size:13px;padding:3px 6px;border-radius:5px}
+.dl i{width:10px;height:10px;border-radius:2px}
+.dl span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dl b{font-variant-numeric:tabular-nums}.dl em{font-style:normal;color:var(--faint);text-align:right;font-size:12px}
+.clk{cursor:pointer}.dl.clk:hover,.db.clk:hover{background:var(--steel-l)}
+.dbars{display:grid;gap:6px}
+.db{display:grid;grid-template-columns:minmax(70px,130px) minmax(0,1fr) auto;gap:10px;align-items:center;font-size:13px;padding:4px 6px;border-radius:5px}
+.dtr{height:12px;background:var(--line2);border-radius:3px;overflow:hidden}.dtr div{height:100%;border-radius:3px}
+.db b{font-variant-numeric:tabular-nums;font-size:12.5px;min-width:56px;text-align:right}
+.card.alert{border-color:var(--red)}
+/* tidy dashboard */
+.cards{grid-template-columns:repeat(auto-fit,minmax(138px,1fr))}
+.card{min-height:108px;justify-content:space-between}.card .k{letter-spacing:.06em}.card .m{line-height:1.3}
+.dgrid{grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch}
+.dgrid>.dp{display:flex;flex-direction:column}.dgrid>.dp .dsub{min-height:34px}
+.dsec{font:600 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:18px 0 8px}
+@media (max-width:1280px){.dgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:760px){.dgrid{grid-template-columns:1fr}}.card.alert .v{color:var(--red)}
+.card:focus-visible,.dl:focus-visible,.db:focus-visible{outline:2px solid var(--steel);outline-offset:1px}
+</style>
+<div id="login">
+  <div class="login-art">
+    <div>
+      <div class="eb">IR Group · PSS Department</div>
+      <h1>MM2-06 · CP Account In Service Database</h1>
+      <p>How old each CPA account is, which project it is assigned to, and which project or company pays its expenses.</p>
+    </div>
+    <div class="codes"><span>CPA</span><span>AGE</span><span>MOVEMENTS</span><span>STATS</span></div>
+  </div>
+  <div class="login-form">
+    <form id="loginForm" autocomplete="on">
+      <h2>Sign in</h2>
+      <label class="f" for="lu">Username<input class="i" id="lu" autocomplete="username" required></label>
+      <label class="f" for="lp">Password<input class="i" id="lp" type="password" autocomplete="current-password" required></label>
+      <div class="err" id="loginErr" role="alert"></div>
+      <button class="btn pri" id="loginBtn" type="submit" style="justify-content:center;padding:10px" disabled>Connecting…</button>
+      <p class="hint" style="margin:0">Ask your Admin for an account. Sign-in locks the page; it is not bank-grade security.</p>
+      <p class="hint" style="margin:0">Version 0.1 · 18 Oct 2026</p>
+    </form>
+  </div>
+</div>
+<div id="app" class="hidden">
+  <aside>
+    <div class="brand"><b>MM2-06 · CP Account In Service Database</b><small>IR Group · PSS Department</small></div>
+    <nav id="nav" aria-label="CPA In Service"></nav>
+    <div class="side-foot"><div id="who"></div><div class="btns"><button class="btn sm" id="btnPw" type="button">Password</button><button class="btn sm" id="btnOut" type="button">Sign out</button></div></div>
+  </aside>
+  <main><div class="topbar"><h1 id="pageTitle"></h1><span class="sub" id="pageSub"></span><span class="sync" id="todayTxt"></span></div><section id="view"><div class="empty">Loading…</div></section></main>
+</div>
+<div id="modalRoot"></div><div id="toastRoot"></div>
+<script type="application/json" id="offlineSeed">{"source": {"snap": {"accounts": {"ac_cpa001": {"accNo": "9C01-919166", "bank": "Wing", "code": "CPA-001", "grp": "Wing", "holder": "TW-OP", "name": "SOK DARA", "project": "Taiwan", "status": "Stop Use"}, "ac_cpa002": {"accNo": "9C02-299126", "bank": "ABA", "code": "CPA-002", "grp": "ABA", "holder": "TW-OP", "name": "CHAN SREYNEANG", "project": "Taiwan-B777", "status": "Stop Use"}, "ac_cpa003": {"accNo": "9C03-743782", "bank": "ACLEDA", "code": "CPA-003", "grp": "ACLEDA", "holder": "PSS-KH", "name": "KIM VANNAK", "project": "Combined", "status": "Active"}, "ac_cpa004": {"accNo": "9C04-195074", "bank": "PiPAY", "code": "CPA-004", "grp": "PiPAY", "holder": "PSS-KH2", "name": "LY SOPHEA", "project": "Taiwan", "status": "Active"}, "ac_cpa005": {"accNo": "9C05-143914", "bank": "Wing", "code": "CPA-005", "grp": "Wing", "holder": "TW-OP", "name": "HENG RITHY", "project": "Taiwan-B777", "status": "Sign Out"}, "ac_cpa006": {"accNo": "9C06-574999", "bank": "ABA", "code": "CPA-006", "grp": "ABA", "holder": "TW-OP", "name": "PICH MALY", "project": "Combined", "status": "Never Used"}, "ac_cpa007": {"accNo": "9C07-753397", "bank": "ACLEDA", "code": "CPA-007", "grp": "ACLEDA", "holder": "PSS-KH", "name": "MAO VEASNA", "project": "Taiwan", "status": "Unable to Log In"}, "ac_cpa008": {"accNo": "9C08-137384", "bank": "Wing", "code": "CPA-008", "grp": "Wing", "holder": "PSS-KH2", "name": "TEP CHANTHOU", "project": "Taiwan-B777", "status": "Active"}, "ac_cpa009": {"accNo": "9C09-915905", "bank": "Wing", "code": "CPA-009", "grp": "Wing", "holder": "TW-OP", "name": "SREY POV", "project": "Combined", "status": "Active"}, "ac_cpa010": {"accNo": "9C10-304809", "bank": "ABA", "code": "CPA-010", "grp": "ABA", "holder": "TW-OP", "name": "NGUON SAMNANG", "project": "Taiwan", "status": "Stop Use"}, "ac_cpa011": {"accNo": "9C11-104816", "bank": "ACLEDA", "code": "CPA-011", "grp": "ACLEDA", "holder": "PSS-KH", "name": "YIM SOKHA", "project": "Taiwan-B777", "status": "Sign Out"}, "ac_cpa012": {"accNo": "9C12-526538", "bank": "PiPAY", "code": "CPA-012", "grp": "PiPAY", "holder": "PSS-KH2", "name": "CHEA VANNY", "project": "Combined", "status": "Unable to Log In"}, "ac_cpa013": {"accNo": "9C13-842192", "bank": "Wing", "code": "CPA-013", "grp": "Wing", "holder": "TW-OP", "name": "SAM BOPHA", "project": "Taiwan", "status": "Sign Out"}, "ac_cpa014": {"accNo": "9C14-403080", "bank": "ABA", "code": "CPA-014", "grp": "ABA", "holder": "TW-OP", "name": "LIM KOSAL", "project": "Taiwan-B777", "status": "Active"}, "ac_cpa015": {"accNo": "9C15-519849", "bank": "Wing", "code": "CPA-015", "grp": "Wing", "holder": "PSS-KH", "name": "OUK DINA", "project": "Combined", "status": "Active"}, "ac_cpa016": {"accNo": "9C16-117710", "bank": "PiPAY", "code": "CPA-016", "grp": "PiPAY", "holder": "PSS-KH2", "name": "VONG SOVANN", "project": "Taiwan", "status": "Active"}, "ac_cpa017": {"accNo": "9C17-154864", "bank": "Wing", "code": "CPA-017", "grp": "Wing", "holder": "TW-OP", "name": "ROEUN PISETH", "project": "Taiwan-B777", "status": "Unable to Log In"}, "ac_cpa018": {"accNo": "9C18-540183", "bank": "ABA", "code": "CPA-018", "grp": "ABA", "holder": "TW-OP", "name": "CHEA RATTANA", "project": "Combined", "status": "Stop Use"}, "ac_cpa019": {"accNo": "9C19-807693", "bank": "ACLEDA", "code": "CPA-019", "grp": "ACLEDA", "holder": "PSS-KH", "name": "SENG BUNTHOEUN", "project": "Taiwan", "status": "Active"}, "ac_cpa020": {"accNo": "9C20-115885", "bank": "PiPAY", "code": "CPA-020", "grp": "PiPAY", "holder": "PSS-KH2", "name": "KAO SREYMOM", "project": "Taiwan-B777", "status": "Active"}, "ac_cpa021": {"accNo": "9C21-358356", "bank": "Wing", "code": "CPA-021", "grp": "Wing", "holder": "TW-OP", "name": "SOK DARA", "project": "Combined", "status": "Blocked"}, "ac_cpa022": {"accNo": "9C22-610471", "bank": "Wing", "code": "CPA-022", "grp": "Wing", "holder": "TW-OP", "name": "CHAN SREYNEANG", "project": "Taiwan", "status": "Active"}, "ac_cpa023": {"accNo": "9C23-633584", "bank": "ACLEDA", "code": "CPA-023", "grp": "ACLEDA", "holder": "PSS-KH", "name": "KIM VANNAK", "project": "Taiwan-B777", "status": "Active"}, "ac_cpa024": {"accNo": "9C24-539595", "bank": "PiPAY", "code": "CPA-024", "grp": "PiPAY", "holder": "PSS-KH2", "name": "LY SOPHEA", "project": "Combined", "status": "Active"}, "ac_cpa025": {"accNo": "9C25-323205", "bank": "Wing", "code": "CPA-025", "grp": "Wing", "holder": "TW-OP", "name": "HENG RITHY", "project": "Taiwan", "status": "Unable to Log In"}, "ac_cpa026": {"accNo": "9C26-942438", "bank": "ABA", "code": "CPA-026", "grp": "ABA", "holder": "TW-OP", "name": "PICH MALY", "project": "Taiwan-B777", "status": "Active"}, "ac_cpa027": {"accNo": "9C27-120584", "bank": "ACLEDA", "code": "CPA-027", "grp": "ACLEDA", "holder": "PSS-KH", "name": "MAO VEASNA", "project": "Combined", "status": "Never Used"}, "ac_cpa028": {"accNo": "9C28-731262", "bank": "PiPAY", "code": "CPA-028", "grp": "PiPAY", "holder": "PSS-KH2", "name": "TEP CHANTHOU", "project": "Taiwan", "status": "Active"}, "ac_cpa029": {"accNo": "9C29-253468", "bank": "Wing", "code": "CPA-029", "grp": "Wing", "holder": "TW-OP", "name": "SREY POV", "project": "Taiwan-B777", "status": "Unable to Log In"}, "ac_cpa030": {"accNo": "9C30-739980", "bank": "ABA", "code": "CPA-030", "grp": "ABA", "holder": "TW-OP", "name": "NGUON SAMNANG", "project": "Combined", "status": "Active"}, "ac_cpa031": {"accNo": "9C31-177889", "bank": "ACLEDA", "code": "CPA-031", "grp": "ACLEDA", "holder": "PSS-KH", "name": "YIM SOKHA", "project": "Taiwan", "status": "To Check"}, "ac_cpa032": {"accNo": "9C32-116262", "bank": "PiPAY", "code": "CPA-032", "grp": "PiPAY", "holder": "PSS-KH2", "name": "CHEA VANNY", "project": "Taiwan-B777", "status": "Active"}, "ac_cpa033": {"accNo": "9C33-752370", "bank": "Wing", "code": "CPA-033", "grp": "Wing", "holder": "TW-OP", "name": "SAM BOPHA", "project": "Combined", "status": "Never Used"}, "ac_cpa034": {"accNo": "9C34-972791", "bank": "ABA", "code": "CPA-034", "grp": "ABA", "holder": "TW-OP", "name": "LIM KOSAL", "project": "Taiwan", "status": "Stop Use"}, "ac_cpa035": {"accNo": "9C35-504852", "bank": "ACLEDA", "code": "CPA-035", "grp": "ACLEDA", "holder": "PSS-KH", "name": "OUK DINA", "project": "Taiwan-B777", "status": "Never Used"}, "ac_cpa036": {"accNo": "9C36-339477", "bank": "Wing", "code": "CPA-036", "grp": "Wing", "holder": "PSS-KH2", "name": "VONG SOVANN", "project": "Combined", "status": "Active"}, "ac_cpa037": {"accNo": "9C37-299020", "bank": "Wing", "code": "CPA-037", "grp": "Wing", "holder": "TW-OP", "name": "ROEUN PISETH", "project": "Taiwan", "status": "Never Used"}, "ac_cpa038": {"accNo": "9C38-306139", "bank": "ABA", "code": "CPA-038", "grp": "ABA", "holder": "TW-OP", "name": "CHEA RATTANA", "project": "Taiwan-B777", "status": "Active"}, "ac_cpa039": {"accNo": "9C39-732851", "bank": "ACLEDA", "code": "CPA-039", "grp": "ACLEDA", "holder": "PSS-KH", "name": "SENG BUNTHOEUN", "project": "Combined", "status": "Unable to Log In"}, "ac_cpa040": {"accNo": "9C40-140576", "bank": "PiPAY", "code": "CPA-040", "grp": "PiPAY", "holder": "PSS-KH2", "name": "KAO SREYMOM", "project": "Taiwan", "status": "Active"}}, "at": "2026-10-23T07:00:00.000Z", "source": "CPA Control System V3.3"}}, "risk": {"rk_dm_06": {"acctId": "ac_cpa024", "at": "2026-10-29T00:00:00.000Z", "by": "admin", "byName": "Dummy data", "end": "2026-08-05", "note": "", "result": "", "start": "2026-07-31", "type": "Complaint"}, "rk_dm_05": {"acctId": "ac_cpa024", "at": "2026-10-29T00:00:00.000Z", "by": "admin", "byName": "Dummy data", "end": "2026-04-17", "note": "", "result": "", "start": "2026-04-12", "type": "Complaint"}, "rk_dm_01": {"acctId": "ac_cpa004", "at": "2026-10-29T00:00:00.000Z", "by": "admin", "byName": "Dummy data", "end": "", "note": "", "result": "", "start": "2026-10-19", "type": "Blocked"}, "rk_dm_08": {"acctId": "ac_cpa028", "at": "2026-10-29T00:00:00.000Z", "by": "admin", "byName": "Dummy data", "end": "2026-06-11", "note": "", "result": "", "start": "2026-06-01", "type": "Blocked"}, "rk_dm_02": {"acctId": "ac_cpa014", "at": "2026-10-29T00:00:00.000Z", "by": "admin", "byName": "Dummy data", "end": "", "note": "", "result": "", "start": "2026-09-19", "type": "Dormant"}, "rk_dm_03": {"acctId": "ac_cpa020", "at": "2026-10-29T00:00:00.000Z", "by": "admin", "byName": "Dummy data", "end": "2026-10-17", "note": "", "result": "", "start": "2026-10-09", "type": "Sign out"}, "rk_dm_10": {"acctId": "ac_cpa030", "at": "2026-10-29T00:00:00.000Z", "by": "admin", "byName": "Dummy data", "end": "", "note": "", "result": "Not unblocked", "start": "2026-09-29", "type": "Unblock visit"}, "rk_dm_04": {"acctId": "ac_cpa024", "at": "2026-10-29T00:00:00.000Z", "by": "admin", "byName": "Dummy data", "end": "2026-01-12", "note": "", "result": "", "start": "2026-01-02", "type": "Complaint"}, "rk_dm_07": {"acctId": "ac_cpa024", "at": "2026-10-29T00:00:00.000Z", "by": "admin", "byName": "Dummy data", "end": "", "note": "", "result": "", "start": "2026-10-27", "type": "Complaint"}, "rk_dm_11": {"acctId": "ac_cpa030", "at": "2026-10-29T00:00:00.000Z", "by": "admin", "byName": "Dummy data", "end": "2026-10-01", "note": "", "result": "", "start": "2026-09-24", "type": "Blocked"}, "rk_dm_09": {"acctId": "ac_cpa028", "at": "2026-10-29T00:00:00.000Z", "by": "admin", "byName": "Dummy data", "end": "2026-09-09", "note": "", "result": "", "start": "2026-08-30", "type": "Blocked"}, "rk_dm_12": {"acctId": "ac_cpa036", "at": "2026-10-29T00:00:00.000Z", "by": "admin", "byName": "Dummy data", "end": "", "note": "Explanation sent", "result": "", "start": "2026-10-11", "type": "SOF request"}}, "lines": {"ln_dm_077": {"acctId": "ac_cpa038", "kind": "Expenses", "project": "Taiwan", "company": "Demo Phnom Consulting Co., Ltd.", "start": "2025-08-08", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_039": {"acctId": "ac_cpa019", "kind": "Expenses", "project": "Taiwan", "company": "Riverside Dummy Media Co., Ltd.", "start": "2024-11-15", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_083": {"acctId": "ac_cpa040", "kind": "Expenses", "project": "Taiwan", "company": "Riverside Dummy Media Co., Ltd.", "start": "2026-08-10", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_068": {"acctId": "ac_cpa033", "kind": "Project", "project": "Combined", "company": "", "start": "2023-10-06", "end": "2024-12-22", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_027": {"acctId": "ac_cpa014", "kind": "Project", "project": "Taiwan", "company": "", "start": "2026-10-10", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_017": {"acctId": "ac_cpa009", "kind": "Project", "project": "Combined", "company": "", "start": "2026-10-19", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_064": {"acctId": "ac_cpa031", "kind": "Expenses", "project": "Taiwan", "company": "Angkor Demo Trading Co., Ltd.", "start": "2025-03-17", "end": "2026-01-05", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_054": {"acctId": "ac_cpa026", "kind": "Expenses", "project": "Taiwan", "company": "Demo Bayon Logistics PLC", "start": "2025-09-09", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_062": {"acctId": "ac_cpa030", "kind": "Expenses", "project": "Combined", "company": "Riverside Dummy Media Co., Ltd.", "start": "2024-01-26", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_070": {"acctId": "ac_cpa034", "kind": "Project", "project": "Taiwan", "company": "", "start": "2022-06-25", "end": "2023-07-22", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_035": {"acctId": "ac_cpa017", "kind": "Expenses", "project": "Taiwan", "company": "Sample Orbit Games Co., Ltd.", "start": "2022-06-25", "end": "2023-08-04", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_012": {"acctId": "ac_cpa006", "kind": "Expenses", "project": "Combined", "company": "Mekong Sample Foods Co., Ltd.", "start": "2024-02-16", "end": "2025-04-12", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_060": {"acctId": "ac_cpa029", "kind": "Expenses", "project": "Taiwan", "company": "Angkor Demo Trading Co., Ltd.", "start": "2024-01-13", "end": "2025-03-27", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_002": {"acctId": "ac_cpa001", "kind": "Expenses", "project": "Taiwan", "company": "Sample Coastal Travel Co., Ltd.", "start": "2023-08-17", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_022": {"acctId": "ac_cpa011", "kind": "Expenses", "project": "Taiwan", "company": "Dummy Royal Retail Co., Ltd.", "start": "2023-07-02", "end": "2024-07-13", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_023": {"acctId": "ac_cpa012", "kind": "Project", "project": "Combined", "company": "", "start": "2022-01-29", "end": "2022-10-19", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_080": {"acctId": "ac_cpa040", "kind": "Project", "project": "Taiwan", "company": "", "start": "2023-01-01", "end": "2023-12-25", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_052": {"acctId": "ac_cpa025", "kind": "Expenses", "project": "Taiwan", "company": "Angkor Demo Trading Co., Ltd.", "start": "2025-04-21", "end": "2026-03-25", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_026": {"acctId": "ac_cpa013", "kind": "Expenses", "project": "Taiwan", "company": "Dummy Royal Retail Co., Ltd.", "start": "2025-06-24", "end": "2026-07-11", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_029": {"acctId": "ac_cpa015", "kind": "Project", "project": "Combined", "company": "", "start": "2022-02-20", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_074": {"acctId": "ac_cpa036", "kind": "Project", "project": "Combined", "company": "", "start": "2025-04-24", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_032": {"acctId": "ac_cpa016", "kind": "Project", "project": "Combined", "company": "", "start": "2023-10-17", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_081": {"acctId": "ac_cpa040", "kind": "Project", "project": "PHP", "company": "", "start": "2023-12-26", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_006": {"acctId": "ac_cpa003", "kind": "Expenses", "project": "Combined", "company": "Demo Green Farm Co., Ltd.", "start": "2025-11-10", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_041": {"acctId": "ac_cpa020", "kind": "Expenses", "project": "Taiwan", "company": "Demo Bayon Logistics PLC", "start": "2025-07-09", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_034": {"acctId": "ac_cpa017", "kind": "Project", "project": "Taiwan", "company": "", "start": "2022-06-25", "end": "2023-08-04", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_031": {"acctId": "ac_cpa016", "kind": "Project", "project": "Taiwan", "company": "", "start": "2022-08-05", "end": "2023-10-16", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_028": {"acctId": "ac_cpa014", "kind": "Expenses", "project": "Taiwan", "company": "Sample Lotus Tech Co., Ltd.", "start": "2026-10-10", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_075": {"acctId": "ac_cpa037", "kind": "Project", "project": "Taiwan", "company": "", "start": "2024-07-05", "end": "2025-11-12", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_051": {"acctId": "ac_cpa025", "kind": "Project", "project": "Taiwan", "company": "", "start": "2025-04-21", "end": "2026-03-25", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_008": {"acctId": "ac_cpa004", "kind": "Expenses", "project": "Taiwan", "company": "Riverside Dummy Media Co., Ltd.", "start": "2024-11-16", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_040": {"acctId": "ac_cpa020", "kind": "Project", "project": "Taiwan", "company": "", "start": "2025-07-09", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_016": {"acctId": "ac_cpa008", "kind": "Expenses", "project": "Taiwan", "company": "Angkor Demo Trading Co., Ltd.", "start": "2023-11-23", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_071": {"acctId": "ac_cpa034", "kind": "Expenses", "project": "Taiwan", "company": "Mekong Sample Foods Co., Ltd.", "start": "2022-06-25", "end": "2023-07-22", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_010": {"acctId": "ac_cpa005", "kind": "Expenses", "project": "Taiwan", "company": "Mekong Sample Foods Co., Ltd.", "start": "2023-09-21", "end": "2024-09-21", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_045": {"acctId": "ac_cpa022", "kind": "Expenses", "project": "Taiwan", "company": "Mekong Sample Foods Co., Ltd.", "start": "2022-04-28", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_025": {"acctId": "ac_cpa013", "kind": "Project", "project": "Taiwan", "company": "", "start": "2025-06-24", "end": "2026-07-11", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_038": {"acctId": "ac_cpa019", "kind": "Project", "project": "Taiwan", "company": "", "start": "2024-11-15", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_069": {"acctId": "ac_cpa033", "kind": "Expenses", "project": "Combined", "company": "Sample Orbit Games Co., Ltd.", "start": "2023-10-06", "end": "2024-12-22", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_043": {"acctId": "ac_cpa021", "kind": "Expenses", "project": "Combined", "company": "Dummy Delta Pay PLC", "start": "2024-06-02", "end": "2025-05-01", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_067": {"acctId": "ac_cpa032", "kind": "Expenses", "project": "Taiwan", "company": "Demo Phnom Consulting Co., Ltd.", "start": "2026-07-21", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_047": {"acctId": "ac_cpa023", "kind": "Expenses", "project": "Taiwan", "company": "Demo Bayon Logistics PLC", "start": "2023-01-01", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_013": {"acctId": "ac_cpa007", "kind": "Project", "project": "Taiwan", "company": "", "start": "2024-01-04", "end": "2024-08-07", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_007": {"acctId": "ac_cpa004", "kind": "Project", "project": "Taiwan", "company": "", "start": "2024-11-16", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_015": {"acctId": "ac_cpa008", "kind": "Project", "project": "Taiwan", "company": "", "start": "2023-11-23", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_073": {"acctId": "ac_cpa035", "kind": "Expenses", "project": "Taiwan", "company": "Dummy Royal Retail Co., Ltd.", "start": "2022-12-30", "end": "2024-01-31", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_055": {"acctId": "ac_cpa027", "kind": "Project", "project": "Combined", "company": "", "start": "2022-12-19", "end": "2024-03-30", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_005": {"acctId": "ac_cpa003", "kind": "Project", "project": "Combined", "company": "", "start": "2025-11-10", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_030": {"acctId": "ac_cpa015", "kind": "Expenses", "project": "Combined", "company": "Demo Phnom Consulting Co., Ltd.", "start": "2022-02-20", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_024": {"acctId": "ac_cpa012", "kind": "Expenses", "project": "Combined", "company": "Mekong Sample Foods Co., Ltd.", "start": "2022-01-29", "end": "2022-10-19", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_042": {"acctId": "ac_cpa021", "kind": "Project", "project": "Combined", "company": "", "start": "2024-06-02", "end": "2025-05-01", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_046": {"acctId": "ac_cpa023", "kind": "Project", "project": "Taiwan", "company": "", "start": "2023-01-01", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_044": {"acctId": "ac_cpa022", "kind": "Project", "project": "Taiwan", "company": "", "start": "2022-04-28", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_020": {"acctId": "ac_cpa010", "kind": "Expenses", "project": "Taiwan", "company": "Dummy Delta Pay PLC", "start": "2026-01-26", "end": "2026-10-01", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_003": {"acctId": "ac_cpa002", "kind": "Project", "project": "Taiwan", "company": "", "start": "2022-02-04", "end": "2023-05-03", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_061": {"acctId": "ac_cpa030", "kind": "Project", "project": "Combined", "company": "", "start": "2024-01-26", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_059": {"acctId": "ac_cpa029", "kind": "Project", "project": "Taiwan", "company": "", "start": "2024-01-13", "end": "2025-03-27", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_021": {"acctId": "ac_cpa011", "kind": "Project", "project": "Taiwan", "company": "", "start": "2023-07-02", "end": "2024-07-13", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_019": {"acctId": "ac_cpa010", "kind": "Project", "project": "Taiwan", "company": "", "start": "2026-01-26", "end": "2026-10-01", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_078": {"acctId": "ac_cpa039", "kind": "Project", "project": "Combined", "company": "", "start": "2022-12-02", "end": "2023-08-02", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_001": {"acctId": "ac_cpa001", "kind": "Project", "project": "Taiwan", "company": "", "start": "2023-08-17", "end": "2024-02-25", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_009": {"acctId": "ac_cpa005", "kind": "Project", "project": "Taiwan", "company": "", "start": "2023-09-21", "end": "2024-09-21", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_033": {"acctId": "ac_cpa016", "kind": "Expenses", "project": "Taiwan", "company": "Sample Lotus Tech Co., Ltd.", "start": "2022-08-05", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_014": {"acctId": "ac_cpa007", "kind": "Expenses", "project": "Taiwan", "company": "Test Silk Road Co., Ltd.", "start": "2024-01-04", "end": "2024-08-07", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_063": {"acctId": "ac_cpa031", "kind": "Project", "project": "Taiwan", "company": "", "start": "2025-03-17", "end": "2026-01-05", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_079": {"acctId": "ac_cpa039", "kind": "Expenses", "project": "Combined", "company": "Riverside Dummy Media Co., Ltd.", "start": "2022-12-02", "end": "2023-08-02", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_037": {"acctId": "ac_cpa018", "kind": "Expenses", "project": "Combined", "company": "Demo Phnom Consulting Co., Ltd.", "start": "2024-05-12", "end": "2024-10-19", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_072": {"acctId": "ac_cpa035", "kind": "Project", "project": "Taiwan", "company": "", "start": "2022-12-30", "end": "2024-01-31", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_053": {"acctId": "ac_cpa026", "kind": "Project", "project": "Taiwan", "company": "", "start": "2025-09-09", "end": "2026-11-05", "note": "Contract period", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_076": {"acctId": "ac_cpa037", "kind": "Expenses", "project": "Taiwan", "company": "Test Silk Road Co., Ltd.", "start": "2024-07-05", "end": "2025-11-12", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_011": {"acctId": "ac_cpa006", "kind": "Project", "project": "Combined", "company": "", "start": "2024-02-16", "end": "2025-04-12", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_066": {"acctId": "ac_cpa032", "kind": "Expenses", "project": "Taiwan", "company": "Sample Coastal Travel Co., Ltd.", "start": "2025-09-14", "end": "2026-07-01", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_050": {"acctId": "ac_cpa024", "kind": "Expenses", "project": "Combined", "company": "Angkor Demo Trading Co., Ltd.", "start": "2022-03-14", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_057": {"acctId": "ac_cpa028", "kind": "Project", "project": "Taiwan", "company": "", "start": "2023-03-19", "end": "2026-11-14", "note": "Contract period", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_065": {"acctId": "ac_cpa032", "kind": "Project", "project": "Taiwan", "company": "", "start": "2025-09-14", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_056": {"acctId": "ac_cpa027", "kind": "Expenses", "project": "Combined", "company": "Riverside Dummy Media Co., Ltd.", "start": "2022-12-19", "end": "2024-03-30", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_048": {"acctId": "ac_cpa024", "kind": "Project", "project": "Combined", "company": "", "start": "2022-03-14", "end": "2023-02-10", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_004": {"acctId": "ac_cpa002", "kind": "Expenses", "project": "Taiwan", "company": "Dummy Royal Retail Co., Ltd.", "start": "2022-02-04", "end": "2023-05-03", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_082": {"acctId": "ac_cpa040", "kind": "Expenses", "project": "Taiwan", "company": "Angkor Demo Trading Co., Ltd.", "start": "2023-01-01", "end": "2026-08-30", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_049": {"acctId": "ac_cpa024", "kind": "Project", "project": "KH", "company": "", "start": "2023-02-11", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_058": {"acctId": "ac_cpa028", "kind": "Expenses", "project": "Taiwan", "company": "Demo Green Farm Co., Ltd.", "start": "2023-03-19", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_036": {"acctId": "ac_cpa018", "kind": "Project", "project": "Combined", "company": "", "start": "2024-05-12", "end": "2024-10-19", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}, "ln_dm_018": {"acctId": "ac_cpa009", "kind": "Expenses", "project": "Combined", "company": "Dummy Delta Pay PLC", "start": "2026-10-19", "end": "", "note": "", "createdAt": "2026-10-29T00:00:00.000Z", "createdBy": "Dummy data", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data"}}, "accounts": {"ac_cpa009": {"accNo": "9C09-915905", "bank": "Wing", "cdbProject": "Combined", "cdbStatus": "Active", "closeReason": "", "closedAt": "", "code": "CPA-009", "holder": "TW-OP", "name": "SREY POV", "openedAt": "2026-10-19", "register": "CPA", "remark": "", "status": "Active", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Active"}, "ac_cpa030": {"accNo": "9C30-739980", "bank": "ABA", "cdbProject": "Combined", "cdbStatus": "Active", "closeReason": "", "closedAt": "", "code": "CPA-030", "holder": "TW-OP", "name": "NGUON SAMNANG", "openedAt": "2024-01-26", "register": "CPA", "remark": "", "status": "Active", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Active"}, "ac_cpa003": {"accNo": "9C03-743782", "bank": "ACLEDA", "cdbProject": "Combined", "cdbStatus": "Active", "closeReason": "", "closedAt": "", "code": "CPA-003", "holder": "PSS-KH", "name": "KIM VANNAK", "openedAt": "2025-11-10", "register": "CPA", "remark": "", "status": "Active", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Active"}, "ac_cpa040": {"accNo": "9C40-140576", "bank": "PiPAY", "cdbProject": "Taiwan", "cdbStatus": "Active", "closeReason": "", "closedAt": "", "code": "CPA-040", "holder": "PSS-KH2", "name": "KAO SREYMOM", "openedAt": "2023-01-01", "register": "CPA", "remark": "", "status": "Active", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Active"}, "ac_cpa016": {"accNo": "9C16-117710", "bank": "PiPAY", "cdbProject": "Taiwan", "cdbStatus": "Stop Use", "closeReason": "", "closedAt": "", "code": "CPA-016", "holder": "PSS-KH2", "name": "VONG SOVANN", "openedAt": "2022-08-05", "register": "CPA", "remark": "", "status": "Active", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Active"}, "ac_cpa014": {"accNo": "9C14-403080", "bank": "ABA", "cdbProject": "Taiwan-B777", "cdbStatus": "Active", "closeReason": "", "closedAt": "", "code": "CPA-014", "holder": "TW-OP", "name": "LIM KOSAL", "openedAt": "2026-10-10", "register": "CPA", "remark": "", "status": "Active", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Active"}, "ac_cpa035": {"accNo": "9C35-504852", "bank": "ACLEDA", "cdbProject": "Taiwan-B777", "cdbStatus": "Never Used", "closeReason": "Never Used", "closedAt": "2024-01-31", "code": "CPA-035", "holder": "PSS-KH", "name": "OUK DINA", "openedAt": "2022-12-30", "register": "CPA", "remark": "", "status": "Never Used", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Never Used"}, "ac_cpa039": {"accNo": "9C39-732851", "bank": "ACLEDA", "cdbProject": "Combined", "cdbStatus": "Unable to Log In", "closeReason": "Unable to Log In", "closedAt": "2023-08-02", "code": "CPA-039", "holder": "PSS-KH", "name": "SENG BUNTHOEUN", "openedAt": "2022-12-02", "register": "CPA", "remark": "", "status": "Unable to Log In", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Unable to Log In"}, "ac_cpa027": {"accNo": "9C27-120584", "bank": "ACLEDA", "cdbProject": "Combined", "cdbStatus": "Never Used", "closeReason": "Never Used", "closedAt": "2024-03-30", "code": "CPA-027", "holder": "PSS-KH", "name": "MAO VEASNA", "openedAt": "2022-12-19", "register": "CPA", "remark": "", "status": "Never Used", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Never Used"}, "ac_cpa007": {"accNo": "9C07-753397", "bank": "ACLEDA", "cdbProject": "Taiwan", "cdbStatus": "Unable to Log In", "closeReason": "Unable to Log In", "closedAt": "2024-08-07", "code": "CPA-007", "holder": "PSS-KH", "name": "MAO VEASNA", "openedAt": "2024-01-04", "register": "CPA", "remark": "", "status": "Unable to Log In", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Unable to Log In"}, "ac_cpa032": {"accNo": "9C32-116262", "bank": "PiPAY", "cdbProject": "Taiwan-B777", "cdbStatus": "Active", "closeReason": "", "closedAt": "", "code": "CPA-032", "holder": "PSS-KH2", "name": "CHEA VANNY", "openedAt": "2025-09-14", "register": "CPA", "remark": "", "status": "Active", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Active"}, "ac_cpa024": {"accNo": "9C24-539595", "bank": "PiPAY", "cdbProject": "Combined", "cdbStatus": "Active", "closeReason": "", "closedAt": "", "code": "CPA-024", "holder": "PSS-KH2", "name": "LY SOPHEA", "openedAt": "2022-03-14", "register": "CPA", "remark": "", "status": "Active", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Active"}, "ac_cpa019": {"accNo": "9C19-807693", "bank": "ACLEDA", "cdbProject": "Taiwan", "cdbStatus": "Stop Use", "closeReason": "", "closedAt": "", "code": "CPA-019", "holder": "PSS-KH", "name": "SENG BUNTHOEUN", "openedAt": "2024-11-15", "register": "CPA", "remark": "", "status": "Active", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Active"}, "ac_cpa018": {"accNo": "9C18-540183", "bank": "ABA", "cdbProject": "Combined", "cdbStatus": "Stop Use", "closeReason": "Stop Use", "closedAt": "2024-10-19", "code": "CPA-018", "holder": "TW-OP", "name": "CHEA RATTANA", "openedAt": "2024-05-12", "register": "CPA", "remark": "", "status": "Stop Use", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Stop Use"}, "ac_cpa015": {"accNo": "9C15-519849", "bank": "Wing", "cdbProject": "Combined", "cdbStatus": "Active", "closeReason": "", "closedAt": "", "code": "CPA-015", "holder": "PSS-KH", "name": "OUK DINA", "openedAt": "2022-02-20", "register": "CPA", "remark": "", "status": "Active", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Active"}, "ac_cpa020": {"accNo": "9C20-115885", "bank": "PiPAY", "cdbProject": "Taiwan-B777", "cdbStatus": "Active", "closeReason": "", "closedAt": "", "code": "CPA-020", "holder": "PSS-KH2", "name": "KAO SREYMOM", "openedAt": "2025-07-09", "register": "CPA", "remark": "", "status": "Active", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Active"}, "ac_cpa038": {"accNo": "9C38-306139", "bank": "ABA", "cdbProject": "Taiwan-B777", "cdbStatus": "Active", "closeReason": "", "closedAt": "", "code": "CPA-038", "holder": "TW-OP", "name": "CHEA RATTANA", "openedAt": "2025-08-08", "register": "CPA", "remark": "", "status": "Active", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Active"}, "ac_cpa001": {"accNo": "9C01-919166", "bank": "Wing", "cdbProject": "Taiwan", "cdbStatus": "Stop Use", "closeReason": "Stop Use", "closedAt": "2024-02-25", "code": "CPA-001", "holder": "TW-OP", "name": "SOK DARA", "openedAt": "2023-08-17", "register": "CPA", "remark": "", "status": "Stop Use", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Stop Use"}, "ac_cpa026": {"accNo": "9C26-942438", "bank": "ABA", "cdbProject": "Taiwan-B777", "cdbStatus": "Active", "closeReason": "", "closedAt": "", "code": "CPA-026", "holder": "TW-OP", "name": "PICH MALY", "openedAt": "2025-09-09", "register": "CPA", "remark": "", "status": "Active", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Active"}, "ac_cpa031": {"accNo": "9C31-177889", "bank": "ACLEDA", "cdbProject": "Taiwan", "cdbStatus": "To Check", "closeReason": "To Check", "closedAt": "2026-01-05", "code": "CPA-031", "holder": "PSS-KH", "name": "YIM SOKHA", "openedAt": "2025-03-17", "register": "CPA", "remark": "", "status": "To Check", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "To Check"}, "ac_cpa011": {"accNo": "9C11-104816", "bank": "ACLEDA", "cdbProject": "Taiwan-B777", "cdbStatus": "Sign Out", "closeReason": "Sign Out", "closedAt": "2024-07-13", "code": "CPA-011", "holder": "PSS-KH", "name": "YIM SOKHA", "openedAt": "2023-07-02", "register": "CPA", "remark": "", "status": "Sign Out", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Sign Out"}, "ac_cpa008": {"accNo": "9C08-137384", "bank": "Wing", "cdbProject": "Taiwan-B777", "cdbStatus": "Active", "closeReason": "", "closedAt": "", "code": "CPA-008", "holder": "PSS-KH2", "name": "TEP CHANTHOU", "openedAt": "2023-11-23", "register": "CPA", "remark": "", "status": "Active", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Active"}, "ac_cpa028": {"accNo": "9C28-731262", "bank": "PiPAY", "cdbProject": "Taiwan", "cdbStatus": "Active", "closeReason": "", "closedAt": "", "code": "CPA-028", "holder": "PSS-KH2", "name": "TEP CHANTHOU", "openedAt": "2023-03-19", "register": "CPA", "remark": "", "status": "Active", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Active"}, "ac_cpa033": {"accNo": "9C33-752370", "bank": "Wing", "cdbProject": "Combined", "cdbStatus": "Never Used", "closeReason": "Never Used", "closedAt": "2024-12-22", "code": "CPA-033", "holder": "TW-OP", "name": "SAM BOPHA", "openedAt": "2023-10-06", "register": "CPA", "remark": "", "status": "Never Used", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Never Used"}, "ac_cpa022": {"accNo": "9C22-610471", "bank": "Wing", "cdbProject": "Taiwan", "cdbStatus": "Active", "closeReason": "", "closedAt": "", "code": "CPA-022", "holder": "TW-OP", "name": "CHAN SREYNEANG", "openedAt": "2022-04-28", "register": "CPA", "remark": "", "status": "Active", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Active"}, "ac_cpa021": {"accNo": "9C21-358356", "bank": "Wing", "cdbProject": "Combined", "cdbStatus": "Blocked", "closeReason": "Blocked", "closedAt": "2025-05-01", "code": "CPA-021", "holder": "TW-OP", "name": "SOK DARA", "openedAt": "2024-06-02", "register": "CPA", "remark": "", "status": "Blocked", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Blocked"}, "ac_cpa005": {"accNo": "9C05-143914", "bank": "Wing", "cdbProject": "Taiwan-B777", "cdbStatus": "Sign Out", "closeReason": "Sign Out", "closedAt": "2024-09-21", "code": "CPA-005", "holder": "TW-OP", "name": "HENG RITHY", "openedAt": "2023-09-21", "register": "CPA", "remark": "", "status": "Sign Out", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Sign Out"}, "ac_cpa034": {"accNo": "9C34-972791", "bank": "ABA", "cdbProject": "Taiwan", "cdbStatus": "Stop Use", "closeReason": "Stop Use", "closedAt": "2023-07-22", "code": "CPA-034", "holder": "TW-OP", "name": "LIM KOSAL", "openedAt": "2022-06-25", "register": "CPA", "remark": "", "status": "Stop Use", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Stop Use"}, "ac_cpa037": {"accNo": "9C37-299020", "bank": "Wing", "cdbProject": "Taiwan", "cdbStatus": "Never Used", "closeReason": "Never Used", "closedAt": "2025-11-12", "code": "CPA-037", "holder": "TW-OP", "name": "ROEUN PISETH", "openedAt": "2024-07-05", "register": "CPA", "remark": "", "status": "Never Used", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Never Used"}, "ac_cpa013": {"accNo": "9C13-842192", "bank": "Wing", "cdbProject": "Taiwan", "cdbStatus": "Sign Out", "closeReason": "Sign Out", "closedAt": "2026-07-11", "code": "CPA-013", "holder": "TW-OP", "name": "SAM BOPHA", "openedAt": "2025-06-24", "register": "CPA", "remark": "", "status": "Sign Out", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Sign Out"}, "ac_cpa006": {"accNo": "9C06-574999", "bank": "ABA", "cdbProject": "Combined", "cdbStatus": "Never Used", "closeReason": "Never Used", "closedAt": "2025-04-12", "code": "CPA-006", "holder": "TW-OP", "name": "PICH MALY", "openedAt": "2024-02-16", "register": "CPA", "remark": "", "status": "Never Used", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Never Used"}, "ac_cpa029": {"accNo": "9C29-253468", "bank": "Wing", "cdbProject": "Taiwan-B777", "cdbStatus": "Unable to Log In", "closeReason": "Unable to Log In", "closedAt": "2025-03-27", "code": "CPA-029", "holder": "TW-OP", "name": "SREY POV", "openedAt": "2024-01-13", "register": "CPA", "remark": "", "status": "Unable to Log In", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Unable to Log In"}, "ac_cpa010": {"accNo": "9C10-304809", "bank": "ABA", "cdbProject": "Taiwan", "cdbStatus": "Stop Use", "closeReason": "Stop Use", "closedAt": "2026-10-01", "code": "CPA-010", "holder": "TW-OP", "name": "NGUON SAMNANG", "openedAt": "2026-01-26", "register": "CPA", "remark": "", "status": "Stop Use", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Stop Use"}, "ac_cpa004": {"accNo": "9C04-195074", "bank": "PiPAY", "cdbProject": "Taiwan", "cdbStatus": "Active", "closeReason": "", "closedAt": "", "code": "CPA-004", "holder": "PSS-KH2", "name": "LY SOPHEA", "openedAt": "2024-11-16", "register": "CPA", "remark": "", "status": "Active", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Active"}, "ac_cpa002": {"accNo": "9C02-299126", "bank": "ABA", "cdbProject": "Taiwan-B777", "cdbStatus": "Stop Use", "closeReason": "Stop Use", "closedAt": "2023-05-03", "code": "CPA-002", "holder": "TW-OP", "name": "CHAN SREYNEANG", "openedAt": "2022-02-04", "register": "CPA", "remark": "", "status": "Stop Use", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Stop Use"}, "ac_cpa023": {"accNo": "9C23-633584", "bank": "ACLEDA", "cdbProject": "Taiwan-B777", "cdbStatus": "Active", "closeReason": "", "closedAt": "", "code": "CPA-023", "holder": "PSS-KH", "name": "KIM VANNAK", "openedAt": "", "register": "CPA", "remark": "", "status": "Active", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Active"}, "ac_cpa012": {"accNo": "9C12-526538", "bank": "PiPAY", "cdbProject": "Combined", "cdbStatus": "Unable to Log In", "closeReason": "Unable to Log In", "closedAt": "2022-10-19", "code": "CPA-012", "holder": "PSS-KH2", "name": "CHEA VANNY", "openedAt": "2022-01-29", "register": "CPA", "remark": "", "status": "Unable to Log In", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Unable to Log In"}, "ac_cpa025": {"accNo": "9C25-323205", "bank": "Wing", "cdbProject": "Taiwan", "cdbStatus": "Unable to Log In", "closeReason": "Unable to Log In", "closedAt": "2026-03-25", "code": "CPA-025", "holder": "TW-OP", "name": "HENG RITHY", "openedAt": "2025-04-21", "register": "CPA", "remark": "", "status": "Unable to Log In", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Unable to Log In"}, "ac_cpa036": {"accNo": "9C36-339477", "bank": "Wing", "cdbProject": "Combined", "cdbStatus": "Active", "closeReason": "", "closedAt": "", "code": "CPA-036", "holder": "PSS-KH2", "name": "VONG SOVANN", "openedAt": "2025-04-24", "register": "CPA", "remark": "", "status": "Active", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Active"}, "ac_cpa017": {"accNo": "9C17-154864", "bank": "Wing", "cdbProject": "Taiwan-B777", "cdbStatus": "Unable to Log In", "closeReason": "Unable to Log In", "closedAt": "2023-08-04", "code": "CPA-017", "holder": "TW-OP", "name": "ROEUN PISETH", "openedAt": "2022-06-25", "register": "CPA", "remark": "", "status": "Unable to Log In", "updatedAt": "2026-10-29T00:00:00.000Z", "updatedBy": "Dummy data", "v33Status": "Unable to Log In"}}, "users": {"admin": {"u": "admin", "name": "Administrator", "role": "Admin", "salt": "6c0bea84b33e0d1a01230056", "hash": "bec6e2649051e78086511b128cb73dea411b4f19bcf0951dea9a3e5486fe84a7", "mustChange": true, "active": true, "lastLogin": null}}, "log": {}, "docs": {}, "docdata": {}, "hist": {}, "alerts": {}, "settings": {}}</script>
+<script>
+/* OFFLINE MODE: used only when opened outside Claude (no window.claude). Data is kept in this browser (localStorage) and starts from the dummy seed. */
+(function(){
+if(window.claude&&window.claude.use)return;
+var KEY='mm206_offline_db_v1';
+var SEED=JSON.parse(document.getElementById('offlineSeed').textContent);
+var store;
+try{var raw=localStorage.getItem(KEY);store=raw?JSON.parse(raw):null}catch(e){store=null}
+if(!store)store=JSON.parse(JSON.stringify(SEED));
+var persistT=null;
+function persist(){clearTimeout(persistT);persistT=setTimeout(function(){try{localStorage.setItem(KEY,JSON.stringify(store))}catch(e){}},50)}
+var subs={};
+function clone(o){return o==null?o:JSON.parse(JSON.stringify(o))}
+function snap(c){var o=store[c]||{};return{docs:Object.keys(o).map(function(id){return{id:id,exists:true,data:function(){return clone(o[id])}}}),size:Object.keys(o).length}}
+function notify(c){(subs[c]||[]).forEach(function(f){try{f(snap(c))}catch(e){}})}
+function split(p){var i=p.indexOf('/');return[p.slice(0,i),p.slice(i+1)]}
+function applyUpd(base,upd){var o=clone(base)||{};Object.keys(upd).forEach(function(k){var v=upd[k];if(v&&typeof v==='object'&&v.__delete__===true)delete o[k];else o[k]=clone(v)});return o}
+function doc(p){var a=split(p),c=a[0],id=a[1];return{
+  get:function(){return Promise.resolve({id:id,exists:!!(store[c]&&store[c][id]),data:function(){return clone((store[c]||{})[id])}})},
+  set:function(d){store[c]=store[c]||{};store[c][id]=applyUpd({},d);persist();notify(c);return Promise.resolve()},
+  update:function(u){if(!store[c]||!store[c][id])return Promise.reject(new Error('not-found'));store[c][id]=applyUpd(store[c][id],u);persist();notify(c);return Promise.resolve()},
+  delete:function(){if(store[c])delete store[c][id];persist();notify(c);return Promise.resolve()}}}
+function query(c,field,dir,lim){function res(){var s=snap(c);if(field){s.docs.sort(function(x,y){var a=x.data()[field],b=y.data()[field];return(a>b?1:a<b?-1:0)*(dir==='desc'?-1:1)})}if(lim)s.docs=s.docs.slice(0,lim);return s}return{onSnapshot:function(cb){var f=function(){cb(res())};(subs[c]=subs[c]||[]).push(f);setTimeout(f,0);return function(){subs[c]=(subs[c]||[]).filter(function(x){return x!==f})}},
+  orderBy:function(f,d){return query(c,f,d||'asc',lim)},
+  limit:function(n){return query(c,field,dir,n)},
+  get:function(){var s=snap(c);if(field){s.docs.sort(function(x,y){var a=x.data()[field],b=y.data()[field];return(a>b?1:a<b?-1:0)*(dir==='desc'?-1:1)})}if(lim)s.docs=s.docs.slice(0,lim);return Promise.resolve(s)}}}
+var DB={doc:doc,collection:function(c){var q=query(c);q.doc=function(id){return doc(c+'/'+id)};q.add=function(d){var id='a'+Math.random().toString(36).slice(2,12);return doc(c+'/'+id).set(d).then(function(){return{id:id}})};q.onSnapshot=function(cb){(subs[c]=subs[c]||[]).push(cb);setTimeout(function(){cb(snap(c))},0);return function(){subs[c]=(subs[c]||[]).filter(function(f){return f!==cb})}};return q}};
+var DL={save:function(o){return new Promise(function(res){var u=URL.createObjectURL(o.data),a=document.createElement('a');a.href=u;a.download=o.filename||'file';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(u);a.remove();res()},100)})}};
+window.claude={use:function(n){return Promise.resolve(n==='db'?DB:n==='downloads'?DL:null)}};
+
+})();
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const pad=n=>String(n).padStart(2,'0');
+const todayStr=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+const addMonth=(ym,n)=>{let [y,m]=ym.split('-').map(Number);m+=n;y+=Math.floor((m-1)/12);m=((m-1)%12+12)%12+1;return `${y}-${pad(m)}`};
+const monthLabel=ym=>ym?`${MON[+ym.slice(5)-1]} ${ym.slice(0,4)}`:'';
+const dueOf=ym=>addMonth(ym,1)+'-05';
+const fmtD=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||'');return m?`${+m[3]} ${MON[+m[2]-1]} ${m[1]}`:''};
+const dayDiff=(a,b)=>Math.round((Date.parse(a+'T00:00:00Z')-Date.parse(b+'T00:00:00Z'))/864e5);
+const fmtDT=iso=>{if(!iso)return '';const d=new Date(iso);if(isNaN(d))return '';return `${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())}`};
+const toLocalInput=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const uniq=a=>[...new Set(a.filter(Boolean))].sort((x,y)=>x.localeCompare(y));
+const rid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function toast(t){const r=$('#toastRoot');r.innerHTML=`<div class="toast" role="status">${esc(t)}</div>`;clearTimeout(toast.t);toast.t=setTimeout(()=>r.innerHTML='',3000)}
+
+let db=null,dl=null,ME=null;
+const MENUS=[["dash", "Dashboard"], ["acc", "Accounts in service"], ["mov", "Movements"], ["stats", "Stats by age"], ["att", "Needs attention"], ["alert", "Alerts"], ["risk", "Risk control"], ["rec", "Matches source"], ["hist", "History"]];
+const ACTS=[['edit','Add and edit records'],['files','Upload files and docs'],['delete','Delete records'],['export','Excel export']];
+const posDefs=()=>{const L=((D.settings&&D.settings.positions)||{}).list||{},all=(typeof MENUS!=='undefined'?MENUS:[]).map(m=>m[0]);
+  const def={Admin:{menus:all,acts:ACTS.map(a=>a[0])},Editor:{menus:all,acts:['edit','files','delete','export']},Viewer:{menus:all,acts:[]}};
+  const o={};Object.keys(def).forEach(k=>o[k]=k!=='Admin'&&L[k]?{menus:L[k].menus||[],acts:L[k].acts||[],docs:L[k].docs,dk:L[k].dk||[]}:def[k]);
+  Object.keys(L).forEach(k=>{if(!def[k])o[k]={menus:L[k].menus||[],acts:L[k].acts||[],docs:L[k].docs,dk:L[k].dk||[]}});return o};
+const posNames=()=>Object.keys(posDefs());
+const rl=r=>r==='Admin'?'Master Admin':r;
+const can=p=>{if(!ME)return false;if(p==='view')return true;if(ME.role==='Admin')return true;if(p==='admin')return false;const q=posDefs()[ME.role];if(!q)return false;return p.startsWith('m:')?q.menus.includes(p.slice(2)):q.acts.includes(p)};
+const menuOk=k=>k==='users'||k==='access'||k==='lists'?can('admin'):can('m:'+k);
+const fixT=T=>{let o=T.filter(x=>x[0]==='g'||menuOk(x[0]));if(can('admin')){if(!o.some(x=>x[0]==='users'))o.push(['g','Tools']);if(!o.some(x=>x[0]==='access'))o.push(['access','Access control'])}if(can('admin')&&!o.some(x=>x[0]==='lists'))o.push(['lists','Lists']);return o.filter((x,i,a)=>x[0]!=='g'||(a[i+1]&&a[i+1][0]!=='g'))};
+const store={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
+const D={settings:{},source:{},docs:{},accounts:{},lines:{},risk:{},alerts:{},hist:{},log:{},users:{}};
+const READY={};
+const UI={ashow:'Open',asev:'',atype:'',tab:'dash',bank:'',v33:'',cdb:'',q:'',reg:'',proj:'',st:'Active',band:'',kind:'',hk:'',rl:''};
+const REGS=['CPA'];
+const HOLDERS=()=>uniq(rows('accounts').map(a=>a.holder));
+const PROJ_REF={IR:'Irich',B7:'Bet777',IJ:'IrichJili',H5:'Best777'};
+const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+const rows=c=>Object.entries(D[c]).map(([id,x])=>({...x,id}));
+const aLabel=a=>a?`${a.code||''}${a.code&&a.name?' · ':''}${a.name||''}`:'';
+const dayMs=s=>Date.parse(s+'T00:00:00Z');
+const addDay=(s,n)=>new Date(dayMs(s)+n*864e5).toISOString().slice(0,10);
+function ageParts(from,to){
+  if(!from)return null;to=to||todayStr();if(to<from)return {y:0,m:0,d:0,days:0,neg:true};
+  let [fy,fm,fd]=from.split('-').map(Number),[ty,tm,td]=to.split('-').map(Number);
+  let y=ty-fy,m=tm-fm,d=td-fd;
+  if(d<0){m--;const pm=tm-1<1?12:tm-1,py=tm-1<1?ty-1:ty;d+=new Date(py,pm,0).getDate()}
+  if(m<0){y--;m+=12}
+  return {y,m,d,days:Math.round((dayMs(to)-dayMs(from))/864e5)};
+}
+const ageTxt=p=>!p?'':p.y?`${p.y} y ${p.m} m ${p.d} d`:p.m?`${p.m} m ${p.d} d`:`${p.d} d`;
+const bandOf=p=>!p?'Date not set':p.days<92?'Under 3 months':p.days<366?'3 to 12 months':p.days<731?'1 to 2 years':'Over 2 years';
+const BANDS=['Under 3 months','3 to 12 months','1 to 2 years','Over 2 years','Date not set'];
+const inLine=(l,t)=>l.start&&l.start<=t&&(!l.end||l.end>=t);
+function acctView(a){
+  const t=todayStr(),L=rows('lines').filter(l=>l.acctId===a.id).sort((x,y)=>(x.start||'').localeCompare(y.start||''));
+  const closed=(a.status||'Active')!=='Active',endD=closed&&a.closedAt?a.closedAt:null;
+  const age=a.openedAt?ageParts(a.openedAt,endD||t):null;
+  const cur=k=>{const c=L.filter(l=>l.kind===k&&inLine(l,t));return c[c.length-1]||null};
+  return {...a,L,age,closed,curP:cur('Project'),curE:cur('Expenses')};
+}
+const views=()=>rows('accounts').map(acctView);
+const lineName=l=>l?(l.kind==='Project'?l.project:[l.project,l.company].filter(Boolean).join(' / ')):'';
+function aFilt(list){
+  const q=UI.q.toLowerCase();
+  return list.filter(a=>(!UI.bank||a.bank===UI.bank)&&(!UI.v33||a.v33Status===UI.v33)&&(!UI.cdb||a.cdbProject===UI.cdb)&&(!UI.reg||a.holder===UI.reg)&&(!UI.st||(a.status||'Active')===UI.st)&&(!UI.band||bandOf(a.age)===UI.band)
+   &&(!UI.proj||a.L.some(l=>l.kind==='Project'&&l.project===UI.proj))
+   &&(!q||[aLabel(a),a.bank,a.accNo,a.holder,a.cdbProject,lineName(a.curP),lineName(a.curE),a.remark].join(' ').toLowerCase().includes(q)));
+}
+function attention(){
+  const W=[],t=todayStr();
+  views().forEach(a=>{
+    const lab=aLabel(a),w=(sev,text)=>W.push({sev,text,id:a.id,lab,reg:a.holder});
+    const act=!a.closed;
+    if(!a.openedAt)w('Check','Date opened is not set');
+    if(a.closed&&!a.closedAt)w('Check','Not in service but no closing date');
+    if(a.closed&&a.cdbStatus&&a.cdbStatus!==a.status)w('Note',`CPA Control V3.3 shows ${a.cdbStatus}`);
+    if(act&&a.cdbStatus==='Closed')w('Urgent','CPA Control V3.3 shows it is not Active, but it is still Active here');
+    if(act&&!a.curP)w('Check','No project assigned today');
+    if(act&&!a.curE)w('Check','No expense payer today');
+    ['Project','Expenses'].forEach(k=>{
+      const ls=a.L.filter(l=>l.kind===k);
+      ls.forEach(l=>{
+        if(a.openedAt&&l.start&&l.start<a.openedAt)w('Check',`${k} "${lineName(l)}" starts before the account was opened`);
+        if(a.closed&&a.closedAt&&(!l.end||l.end>a.closedAt))w('Urgent',`${k} "${lineName(l)}" is still open after the account closed`);
+      });
+      for(let i=1;i<ls.length;i++){
+        const p=ls[i-1],n=ls[i];if(!p.end){w('Urgent',`${k} lines overlap: "${lineName(p)}" has no end date before "${lineName(n)}"`);continue}
+        if(n.start<=p.end)w('Urgent',`${k} lines overlap: "${lineName(p)}" and "${lineName(n)}"`);
+        else if(addDay(p.end,1)<n.start)w('Check',`${k} gap of ${Math.round((dayMs(n.start)-dayMs(p.end))/864e5)-1} day(s) between "${lineName(p)}" and "${lineName(n)}"`);
+      }
+    });
+  });
+  {const M=riskMap();views().forEach(a=>{if(a.closed)return;const s=riskStats(M[a.id]);const lab=aLabel(a);
+    (M[a.id]||[]).filter(e=>['Blocked','Sign out','Complaint','Dormant'].includes(e.type)&&!e.end).forEach(e=>W.push({sev:'Check',text:e.type+' since '+fmtD(e.start)+' ('+evDays(e)+' days, ongoing)',id:a.id,lab,reg:a.register}));
+    if(s.total&&s.level==='High')W.push({sev:'Check',text:'Risk level is High',id:a.id,lab,reg:a.register})})}
+  const o={Urgent:0,Check:1,Note:2};return W.sort((x,y)=>o[x.sev]-o[y.sev]||x.lab.localeCompare(y.lab));
+}
+async function logH(kind,targetId,label,action,detail){try{await db.collection('hist').doc(rid('h')).set({at:new Date().toISOString(),by:ME.u,byName:ME.name,kind,targetId,label,action,detail:detail||''})}catch(e){}}
+
+/* ---------- audit ---------- */
+async function logAct(action,target,detail){try{await db.collection('log').doc(rid('l')).set({at:new Date().toISOString(),by:ME?ME.u:'',name:ME?ME.name:'',action,target,detail:detail||''})}catch(e){}}
+
+/* ---------- modal ---------- */
+function openModal(title,sub,body,footer){
+  $('#modalRoot').innerHTML=`<div class="ov" id="ov"><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><header><div><h2>${esc(title)}</h2>${sub?`<div class="faint">${sub}</div>`:''}</div><button class="x" type="button" id="mx" aria-label="Close">×</button></header><div class="body">${body}</div>${footer?`<footer>${footer}</footer>`:''}</div></div>`;
+  $('#mx').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal()});
+  document.onkeydown=e=>{if(e.key==='Escape'){if($('.light'))$('.light').remove();else closeModal()}};
+}
+const closeModal=()=>{$('#modalRoot').innerHTML='';document.onkeydown=null;UI.modal=null;if(ME&&typeof draw==='function')draw()};
+function lightbox(src){const d=document.createElement('div');d.className='light';d.innerHTML=`<img alt="Screenshot" src="${src}">`;d.onclick=()=>d.remove();document.body.appendChild(d)}
+
+/* ---------- dashboard ---------- */
+const IS_CPA=true;
+const PAL=['#067647','#23507A','#B8860B','#7A5AF8','#0E9384','#C4320A'],GREY='#98A2B3',GREYS=['Date not set','No project','No holder','No bank','No expense payer'];
+const pctTxt=(n,t)=>t?Math.round(n*100/t)+'%':'0%';
+const dfa=f=>`data-df="${esc(JSON.stringify(f))}"`;
+function donut(title,sub,items){
+  const tot=items.reduce((s,x)=>s+x.n,0),R=62,C=2*Math.PI*R;let off=0;
+  const arcs=tot?items.filter(x=>x.n).map(x=>{const len=C*x.n/tot;const el=`<circle r="${R}" cx="80" cy="80" fill="none" stroke="${x.c}" stroke-width="26" stroke-dasharray="${len.toFixed(2)} ${(C-len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 80 80)" ${x.df?dfa(x.df)+' style="cursor:pointer"':''}><title>${esc(x.label)}: ${x.n}</title></circle>`;off+=len;return el}).join(''):`<circle r="${R}" cx="80" cy="80" fill="none" stroke="var(--line)" stroke-width="26"/>`;
+  return `<div class="dp"><h3>${esc(title)}</h3><div class="dsub">${esc(sub)}</div><svg viewBox="0 0 160 160" width="170" height="170" role="img" aria-label="${esc(title)}" class="dsvg">${arcs}<text x="80" y="84" text-anchor="middle" style="font:600 26px var(--head);fill:var(--ink)">${tot}</text><text x="80" y="100" text-anchor="middle" style="font:10.5px var(--body);fill:var(--muted)">accounts</text></svg>
+   <div class="dleg">${items.map(x=>`<div class="dl ${x.df?'clk':''}" ${x.df?dfa(x.df)+' tabindex="0"':''}><i style="background:${x.c}"></i><span title="${esc(x.label)}">${esc(x.label)}</span><b>${x.n}</b><em>${pctTxt(x.n,tot)}</em></div>`).join('')||'<div class="faint">No data yet.</div>'}</div></div>`;
+}
+function bars(title,sub,items,sc,col){
+  const mx=sc||Math.max(1,...items.map(x=>x.n));
+  return `<div class="dp"><h3>${esc(title)}</h3><div class="dsub">${esc(sub)}</div><div class="dbars">${items.map(x=>`<div class="db ${x.df?'clk':''}" ${x.df?dfa(x.df)+' tabindex="0"':''}><span title="${esc(x.label)}">${esc(x.label)}</span><div class="dtr"><div style="width:${Math.round(x.n*100/mx)}%;background:${x.c||col||'var(--steel)'}"></div></div><b>${x.n}${x.of!=null?' of '+x.of:''}</b></div>`).join('')||'<div class="faint">No data yet.</div>'}</div></div>`;
+}
+function dashView(){
+  const all=views(),act=all.filter(a=>!a.closed),aged=act.filter(a=>a.age),tot=act.length;
+  if(!all.length)return `<div class="tbox"><div class="empty"><b>No accounts yet</b>Import the accounts or add one, then the dashboard fills in.</div></div>`;
+  const avg=aged.length?Math.round(aged.reduce((s,a)=>s+a.age.days,0)/aged.length):0;
+  const old=aged.reduce((m,a)=>!m||a.age.days>m.age.days?a:m,null);
+  const AO=alOpen(),miss=act.filter(a=>!a.openedAt).length,W=attention().filter(w=>w.sev!=='Note').length;
+  const cnt=(list,fn)=>{const m={};list.forEach(a=>{const k=fn(a);m[k]=(m[k]||0)+1});return m};
+  const mk=(m,keys,df)=>keys.filter(k=>m[k]).map((k,i)=>({label:k,n:m[k],c:GREYS.includes(k)?GREY:PAL[i%PAL.length],df:df(k)}));
+  const ageItems=mk(cnt(act,a=>bandOf(a.age)),BANDS,k=>({st:'Active',band:k}));
+  const projOf=a=>a.curP?a.curP.project:(a.cdbProject||'No project');
+  const pm=cnt(act,projOf),pdf=k=>pm[k]===undefined||k==='No project'?null:(act.some(a=>a.curP&&a.curP.project===k)?{st:'Active',proj:k}:{st:'Active',cdb:k});
+  const projItems=mk(pm,uniq(Object.keys(pm).filter(k=>k!=='No project')).concat(pm['No project']?['No project']:[]),pdf);
+  const cards=[['In service',tot,'Accounts in use',{st:'Active'}],['Not in service',all.length-tot,'Not Active in V3.3',{st:'Closed'}],['Average age',aged.length?ageTxt(ageParts(addDay(todayStr(),-avg))):'—','Accounts in service',{st:'Active'}],['Oldest',old?ageTxt(old.age):'—',old?aLabel(old):'',old?{st:'Active',band:bandOf(old.age)}:{st:'Active'}],['Date opened missing',miss,'In service, no date opened',{st:'Active',band:'Date not set'}],['Needs attention',W,'Urgent or Check items',{tab:'att'}],['Open alerts',AO.filter(x=>x.sev!=='Info').length,`${AO.filter(x=>x.sev==='Critical').length} critical · ${AO.filter(x=>x.sev==='Warning').length} warning`,{tab:'alert'}]];
+  const cardHtml=cards.map(([k,v,m,f],i)=>`<div class="card ${(k==='Date opened missing'||k==='Needs attention')&&v>0?'alert':''}" ${dfa(f)} tabindex="0"><span class="k">${esc(k)}</span><span class="v">${esc(v)}</span><span class="m">${esc(m)}</span></div>`).join('');
+  const missItems=[['Date opened',act.filter(a=>!a.openedAt).length],['Project today',act.filter(a=>!a.curP).length],['Expense payer today',act.filter(a=>!a.curE).length]].map(([l,n])=>({label:l,n,of:tot,c:'#C4320A',df:{tab:'att'}}));
+  
+  const bm=cnt(act,a=>a.bank||'No bank'),hm=cnt(act,a=>a.holder||'No holder'),sm=cnt(all,a=>a.v33Status||'No status');
+  const bankItems=mk(bm,Object.keys(bm).sort((x,y)=>bm[y]-bm[x]),k=>k==='No bank'?null:{st:'Active',bank:k});
+  const holdItems=Object.keys(hm).sort((x,y)=>hm[y]-hm[x]).map(k=>({label:k,n:hm[k],df:k==='No holder'?null:{st:'Active',reg:k}}));
+  const stOrder=['Active','To Check','Never Used','Sign Out','Unable to Log In','Blocked','Stop Use'],stc={'Active':'#067647','To Check':'#B8860B','Never Used':'#98A2B3','Sign Out':'#7A5AF8','Unable to Log In':'#0E9384','Blocked':'#C4320A','Stop Use':'#667085'};
+  const stItems=Object.keys(sm).sort((x,y)=>(stOrder.indexOf(x)<0?99:stOrder.indexOf(x))-(stOrder.indexOf(y)<0?99:stOrder.indexOf(y))).map(k=>({label:k,n:sm[k],c:stc[k]||GREY,df:{st:'',v33:k}}));
+  const rkM=riskMap(),rkS=act.map(a=>riskStats(rkM[a.id]));
+  const rkLvl=[['High','var(--red)'],['Medium','#C8921B'],['Low','var(--green)']].map(([l,c])=>({label:l,n:rkS.filter(s=>s.total&&s.level===l).length,c,df:{tab:'risk',rl:l,st:'Active'}})).concat([{label:'No events',n:rkS.filter(s=>!s.total).length,c:'var(--faint)',df:{tab:'risk',rl:'None',st:'Active'}}]);
+  const rkOn=['Blocked','Sign out','Complaint','Dormant'].map(k=>({label:k,n:rkS.filter(s=>s[k].ongoing).length,c:'var(--red)',df:{tab:'risk',st:'Active'}}));
+  const rkTy=RK_COLS.map(([k,l])=>({label:l,n:rkS.filter(s=>s[k].n).length,c:'var(--steel)',df:{tab:'risk',st:'Active'}}));
+  const rkBoxes=bars('Risk level','Accounts in service, by risk level',rkLvl,tot)+bars('Ongoing now','Accounts with an event still open',rkOn,tot)+bars('Accounts with events','Accounts in service with at least one event of this type',rkTy,tot);
+  const strip=AO.filter(x=>x.sev!=='Info').slice(0,4);
+  const alStrip=strip.length?`<div class="${AO.some(x=>x.sev==='Critical')?'warn':'defbox'}" style="margin:0 0 14px"><b>${AO.filter(x=>x.sev!=='Info').length} open alert${AO.filter(x=>x.sev!=='Info').length===1?'':'s'}</b> need action. ${strip.map(x=>`<div style="margin-top:4px">${alSev(x.sev)} ${esc(x.lab)}: ${esc(x.text)}</div>`).join('')}<div style="margin-top:8px"><button class="btn sm" type="button" ${dfa({tab:'alert'})}>Open Alerts</button></div></div>`:'';
+  return `${alStrip}<div class="note" style="margin:0 0 12px">Click any card, slice or bar to open the matching accounts. Charts count accounts in service, except status, which counts all CPA accounts.</div>
+  <div class="cards">${cardHtml}</div>
+  <div class="dsec">Where the accounts are</div><div class="dgrid">${donut('By bank','Accounts in service',bankItems)}${bars('By holder','Accounts in service',holdItems,0,'var(--steel)')}${donut('By project','Project today, or the V3.3 project until a dated line is added',projItems)}</div><div class="dsec">Age, status and data quality</div><div class="dgrid">${donut('Age of accounts','Accounts in service, by age band',ageItems)}${bars('By V3.3 status','All CPA accounts, active and closed',stItems,0)}${bars('Missing information','Accounts in service still missing this item',missItems,tot)}</div><div class="dsec">Risk control</div><div class="dgrid">${rkBoxes}</div>`;
+}
+
+/* ---------- matches source ---------- */
+const REC_NAME=IS_CPA?'CPA Control System V3.3':'the Central Database';
+const recNm=x=>String(x==null?'':x).toLowerCase().replace(/[^a-z0-9]/g,'');
+const pgStat=p=>IS_CPA?(p.v33Status||''):(p.status||'Active');
+const pgGrp=(id,p,S)=>(S[id]&&S[id].grp)||(IS_CPA?p.bank:p.register)||'—';
+function recCalc(){
+  const sn=D.source&&D.source.snap;if(!sn||!sn.accounts)return null;
+  const S=sn.accounts,P=D.accounts,out=[];
+  Object.entries(S).forEach(([id,s])=>{const p=P[id];
+    if(!p){out.push({id:null,code:s.code,name:s.name,issue:'In the source, missing here',src:s.status,pg:'—'});return}
+    const w=(issue,src,pg)=>out.push({id,code:p.code||s.code,name:p.name||s.name,issue,src,pg});
+    const srcIn=s.status==='Active',pgIn=(p.status||'Active')==='Active';
+    if(srcIn!==pgIn)w('In service differs',s.status,p.status||'Active');
+    else if(s.status!==pgStat(p))w('Status differs',s.status,pgStat(p)||'—');
+    if(recNm(s.accNo)!==recNm(p.accNo))w('Account number differs',s.accNo||'—',p.accNo||'—');
+    if(recNm(s.bank)!==recNm(p.bank))w('Bank differs',s.bank||'—',p.bank||'—');
+    if(IS_CPA&&recNm(s.holder)!==recNm(p.holder))w('Holder differs',s.holder||'—',p.holder||'—');
+    if(recNm(s.project)!==recNm(p.cdbProject))w('Project differs',s.project||'—',p.cdbProject||'—');
+  });
+  Object.entries(P).forEach(([id,p])=>{if(!S[id])out.push({id,code:p.code,name:p.name,issue:'Here, not in the source',src:'—',pg:p.status||'Active'})});
+  return {sn,S,P,out};
+}
+function recView(){
+  const r=recCalc();
+  if(!r)return `<div class="tbox"><div class="empty"><b>No source copy yet</b>A copy of ${esc(REC_NAME)} has not been loaded into this page. Ask Claude to sync it.</div></div>`;
+  const {sn,S,P,out}=r,sa=Object.values(S),pa=Object.values(P);
+  const sIn=sa.filter(s=>s.status==='Active').length,pIn=pa.filter(p=>(p.status||'Active')==='Active').length;
+  const grp={};
+  Object.entries(S).forEach(([id,s])=>{const g=grp[s.grp||'—']=grp[s.grp||'—']||{s:0,si:0,p:0,pi:0};g.s++;if(s.status==='Active')g.si++});
+  Object.entries(P).forEach(([id,p])=>{const k=pgGrp(id,p,S),g=grp[k]=grp[k]||{s:0,si:0,p:0,pi:0};g.p++;if((p.status||'Active')==='Active')g.pi++});
+  const keys=Object.keys(grp).sort();
+  const tr=(k,g,b)=>{const bad=g.s!==g.p||g.si!==g.pi;return `<tr ${b?'style="background:var(--grand);font-weight:600"':''}><td><b>${esc(k)}</b></td><td class="n">${g.s}</td><td class="n">${g.p}</td><td class="n">${g.si}</td><td class="n">${g.pi}</td><td>${bad?'<span class="pill r">Differs</span>':'<span class="pill g">Matches</span>'}</td></tr>`};
+  const tot=keys.reduce((t,k)=>({s:t.s+grp[k].s,si:t.si+grp[k].si,p:t.p+grp[k].p,pi:t.pi+grp[k].pi}),{s:0,si:0,p:0,pi:0});
+  let stTbl='';
+  if(IS_CPA){const sm={},pm={};sa.forEach(s=>sm[s.status]=(sm[s.status]||0)+1);pa.forEach(p=>{const k=p.v33Status||'—';pm[k]=(pm[k]||0)+1});
+    const ks=uniq([...Object.keys(sm),...Object.keys(pm)]);
+    stTbl=`<h3 style="margin:16px 0 6px">By V3.3 status</h3><div class="tbox"><table class="t" style="min-width:0"><thead><tr><th>Status</th><th class="n">${esc(REC_NAME)}</th><th class="n">Here</th><th></th></tr></thead><tbody>${ks.map(k=>`<tr><td><b>${esc(k)}</b></td><td class="n">${sm[k]||0}</td><td class="n">${pm[k]||0}</td><td>${(sm[k]||0)===(pm[k]||0)?'<span class="pill g">Matches</span>':'<span class="pill r">Differs</span>'}</td></tr>`).join('')}</tbody></table></div>`}
+  const taken=sn.at?fmtDT(sn.at):'';
+  return `<div class="${out.length||tot.s!==tot.p||sIn!==pIn?'warn':'defbox'}" style="margin-top:0">${out.length||tot.s!==tot.p||sIn!==pIn?`<b>${out.length} difference${out.length===1?'':'s'}</b> found between this page and ${esc(REC_NAME)}.`:`<b>Everything matches</b> ${esc(REC_NAME)}: ${tot.s} accounts, ${sIn} in service.`} Source copy taken ${esc(taken)}. To refresh it, ask Claude to sync; this page cannot read another page's database by itself.</div>
+  <div class="sumstrip"><div class="chip"><span>${esc(REC_NAME)}</span><b>${tot.s}</b></div><div class="chip"><span>Here</span><b>${tot.p}</b></div><div class="chip"><span>In service (source)</span><b>${sIn}</b></div><div class="chip"><span>In service (here)</span><b>${pIn}</b></div><div class="chip ${out.length?'bad':''}"><span>Differences</span><b>${out.length}</b></div></div>
+  <div class="toolbar"><span class="sp"></span><button class="btn" type="button" id="xRec">Export Excel</button></div>
+  <h3 style="margin:8px 0 6px">${IS_CPA?'By bank':'By register'}</h3><div class="tbox"><table class="t" style="min-width:0"><thead><tr><th>${IS_CPA?'Bank':'Register'}</th><th class="n">Accounts (source)</th><th class="n">Accounts (here)</th><th class="n">In service (source)</th><th class="n">In service (here)</th><th></th></tr></thead><tbody>${keys.map(k=>tr(k,grp[k])).join('')}${tr('All accounts',tot,1)}</tbody></table></div>
+  ${stTbl}
+  <h3 style="margin:16px 0 6px">Differences</h3><div class="tbox"><table class="t" style="min-width:760px"><thead><tr><th>Account</th><th>Issue</th><th>${esc(REC_NAME)}</th><th>Here</th></tr></thead><tbody>${out.length?out.map(d=>`<tr ${d.id?`class="row" tabindex="0" data-ac="${esc(d.id)}"`:''}><td><span class="code">${esc(d.code||'')}</span> ${esc(d.name||'')}</td><td><span class="pill a">${esc(d.issue)}</span></td><td>${esc(d.src)}</td><td>${esc(d.pg)}</td></tr>`).join(''):emptyRow(4,'No differences','Every account matches the source.')}</tbody></table></div>`;
+}
+
+/* ---------- risk control ---------- */
+const RK=[['Blocked','Blocked','dur'],['Sign out','Signed out','dur'],['Complaint','Complaint','dur'],['Dormant','Dormant','dur'],['Unblock visit','Unblock visit (owner visited the bank)','visit'],['SOF request','Source of fund (SOF) explanation requested','one'],['Cheque rejected','Cheque rejected (no fund available)','one']];
+const RK_COLS=[['Blocked','Blocked'],['Sign out','Sign out'],['Complaint','Complaint'],['Dormant','Dormant'],['Failed unblock','Unblock failed after visit'],['SOF request','SOF requests'],['Cheque rejected','Cheque rejected']];
+const RK_DEF={'Blocked':[2,4],'Sign out':[2,4],'Complaint':[1,3],'Dormant':[1,2],'Failed unblock':[1,2],'SOF request':[1,3],'Cheque rejected':[1,2]};
+const rkRules=()=>{const x=(D.settings.riskRules||{}).v;return x&&typeof x==='object'?{...RK_DEF,...x}:RK_DEF};
+const evDays=e=>e.start?ageParts(e.start,e.end||todayStr()).days+1:0;
+function riskMap(){const m={};rows('risk').forEach(e=>{(m[e.acctId]=m[e.acctId]||[]).push(e)});return m}
+function riskStats(evs){
+  evs=evs||[];const s={};RK_COLS.forEach(([k])=>s[k]={n:0,days:0,ongoing:0,dates:[]});
+  evs.forEach(e=>{
+    if(e.type==='Unblock visit'){if(e.result==='Not unblocked'){const c=s['Failed unblock'];c.n++;c.dates.push(e.start)}return}
+    const c=s[e.type];if(!c)return;c.n++;c.dates.push(e.start);
+    if(['Blocked','Sign out','Complaint','Dormant'].includes(e.type)){c.days+=evDays(e);if(!e.end)c.ongoing++}
+  });
+  s.visits=evs.filter(e=>e.type==='Unblock visit').length;
+  const R=rkRules();let lvl=0;RK_COLS.forEach(([k])=>{const n=s[k].n,r=R[k];if(n>=r[1])lvl=Math.max(lvl,2);else if(n>=r[0])lvl=Math.max(lvl,1)});
+  s.level=['Low','Medium','High'][lvl];s.total=evs.length;s.ongoing=RK_COLS.reduce((t,[k])=>t+s[k].ongoing,0);return s}
+const lvPill=s=>s.total?`<span class="pill ${s.level==='High'?'r':s.level==='Medium'?'a':'g'}">${s.level}</span>`:'<span class="faint">–</span>';
+const rkCell=(c,isDur)=>c.n?`<b>${c.n}</b>${isDur?`<div class="faint">${c.days.toLocaleString('en-US')} d${c.ongoing?' · ongoing':''}</div>`:''}`:'<span class="faint">0</span>';
+function riskRows(){
+  const M=riskMap(),q=UI.q.toLowerCase();
+  return views().filter(a=>(!UI.st||(a.status||'Active')===UI.st)&&(!q||[aLabel(a),a.bank,a.accNo].join(' ').toLowerCase().includes(q))).map(a=>({a,s:riskStats(M[a.id])})).filter(x=>!UI.rl||(UI.rl==='None'?!x.s.total:x.s.total&&x.s.level===UI.rl)).sort((x,y)=>(['Low','Medium','High'].indexOf(y.s.level)*(y.s.total?1:-1)-['Low','Medium','High'].indexOf(x.s.level)*(x.s.total?1:-1))||y.s.total-x.s.total||(x.a.code||'').localeCompare(y.a.code||''));
+}
+function riskView(){
+  const l=riskRows(),all=riskRows.call(null);
+  const hi=l.filter(x=>x.s.total&&x.s.level==='High').length,md=l.filter(x=>x.s.total&&x.s.level==='Medium').length,og=l.filter(x=>x.s.ongoing).length,ev=rows('risk').length;
+  return `<div class="sumstrip"><div class="chip ${hi?'bad':''}"><span>High risk</span><b>${hi}</b></div><div class="chip"><span>Medium risk</span><b>${md}</b></div><div class="chip ${og?'bad':''}"><span>With an ongoing event</span><b>${og}</b></div><div class="chip"><span>Events recorded</span><b>${ev}</b></div></div>
+  <div class="toolbar">${searchBox('Code, name, bank…')}
+   <label class="f">Risk level<select class="i" id="frl"><option value="">All</option>${['High','Medium','Low','None'].map(k=>opt(k,k==='None'?'No events':k,UI.rl===k)).join('')}</select></label>
+   <label class="f">Show<select class="i" id="fs"><option value="Active" ${UI.st==='Active'?'selected':''}>In service</option><option value="Closed" ${UI.st==='Closed'?'selected':''}>Closed</option><option value="Moved" ${UI.st==='Moved'?'selected':''}>Moved</option><option value="" ${UI.st===''?'selected':''}>All</option></select></label>
+   <span class="sp"></span>${can('export')?'<button class="btn" type="button" id="xRisk">Export Excel</button>':''}${can('admin')?'<button class="btn" type="button" id="rkRules">Risk rules</button>':''}</div>
+  <div class="tbox"><table class="t" style="min-width:1200px"><thead><tr><th>Account code</th><th>Account name</th><th>Account number</th>${RK_COLS.map(c=>`<th class="n">${c[1]}</th>`).join('')}<th>Risk level</th></tr></thead><tbody>
+  ${l.length?l.map(({a,s})=>`<tr class="row" tabindex="0" data-ac="${esc(a.id)}"><td class="code">${esc(a.code||'')}</td><td><b>${esc(a.name||'')}</b><div class="faint">${esc(a.bank||'')}</div></td><td class="mono">${esc(a.accNo||'')||'<span class="faint">–</span>'}</td>${RK_COLS.map(([k])=>`<td class="n">${rkCell(s[k],['Blocked','Sign out','Complaint','Dormant'].includes(k))}${k==='Failed unblock'&&s.visits?`<div class="faint">of ${s.visits} visit${s.visits===1?'':'s'}</div>`:''}</td>`).join('')}<td>${lvPill(s)}</td></tr>`).join(''):emptyRow(11,'No accounts match','')}
+  </tbody></table></div>
+  <div class="note">n = number of times; d = total days (a day count includes the first day; an event with no end date is ongoing and counts up to today). Risk level is the highest level reached by any item, using the thresholds in Risk rules. Click an account to see every event and its dates, and to add one.</div>`;
+}
+function riskRulesModal(){
+  if(!can('admin'))return;const R=rkRules();
+  openModal('Risk rules','An account reaches a level when the count of any item reaches the number',
+   `<div class="tbox"><table class="t" style="min-width:0"><thead><tr><th>Item</th><th class="n">Medium from</th><th class="n">High from</th></tr></thead><tbody>${RK_COLS.map(([k,l])=>`<tr><td>${esc(l)}</td><td class="n"><input class="i rr_m" data-k="${esc(k)}" type="number" min="1" value="${R[k][0]}" style="width:90px"></td><td class="n"><input class="i rr_h" data-k="${esc(k)}" type="number" min="1" value="${R[k][1]}" style="width:90px"></td></tr>`).join('')}</tbody></table></div><div class="err" id="rrErr" role="alert"></div>`,
+   `<span class="sp"></span><button class="btn" type="button" id="rrDef">Reset to default</button><button class="btn" type="button" id="mClose">Cancel</button><button class="btn pri" type="button" id="rrSave">Save rules</button>`);
+  $('#mClose').onclick=closeModal;
+  $('#rrDef').onclick=async()=>{try{await db.doc('settings/riskRules').set({v:RK_DEF,updatedAt:new Date().toISOString(),updatedBy:ME.name});await logAct('Risk rules','','Reset to default');closeModal();toast('Rules reset.')}catch(e){$('#rrErr').textContent='Could not save.'}};
+  $('#rrSave').onclick=async()=>{const v={};for(const [k] of RK_COLS){const m=+document.querySelector('.rr_m[data-k="'+k+'"]').value,h=+document.querySelector('.rr_h[data-k="'+k+'"]').value;if(!(m>=1)||!(h>=m)){$('#rrErr').textContent='Each High number must be at least the Medium number (and 1 or more).';return}v[k]=[m,h]}
+    try{await db.doc('settings/riskRules').set({v,updatedAt:new Date().toISOString(),updatedBy:ME.name});await logAct('Risk rules','',RK_COLS.map(([k])=>k+' '+v[k].join('/')).join('; '));closeModal();toast('Rules saved.')}catch(e){$('#rrErr').textContent='Could not save.'}};
+}
+const riskBoxHtml=()=>`<div><h3>Risk control</h3><div class="faint" style="margin:2px 0 8px">Blocked, sign out, complaint and dormant are tracked with start and end dates. Visits, SOF requests and cheque rejections are tracked by date.</div><div id="riskBox"></div></div>`;
+function riskBind(id,w){
+  const box=$('#riskBox');if(!id||!box)return;
+  const a=D.accounts[id]||{},lab=aLabel(a);
+  const paint=()=>{
+    const evs=rows('risk').filter(e=>e.acctId===id).sort((x,y)=>(y.start||'').localeCompare(x.start||'')||(y.at||'').localeCompare(x.at||'')),s=riskStats(evs);
+    const edit=w&&can('edit'),del=w&&can('delete');
+    box.innerHTML=`<div class="sumstrip" style="margin-bottom:8px">${RK_COLS.map(([k,l])=>`<div class="chip" style="min-width:96px"><span>${esc(l)}</span><b>${s[k].n}</b>${['Blocked','Sign out','Complaint','Dormant'].includes(k)?`<div class="faint">${s[k].days.toLocaleString('en-US')} days${s[k].ongoing?' · ongoing':''}</div>`:''}</div>`).join('')}<div class="chip"><span>Risk level</span><b style="font-size:18px">${lvPill(s)}</b></div></div>
+    <div class="tbox" style="max-height:none"><table class="t" style="min-width:640px"><thead><tr><th>Event</th><th>Date / start</th><th>End</th><th class="n">Days</th><th>Result</th><th>Note</th><th></th></tr></thead><tbody>
+    ${evs.length?evs.map(e=>{const dur=['Blocked','Sign out','Complaint','Dormant'].includes(e.type);return `<tr><td><b>${esc((RK.find(r=>r[0]===e.type)||[0,e.type])[1].replace(/ \(.*\)$/,''))}</b></td><td>${esc(fmtD(e.start))}</td><td>${dur?(e.end?esc(fmtD(e.end)):`<span class="pill a">Ongoing</span>${edit?` <input class="i rk_end" type="date" data-i="${esc(e.id)}" value="${todayStr()}" style="width:150px;display:inline-block"> <button class="btn sm" type="button" data-rkend="${esc(e.id)}">Set end</button>`:''}`):''}</td><td class="n">${dur?evDays(e).toLocaleString('en-US'):''}</td><td>${e.type==='Unblock visit'?`<span class="pill ${e.result==='Unblocked'?'g':'r'}">${esc(e.result||'')}</span>`:''}</td><td>${esc(e.note||'')}<div class="faint">${esc(e.byName||'')}</div></td><td>${del?`<button class="btn sm" type="button" data-rkdel="${esc(e.id)}">Delete</button>`:''}</td></tr>`}).join(''):'<tr><td colspan="7" class="faint" style="padding:10px">No risk events yet.</td></tr>'}
+    </tbody></table></div>
+    ${edit?`<div class="grid2" style="margin-top:10px"><label class="f">Event<select class="i" id="rk_t">${RK.map(r=>opt(r[0],r[1],0)).join('')}</select></label>
+     <label class="f"><span id="rk_l1">Start date</span><input class="i" type="date" id="rk_s" value="${todayStr()}"></label>
+     <label class="f" id="rk_ew">End date (blank = ongoing)<input class="i" type="date" id="rk_e"></label>
+     <label class="f" id="rk_rw">Result of the visit<select class="i" id="rk_r"><option value="Not unblocked">Not unblocked</option><option value="Unblocked">Unblocked</option></select></label>
+     <label class="f">Note<input class="i" id="rk_n" maxlength="200"></label></div>
+     <div style="margin-top:10px"><button class="btn pri" type="button" id="rkAdd">Add event</button> <span class="faint" id="rkErr" role="alert"></span></div>`:''}`;
+    const tg=()=>{const t=$('#rk_t');if(!t)return;const k=(RK.find(r=>r[0]===t.value)||[])[2];$('#rk_l1').textContent=k==='dur'?'Start date':'Date';$('#rk_ew').style.display=k==='dur'?'':'none';$('#rk_rw').style.display=k==='visit'?'':'none'};
+    if($('#rk_t')){$('#rk_t').onchange=tg;tg()}
+    const af=()=>setTimeout(paint,350);
+    if($('#rkAdd'))$('#rkAdd').onclick=async()=>{
+      const err=$('#rkErr');err.textContent='';const type=$('#rk_t').value,k=(RK.find(r=>r[0]===type)||[])[2],start=$('#rk_s').value,end=k==='dur'?$('#rk_e').value:'',note=$('#rk_n').value.trim();
+      if(!start){err.textContent='Enter the date.';return}
+      if(start>todayStr()){err.textContent='The date is in the future.';return}
+      if(end&&end<start){err.textContent='The end date is before the start date.';return}
+      if(end&&end>todayStr()){err.textContent='The end date is in the future.';return}
+      if(k==='dur'&&!end&&evs.some(e=>e.type===type&&!e.end)){err.textContent=type+' is already ongoing. Set its end date first.';return}
+      if(k==='dur'){const o=evs.find(e=>e.type===type&&e.start<=(end||'9999')&&(!e.end||e.end>=start));if(o){err.textContent='This overlaps another '+type+' event ('+fmtD(o.start)+' – '+(o.end?fmtD(o.end):'ongoing')+').';return}}
+      const rec={acctId:id,type,start,end,result:k==='visit'?$('#rk_r').value:'',note,at:new Date().toISOString(),by:ME.u,byName:ME.name};
+      try{await db.doc('risk/'+rid('rk')).set(rec);await logH('Risk',id,lab,'Event added',type+' '+fmtD(start)+(k==='dur'?' – '+(end?fmtD(end):'ongoing'):'')+(rec.result?' · '+rec.result:'')+(note?' · '+note:''));af()}catch(e){err.textContent='Could not save. You may only have view access.'}};
+    box.querySelectorAll('[data-rkend]').forEach(b=>b.onclick=async()=>{const e=D.risk[b.dataset.rkend],v=box.querySelector('.rk_end[data-i="'+b.dataset.rkend+'"]').value;
+      if(!v||v<e.start||v>todayStr()){toast('Choose an end date from the start date up to today.');return}
+      try{await db.doc('risk/'+b.dataset.rkend).update({end:v,updatedAt:new Date().toISOString()});await logH('Risk',id,lab,'Event ended',e.type+' ended '+fmtD(v));af()}catch(x){toast('Could not save.')}});
+    box.querySelectorAll('[data-rkdel]').forEach(b=>b.onclick=async()=>{if(!b.dataset.sure){b.dataset.sure=1;b.textContent='Sure?';setTimeout(()=>{if(b.isConnected){b.dataset.sure='';b.textContent='Delete'}},4000);return}
+      const e=D.risk[b.dataset.rkdel]||{};try{await db.doc('risk/'+b.dataset.rkdel).delete();await logH('Risk',id,lab,'Event deleted',(e.type||'')+' '+fmtD(e.start));af()}catch(x){toast('Could not delete.')}});
+  };
+  paint();
+}
+
+/* ---------- views ---------- */
+/* ---------- alerts (monitoring, tracking, alert) ---------- */
+const AL_DEF={ageYears:[1,2,3,5],ageAhead:30,ageBack:7,lineAhead:30,evWarn:7,evCrit:30,newDays:30};
+const alRules=()=>{const x=(D.settings.alertRules||{}).v;return x&&typeof x==='object'?{...AL_DEF,...x}:AL_DEF};
+const AL_TYPES=['Account age','New account','Line ending','Risk event','Risk level','Data','CPA Control V3.3','Source copy'];
+const AL_ORD={Critical:0,Warning:1,Info:2};
+const alKey=(t,id,ref)=>(t+'_'+id+'_'+ref).replace(/[^A-Za-z0-9_\-]/g,'');
+function alertsCalc(){
+  const R=alRules(),t=todayStr(),out=[],M=riskMap();
+  const add=(sev,type,a,text,ref,due)=>out.push({key:alKey(type,a.id,ref),sev,type,text,id:a.id,lab:aLabel(a),reg:a.holder||'',due:due||'',days:due?dayDiff(due,t):null});
+  views().forEach(a=>{
+    if(a.closed)return;
+    if(a.openedAt){
+      const [Y,Mo,Dd]=a.openedAt.split('-').map(Number);
+      (R.ageYears||[]).forEach(y=>{const ann=new Date(Date.UTC(Y+y,Mo-1,Dd)).toISOString().slice(0,10),df=dayDiff(ann,t);
+        if(df<=R.ageAhead&&df>=-R.ageBack)add('Info','Account age',a,df>=0?`Reaches ${y} year${y>1?'s':''} in service on ${fmtD(ann)}`:`Reached ${y} year${y>1?'s':''} in service on ${fmtD(ann)}`,'y'+y,ann)});
+      const age=dayDiff(t,a.openedAt);
+      if(age>=0&&age<=R.newDays)add('Info','New account',a,`Opened ${age} day${age===1?'':'s'} ago, still in its first ${R.newDays} days: watch it`,'new',a.openedAt);
+    }
+    [['Project',a.curP],['Expenses',a.curE]].forEach(([kind,cur])=>{
+      if(cur&&cur.end){const df=dayDiff(cur.end,t);
+        if(df>=0&&df<=R.lineAhead&&!a.L.some(l=>l.kind===kind&&l.start>cur.end))add(df<=7?'Critical':'Warning','Line ending',a,`${kind==='Project'?'Project':'Expense payer'} "${lineName(cur)}" ends ${fmtD(cur.end)} (${df} day${df===1?'':'s'}) and nothing follows`,kind+cur.end,cur.end)}
+    });
+    (M[a.id]||[]).filter(e=>['Blocked','Sign out','Complaint','Dormant'].includes(e.type)&&!e.end).forEach(e=>{const n=evDays(e);
+      if(n>=R.evCrit)add('Critical','Risk event',a,`${e.type} since ${fmtD(e.start)}: ${n} days and still ongoing`,e.type+e.start,e.start);
+      else if(n>=R.evWarn)add('Warning','Risk event',a,`${e.type} since ${fmtD(e.start)}: ${n} days and still ongoing`,e.type+e.start,e.start)});
+    const s=riskStats(M[a.id]);if(s.total&&s.level==='High')add('Critical','Risk level',a,'Risk level is High: too many events of the same type','high','');
+    if(!a.openedAt)add('Warning','Data',a,'Date opened is not set, so its age cannot be tracked','open','');
+    if(!a.curP)add('Warning','Data',a,'No project assigned today','proj','');
+    if(!a.curE)add('Warning','Data',a,'No expense payer today','exp','');
+    if(a.cdbStatus&&a.cdbStatus!=='Active')add('Critical','CPA Control V3.3',a,'CPA Control V3.3 shows it is not Active, but the account is still in service here','cdbclosed','');
+  });
+  const rc=recCalc();if(rc&&rc.out.length)out.push({key:alKey('Source','copy',String(rc.out.length)),sev:'Warning',type:'Source copy',text:`${rc.out.length} difference${rc.out.length===1?'':'s'} between this page and CPA Control V3.3`,id:null,tab:'rec',lab:'All accounts',reg:'',due:'',days:null});
+  out.forEach(x=>{x.ack=D.alerts[x.key]||null});
+  return out.sort((x,y)=>AL_ORD[x.sev]-AL_ORD[y.sev]||(x.days==null?9e3:x.days)-(y.days==null?9e3:y.days)||x.lab.localeCompare(y.lab));
+}
+const alOpen=()=>alertsCalc().filter(x=>!x.ack);
+const alSev=s=>s==='Critical'?'<span class="pill r">Critical</span>':s==='Warning'?'<span class="pill a">Warning</span>':'<span class="pill x">Info</span>';
+function alWhen(x){if(!x.due)return '<span class="faint">–</span>';const d=x.days;return `${esc(fmtD(x.due))}<div class="faint">${d>0?'in '+d+' day'+(d===1?'':'s'):d===0?'today':Math.abs(d)+' day'+(Math.abs(d)===1?'':'s')+' ago'}</div>`}
+function alertView(){
+  const all=alertsCalc(),q=UI.q.toLowerCase(),o=all.filter(x=>!x.ack),c=s=>o.filter(x=>x.sev===s).length;
+  const l=all.filter(x=>(UI.ashow==='All'||(UI.ashow==='Acknowledged'?x.ack:!x.ack))&&(!UI.asev||x.sev===UI.asev)&&(!UI.atype||x.type===UI.atype)&&(!q||[x.lab,x.text,x.type,x.reg].join(' ').toLowerCase().includes(q)));
+  const ed=can('edit');
+  return `<div class="sumstrip"><div class="chip ${c('Critical')?'bad':''}"><span>Critical</span><b>${c('Critical')}</b></div><div class="chip"><span>Warning</span><b>${c('Warning')}</b></div><div class="chip"><span>Info</span><b>${c('Info')}</b></div><div class="chip"><span>Acknowledged</span><b>${all.length-o.length}</b></div></div>
+  <div class="toolbar">${searchBox('Account, alert, register…')}
+   <label class="f">Show<select class="i" id="fal_show">${['Open','Acknowledged','All'].map(k=>opt(k,k,UI.ashow===k)).join('')}</select></label>
+   <label class="f">Level<select class="i" id="fal_sev"><option value="">All</option>${['Critical','Warning','Info'].map(k=>opt(k,k,UI.asev===k)).join('')}</select></label>
+   <label class="f">Type<select class="i" id="fal_type"><option value="">All</option>${AL_TYPES.map(k=>opt(k,k,UI.atype===k)).join('')}</select></label>
+   <span class="sp"></span>${can('export')?'<button class="btn" type="button" id="xAlert">Export Excel</button>':''}${can('admin')?'<button class="btn" type="button" id="alRules">Alert rules</button>':''}</div>
+  <div class="tbox"><table class="t" style="min-width:980px"><thead><tr><th>Level</th><th>Type</th><th>Alert</th><th>Account</th><th>Holder</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody>${l.length?l.map(x=>`<tr class="row" tabindex="0" ${x.id?`data-ac="${esc(x.id)}"`:`data-tabgo="${x.tab||''}"`}><td>${alSev(x.sev)}</td><td>${esc(x.type)}</td><td>${esc(x.text)}</td><td>${esc(x.lab)}</td><td>${esc(x.reg)}</td><td>${alWhen(x)}</td><td>${x.ack?`<span class="pill g">Acknowledged</span><div class="faint">${esc(x.ack.ackBy||'')} · ${esc(fmtDT(x.ack.ackAt))}${x.ack.note?'<br>'+esc(x.ack.note):''}</div>`:'<span class="pill a">Open</span>'}</td><td class="act">${ed?(x.ack?`<button class="btn sm" type="button" data-alreopen="${esc(x.key)}">Reopen</button>`:`<button class="btn sm" type="button" data-alack="${esc(x.key)}">Acknowledge</button>`):''}</td></tr>`).join(''):emptyRow(8,'No alerts here','Nothing matches this filter. Alerts appear by themselves when an account needs action.')}</tbody></table></div>
+  <div class="note">Alerts are checked live every time this page opens, from account age, timeline, risk events, data quality and the CPA Control V3.3 copy. Acknowledge an alert once someone is handling it; it returns to Open if you reopen it, or appears again as a new alert when the situation changes. Thresholds are set in Alert rules. Click a row to open the account.</div>`;
+}
+function alAckModal(key){
+  const x=alertsCalc().find(z=>z.key===key);if(!x||!can('edit'))return;
+  openModal('Acknowledge alert',esc(x.lab),`<div class="kv"><div><span>Level</span>${alSev(x.sev)}</div><div><span>Type</span>${esc(x.type)}</div></div><div>${esc(x.text)}</div><label class="f">Note (who is handling it, what was done)<textarea class="i" id="alNote" maxlength="300"></textarea></label><div class="err" id="alErr" role="alert"></div>`,
+   `<span class="sp"></span><button class="btn" type="button" id="mCancel">Cancel</button><button class="btn pri" type="button" id="alSave">Acknowledge</button>`);
+  $('#mCancel').onclick=closeModal;
+  $('#alSave').onclick=async()=>{const note=$('#alNote').value.trim();try{await db.doc('alerts/'+key).set({key,type:x.type,text:x.text,acctId:x.id||'',ackBy:ME.name,ackAt:new Date().toISOString(),note});if(x.id)await logH('Alert',x.id,x.lab,'Alert acknowledged',x.text+(note?' · '+note:''));closeModal();toast('Alert acknowledged.')}catch(e){$('#alErr').textContent='Could not save. Try again.'}};
+}
+function alRulesModal(){
+  if(!can('admin'))return;const R=alRules();
+  const row=(k,l,v,h)=>`<label class="f">${l}<input class="i" id="ar_${k}" value="${esc(v)}">${h?`<span class="hint">${h}</span>`:''}</label>`;
+  openModal('Alert rules','When an alert appears',`<div class="mb">${row('ageYears','Age milestones (years)',(R.ageYears||[]).join(', '),'Comma separated, for example 1, 2, 3, 5')}${row('ageAhead','Milestone alert starts (days before)',R.ageAhead)}${row('ageBack','Milestone alert stays (days after)',R.ageBack)}${row('newDays','New account watch (days since opened)',R.newDays)}${row('lineAhead','Line ending soon (days before the end date)',R.lineAhead)}${row('evWarn','Ongoing risk event: Warning from (days)',R.evWarn)}${row('evCrit','Ongoing risk event: Critical from (days)',R.evCrit)}</div><div class="err" id="arErr" role="alert"></div>`,
+   `<span class="sp"></span><button class="btn" type="button" id="arDef">Reset to default</button><button class="btn" type="button" id="mCancel">Cancel</button><button class="btn pri" type="button" id="arSave">Save rules</button>`);
+  $('#mCancel').onclick=closeModal;
+  const save=async v=>{try{await db.doc('settings/alertRules').set({v,updatedAt:new Date().toISOString(),updatedBy:ME.name});logAct('Alert rules','',JSON.stringify(v));closeModal();toast('Saved.')}catch(e){$('#arErr').textContent='Could not save. Try again.'}};
+  $('#arDef').onclick=()=>save(AL_DEF);
+  $('#arSave').onclick=()=>{const g=k=>$('#ar_'+k).value.trim(),v={};
+    v.ageYears=g('ageYears').split(/[,\s]+/).map(Number).filter(n=>n>0&&n<=50);
+    for(const k of ['ageAhead','ageBack','newDays','lineAhead','evWarn','evCrit']){const n=Number(g(k));if(!(n>=0&&n<=3650)){$('#arErr').textContent='Enter whole numbers of days (0 to 3650).';return}v[k]=Math.round(n)}
+    if(v.evCrit<v.evWarn){$('#arErr').textContent='Critical must be the same as or later than Warning.';return}
+    save(v)};
+}
+function alBind(){
+  document.querySelectorAll('[data-alack]').forEach(b=>b.onclick=e=>{e.stopPropagation();alAckModal(b.dataset.alack)});
+  document.querySelectorAll('[data-alreopen]').forEach(b=>b.onclick=async e=>{e.stopPropagation();try{await db.doc('alerts/'+b.dataset.alreopen).delete();toast('Alert reopened.')}catch(x){toast('Could not save.')}});
+  document.querySelectorAll('tr.row[data-tabgo]').forEach(r=>{const go=()=>{if(r.dataset.tabgo){UI.tab=r.dataset.tabgo;draw()}};r.onclick=go;r.onkeydown=e=>{if(e.key==='Enter')go()}});
+  const on=(id,fn)=>{const e=$('#'+id);if(e)e.onclick=fn};
+  on('alRules',alRulesModal);
+  on('xAlert',()=>saveX([{name:'Alerts',rows:[['Level','Type','Alert','Account','Holder','Date','Days','Status','Acknowledged by','Acknowledged at','Note'],...alertsCalc().map(x=>[x.sev,x.type,x.text,x.lab,x.reg,x.due,x.days==null?'':x.days,x.ack?'Acknowledged':'Open',x.ack?x.ack.ackBy||'':'',x.ack?fmtDT(x.ack.ackAt):'',x.ack?x.ack.note||'':''])]}],`Account_in_Service_alerts_${todayStr()}.xlsx`));
+  [['fal_show','ashow'],['fal_sev','asev'],['fal_type','atype']].forEach(([id,k])=>{const e=$('#'+id);if(e)e.onchange=ev=>{UI[k]=ev.target.value;draw()}});
+}
+const TITLES={lists:['Lists','Add, rename, reorder or delete the choices in dropdowns'],access:['Access control','Positions: what each person can open and do'],none:['No access','Ask the Master Admin to give your position a menu'],rec:['Matches source','Page counts checked against '+('CPA Control System V3.3')],dash:['Dashboard','Where the accounts stand today'],acc:['Accounts in service','How old each account is, where it is assigned and who pays its expenses'],mov:['Movements','Every project and expense-payer change, in date order'],stats:['Stats by age','How many accounts, by age and by project'],risk:['Risk control','Blocked, sign out, complaint, dormant, failed unblock visits, SOF requests and rejected cheques, with dates'],att:['Needs attention','Missing dates and gaps in the account timeline'],alert:['Alerts','Monitoring, tracking and alerts: age milestones, line endings, risk events, data gaps'],hist:['History','Every change, kept for good'],users:['Users','Master Admin: everything. Editor: add and change records. Viewer: read only.']};
+function tabsHtml(){
+  const n=attention().filter(w=>w.sev!=='Note').length;
+  const T=[['g','Overview'],['dash','Dashboard'],['g','Accounts'],['acc','Accounts in service'],['mov','Movements'],['stats','Stats by age'],['att','Needs attention',n||''],['alert','Alerts',(()=>{const o=alOpen().filter(x=>x.sev!=='Info').length;return o||''})()],['risk','Risk control',(()=>{const M=riskMap();const h=views().filter(a=>!a.closed&&riskStats(M[a.id]).total&&riskStats(M[a.id]).level==='High').length;return h||''})()],['g','Records'],['rec','Matches source',recCalc()&&recCalc().out.length||''],['hist','History'],...(can('admin')?[['g','Tools'],['users','Users']]:[])];
+  return fixT(T).map(([k,l,c])=>k==='g'?`<div class="ng">${l}</div>`:`<button type="button" data-tab="${k}" ${UI.tab===k?'aria-current="page"':''}><span>${l}</span>${c?`<span class="ct">${esc(c)}</span>`:''}</button>`).join('')+'<div class="ng">Documents</div><button type="button" data-docs="1"><span>Upload docs</span></button>';
+}
+const opt=(v,l,sel)=>`<option value="${esc(v)}" ${sel?'selected':''}>${esc(l)}</option>`;
+const searchBox=ph=>`<label class="f" style="flex:1;min-width:180px">Search<input class="i" id="fq" type="search" value="${esc(UI.q)}" placeholder="${esc(ph)}"></label>`;
+const emptyRow=(n,t,s,btn)=>`<tr><td colspan="${n}" class="empty"><b>${t}</b>${s||''}${btn?`<div class="acts">${btn}</div>`:''}</td></tr>`;
+const projOpts=()=>uniq([...Object.keys(PROJ_REF),...rows('lines').filter(l=>l.kind==='Project').map(l=>l.project)]);
+function accView(){
+  const all=views(),l=aFilt(all).sort((a,b)=>(a.code||'').localeCompare(b.code||''));
+  const act=all.filter(a=>!a.closed),aged=act.filter(a=>a.age);
+  const avg=aged.length?Math.round(aged.reduce((s,a)=>s+a.age.days,0)/aged.length):0;
+  const old=aged.reduce((m,a)=>!m||a.age.days>m.age.days?a:m,null);
+  const body=l.map(a=>`<tr class="row" tabindex="0" data-ac="${esc(a.id)}">
+   <td class="code">${esc(a.code||'')}</td><td><b>${esc(a.name||'')}</b>${a.closed?` <span class="pill x">${esc(a.v33Status||a.status||'Closed')}</span>`:''}</td><td>${esc(a.holder||'')}</td>
+   <td>${esc(a.bank||'')}<div class="faint mono">${esc(a.accNo||'')}</div></td>
+   <td>${a.openedAt?esc(fmtD(a.openedAt)):'<span class="pill a">Not set</span>'}</td>
+   <td>${a.age?`<b>${esc(ageTxt(a.age))}</b><div class="faint">${a.age.days.toLocaleString('en-US')} days${a.closed&&a.closedAt?' · until '+esc(fmtD(a.closedAt)):''}</div>`:''}</td>
+   <td>${a.curP?`<b>${esc(lineName(a.curP))}</b><div class="faint">since ${esc(fmtD(a.curP.start))}</div>`:`<span class="faint">${a.cdbProject?'CDB: '+esc(a.cdbProject):'—'}</span>`}</td>
+   <td>${a.curE?`<b>${esc(lineName(a.curE))}</b><div class="faint">since ${esc(fmtD(a.curE.start))}</div>`:'<span class="faint">—</span>'}</td>
+   <td>${a.closed?(a.closedAt?esc(fmtD(a.closedAt)):'—'):''}</td></tr>`).join('');
+  const xf=[UI.bank&&'Bank: '+UI.bank,UI.v33&&'V3.3 status: '+UI.v33,UI.cdb&&'Project: '+UI.cdb].filter(Boolean);
+  return `${xf.length?`<div class="defbox">Filtered from the dashboard: <b>${esc(xf.join(' · '))}</b> <button class="btn sm" type="button" data-clr="1">Clear</button></div>`:''}<div class="sumstrip"><div class="chip"><span>Accounts in service</span><b>${act.length}</b></div><div class="chip"><span>Average age</span><b>${aged.length?esc(ageTxt(ageParts(addDay(todayStr(),-avg))) ):'—'}</b></div><div class="chip"><span>Oldest</span><b>${old?esc(ageTxt(old.age)):'—'}</b></div><div class="chip ${all.filter(a=>!a.openedAt&&!a.closed).length?'bad':''}"><span>Date opened missing</span><b>${all.filter(a=>!a.openedAt&&!a.closed).length}</b></div></div>
+  <div class="toolbar">${searchBox('Code, name, bank, project, payer…')}
+   <label class="f">Holder<select class="i" id="fr"><option value="">All</option>${HOLDERS().map(k=>opt(k,k,UI.reg===k)).join('')}</select></label>
+   <label class="f">Project<select class="i" id="fp"><option value="">All</option>${projOpts().map(k=>opt(k,k,UI.proj===k)).join('')}</select></label>
+   <label class="f">Age<select class="i" id="fb"><option value="">All</option>${BANDS.map(k=>opt(k,k,UI.band===k)).join('')}</select></label>
+   <label class="f">Show<select class="i" id="fs"><option value="Active" ${UI.st==='Active'?'selected':''}>In service</option><option value="Closed" ${UI.st==='Closed'?'selected':''}>Not in service</option><option value="" ${UI.st===''?'selected':''}>All</option></select></label>
+   <span class="sp"></span><button class="btn" type="button" id="xAcc">Export Excel</button>${can('edit')?'<button class="btn" type="button" data-go="imp:accounts">Import accounts</button><button class="btn" type="button" data-go="imp:lines">Import timeline</button><button class="btn" type="button" data-go="tpl">Excel template</button><button class="btn pri" type="button" data-go="addA">Add account</button>':''}</div>
+  <div class="tbox"><table class="t" style="min-width:1200px"><thead><tr><th>Account code</th><th>Account name</th><th>Holder</th><th>Bank / number</th><th>Date opened</th><th>Age</th><th>Project (today)</th><th>Expenses paid by (today)</th><th>Closed on</th></tr></thead><tbody>${l.length?body:emptyRow(9,all.length?'Nothing matches':'No accounts yet','Import the accounts, or add one.')}</tbody></table></div>
+  <div class="note">Age counts from the date opened to today, or to the closing date for a closed account. "CDB:" is the project written in CPA Control V3.3, shown until a dated project line is added. Click a row to open its timeline.</div>`;
+}
+function movRows(){
+  const out=[];
+  views().forEach(a=>{
+    if(a.openedAt)out.push({d:a.openedAt,a,type:'Opened',what:'Account opened',end:''});
+    a.L.forEach(l=>out.push({d:l.start,a,type:l.kind==='Project'?'Project':'Expenses',what:lineName(l),end:l.end||'',note:l.note||''}));
+    if(a.closed&&a.closedAt)out.push({d:a.closedAt,a,type:'Closed',what:a.closeReason||'Account closed',end:''});
+  });
+  return out.filter(m=>m.d);
+}
+function movView(){
+  const q=UI.q.toLowerCase();
+  const l=movRows().filter(m=>(!UI.kind||m.type===UI.kind)&&(!UI.proj||(m.type!=='Opened'&&m.type!=='Closed'&&m.what.split(' / ').includes(UI.proj)))&&(!q||[aLabel(m.a),m.what,m.note].join(' ').toLowerCase().includes(q))).sort((a,b)=>b.d.localeCompare(a.d));
+  const pill=t=>t==='Opened'?'<span class="pill g">Opened</span>':t==='Closed'?'<span class="pill x">Closed</span>':t==='Project'?'<span class="pill a">Project</span>':'<span class="pill" style="background:var(--steel-l);color:var(--steel)">Expenses</span>';
+  return `<div class="toolbar">${searchBox('Account, project, company…')}
+   <label class="f">Type<select class="i" id="fk"><option value="">All</option>${['Opened','Project','Expenses','Closed'].map(k=>opt(k,k,UI.kind===k)).join('')}</select></label>
+   <label class="f">Project<select class="i" id="fp"><option value="">All</option>${projOpts().map(k=>opt(k,k,UI.proj===k)).join('')}</select></label><span class="sp"></span><button class="btn" type="button" id="xMov">Export Excel</button></div>
+  <div class="tbox"><table class="t" style="min-width:900px"><thead><tr><th>Date</th><th>Type</th><th>Account</th><th>What</th><th>Until</th><th>Days</th><th>Note</th></tr></thead><tbody>${l.length?l.map(m=>`<tr class="row" tabindex="0" data-ac="${esc(m.a.id)}"><td>${esc(fmtD(m.d))}</td><td>${pill(m.type)}</td><td><span class="code">${esc(m.a.code||'')}</span> ${esc(m.a.name||'')}</td><td><b>${esc(m.what)}</b></td><td>${m.type==='Project'||m.type==='Expenses'?(m.end?esc(fmtD(m.end)):'<span class="pill g">Ongoing</span>'):''}</td><td class="n">${m.type==='Project'||m.type==='Expenses'?(ageParts(m.d,m.end||todayStr()).days+1).toLocaleString('en-US'):''}</td><td>${esc(m.note||'')}</td></tr>`).join(''):emptyRow(7,'No movements yet','Dated project and expense-payer lines appear here.')}</tbody></table></div>`;
+}
+function statsView(){
+  const act=views().filter(a=>!a.closed);
+  const projOf=a=>a.curP?a.curP.project:(a.cdbProject?'CDB: '+a.cdbProject:'No project');
+  const projs=uniq(act.map(projOf));
+  const row=(lab,list)=>`<tr><td><b>${esc(lab)}</b></td>${BANDS.map(b=>`<td class="n">${list.filter(a=>bandOf(a.age)===b).length||'<span class="faint">0</span>'}</td>`).join('')}<td class="n"><b>${list.length}</b></td></tr>`;
+  const head=`<thead><tr><th></th>${BANDS.map(b=>`<th class="n">${b}</th>`).join('')}<th class="n">Total</th></tr></thead>`;
+  const pe={};act.forEach(a=>{const k=a.curE?lineName(a.curE):'No expense payer';(pe[k]=pe[k]||[]).push(a)});
+  return `<div class="sumstrip"><div class="chip big"><span>In service</span><b>${act.length}</b></div><div class="chip"><span>Not in service</span><b>${views().length-act.length}</b></div></div>
+  <h3 style="margin:8px 0 6px">By holder</h3><div class="tbox"><table class="t">${head}<tbody>${uniq(act.map(a=>a.holder||'No holder')).map(h=>row(h,act.filter(a=>(a.holder||'No holder')===h))).join('')||emptyRow(7,'No accounts yet')}<tr style="background:var(--grand);font-weight:600">${row('All accounts',act).slice(4)}</tbody></table></div>
+  <h3 style="margin:16px 0 6px">By project (today)</h3><div class="tbox"><table class="t">${head}<tbody>${projs.map(p=>row(p,act.filter(a=>projOf(a)===p))).join('')||emptyRow(7,'No accounts yet')}</tbody></table></div>
+  <h3 style="margin:16px 0 6px">By expense payer (today)</h3><div class="tbox"><table class="t">${head}<tbody>${Object.keys(pe).sort().map(k=>row(k,pe[k])).join('')||emptyRow(7,'No accounts yet')}</tbody></table></div>
+  <div class="note">Only accounts in service are counted. Age bands: under 3 months, 3 to 12 months, 1 to 2 years, over 2 years.</div>`;
+}
+function attView(){
+  const W=attention(),sv=s=>s==='Urgent'?'<span class="pill r">Urgent</span>':s==='Check'?'<span class="pill a">Check</span>':'<span class="pill x">Note</span>';
+  const c=s=>W.filter(w=>w.sev===s).length;
+  return `<div class="sumstrip"><div class="chip ${c('Urgent')?'bad':''}"><span>Urgent</span><b>${c('Urgent')}</b></div><div class="chip"><span>Check</span><b>${c('Check')}</b></div><div class="chip"><span>Note</span><b>${c('Note')}</b></div></div>
+  <div class="tbox"><table class="t"><thead><tr><th>Priority</th><th>Issue</th><th>Account</th><th>Holder</th></tr></thead><tbody>${W.length?W.map(w=>`<tr class="row" tabindex="0" data-ac="${esc(w.id)}"><td>${sv(w.sev)}</td><td>${esc(w.text)}</td><td>${esc(w.lab)}</td><td>${esc(w.reg||'')}</td></tr>`).join(''):emptyRow(4,'Nothing needs attention','Every CPA account has dates, a project and an expense payer, with no gaps.')}</tbody></table></div>
+  <div class="note">Urgent: overlapping lines, a line still open after the account closed, or not Active in CPA Control V3.3 but in service here. Check: missing date opened, no project or payer today, gaps in the timeline, or a line that starts before the account opened. Note: for information. Click a row to fix it.</div>`;
+}
+function histView(){
+  const q=UI.q.toLowerCase();
+  const l=rows('hist').filter(h=>(!UI.hk||h.kind===UI.hk)&&(!q||[h.label,h.detail,h.byName,h.action].join(' ').toLowerCase().includes(q))).sort((a,b)=>(b.at||'').localeCompare(a.at||''));
+  return `<div class="toolbar">${searchBox('Account, change, person…')}<label class="f">Type<select class="i" id="fh"><option value="">All</option>${['Account','Project','Expenses'].map(k=>opt(k,k,UI.hk===k)).join('')}</select></label><span class="sp"></span><button class="btn" type="button" id="xHist">Export Excel</button></div>
+  <div class="tbox"><table class="t" style="min-width:900px"><thead><tr><th>Date &amp; time</th><th>By</th><th>Type</th><th>Account</th><th>Action</th><th>What changed</th></tr></thead><tbody>${l.length?l.map(h=>`<tr><td>${esc(fmtDT(h.at))}</td><td>${esc(h.byName||'')}</td><td>${esc(h.kind||'')}</td><td>${esc(h.label||'')}</td><td>${esc(h.action||'')}</td><td>${esc(h.detail||'')}</td></tr>`).join(''):emptyRow(6,'No history yet','Every add and change is listed here for good.')}</tbody></table></div><div class="note">Showing the latest 500 changes. Nothing can be deleted.</div>`;
+}
+/* ---------- account modal with timeline ---------- */
+function accModal(id){
+  const isNew=!id,w=can('edit');
+  const a=isNew?{status:'Active',register:'CPA'}:{...D.accounts[id]};if(!isNew&&!D.accounts[id])return;
+  UI.modal={a:id||'new'};
+  const v=isNew?{L:[],age:null}:acctView({...a,id});
+  const hist=isNew?[]:rows('hist').filter(h=>h.targetId===id).sort((x,y)=>(y.at||'').localeCompare(x.at||''));
+  const lineTbl=k=>{const ls=v.L.filter(l=>l.kind===k);return `<div class="tbox"><table class="t" style="min-width:520px"><thead><tr><th>${k==='Project'?'Project':'Project and/or company'}</th><th>Start</th><th>End</th><th class="n">Days</th><th>Note</th></tr></thead><tbody>${ls.length?ls.map(l=>`<tr class="row" tabindex="0" data-line="${esc(l.id)}"><td><b>${esc(lineName(l))}</b></td><td>${esc(fmtD(l.start))}</td><td>${l.end?esc(fmtD(l.end)):'<span class="pill g">Ongoing</span>'}</td><td class="n">${(ageParts(l.start,l.end||todayStr()).days+1).toLocaleString('en-US')}</td><td>${esc(l.note||'')}</td></tr>`).join(''):`<tr><td colspan="5" class="faint" style="padding:10px">None yet.${a.cdbProject&&k==='Project'?' CPA Control V3.3 project: '+esc(a.cdbProject)+'.':''}</td></tr>`}</tbody></table></div>`};
+  const f=(k,l,t,ph)=>`<label class="f">${l}<input class="i" id="a_${k}" type="${t||'text'}" value="${esc(a[k]||'')}" ${w?'':'disabled'} ${ph?`placeholder="${ph}"`:''}></label>`;
+  openModal(isNew?'Add account':aLabel(a),isNew?'':(v.age?`Age ${esc(ageTxt(v.age))} · ${v.age.days.toLocaleString('en-US')} days`:'Date opened not set'),
+  `<div class="grid2">${f('code','Account code')}${f('name','Account name')}
+    ${f('holder','Holder')}${f('bank','Bank')}${f('accNo','Account number')}
+    ${f('openedAt','Date opened','date')}
+    <label class="f">Status<select class="i" id="a_status" ${w?'':'disabled'}>${['Active','Closed'].map(k=>opt(k,k,(a.status||'Active')===k)).join('')}</select></label>${f('closedAt','Date closed','date')}${f('closeReason','Reason for closing')}</div>
+   <label class="f">Remark<textarea class="i" id="a_remark" ${w?'':'disabled'}>${esc(a.remark||'')}</textarea></label>
+   ${a.cdbProject||a.cdbStatus?`<div class="faint">From CPA Control V3.3: project ${esc(a.cdbProject||'—')}, status ${esc(a.v33Status||a.cdbStatus||'—')}${a.cdbRemark?', remark: '+esc(a.cdbRemark):''}</div>`:''}
+   <div class="err" id="aErr" role="alert"></div>
+   ${isNew?'<div class="note">Save the account first, then add its project and expense-payer lines.</div>':`
+   <div><h3>Project timeline</h3>${lineTbl('Project')}</div>
+   <div><h3>Expenses paid by (project and/or company)</h3>${lineTbl('Expenses')}</div>
+   ${w?`<div><h3 id="lnTitle">Add a line</h3><div class="grid2" style="margin-top:8px">
+     <label class="f">Type<select class="i" id="l_kind"><option value="Project">Assigned to project</option><option value="Expenses">Expenses paid by</option></select></label>
+     <label class="f">Project<input class="i" id="l_proj" list="dlP" placeholder="For example IR"></label>
+     <label class="f" id="l_cw">Company (optional)<input class="i" id="l_co" list="dlC"></label>
+     <label class="f">Start date<input class="i" type="date" id="l_s"></label><label class="f">End date (blank = ongoing)<input class="i" type="date" id="l_e"></label>
+     <label class="f">Note<input class="i" id="l_n"></label></div>
+     <div style="margin-top:10px"><button class="btn pri" type="button" id="lSave">Add line</button> <button class="btn" type="button" id="lCancel" hidden>Cancel edit</button> <span class="faint" id="lErr" role="alert"></span></div>
+     <div class="note">Adding a new line while the previous one is ongoing ends the previous line the day before the new start date. Lines cannot be deleted; correct a date by clicking the line.</div>
+     <datalist id="dlP">${projOpts().map(k=>`<option value="${esc(k)}">${esc(PROJ_REF[k]||'')}</option>`).join('')}</datalist><datalist id="dlC">${uniq(rows('lines').map(l=>l.company)).map(k=>`<option value="${esc(k)}">`).join('')}</datalist></div>`:''}
+   <div><h3>Documents</h3><div class="faint" style="margin:2px 0 8px">Files for this account, with their type. Upload here and the account is already selected.</div><button class="btn" type="button" id="dcOpen">Documents (${Object.values(D.docs||{}).filter(d=>d.target==='accounts/'+id).length}) · upload…</button></div>
+   ${riskBoxHtml()}
+   <div><h3>History of this account</h3><div class="tl" style="margin-top:8px">${hist.length?hist.map(h=>`<div class="rs"><div class="meta">${esc(fmtDT(h.at))} · ${esc(h.byName||'')} · ${esc(h.kind)} · ${esc(h.action||'')}</div><p>${esc(h.detail||'')}</p></div>`).join(''):'<div class="faint">No history yet.</div>'}</div></div>`}`,
+  `<button class="btn" type="button" id="mClose">${w?'Close':'Close'}</button>${w?'<button class="btn pri" type="button" id="aSave">Save account</button>':''}`);
+  $('#mClose').onclick=closeModal;
+  riskBind(id,w);
+  {const dco=$('#dcOpen');if(dco)dco.onclick=()=>docsModal('accounts/'+id,true)}
+  if(!w)return;
+  $('#aSave').onclick=async()=>{
+    const n={};['code','name','holder','bank','accNo','openedAt','status','closedAt','closeReason','remark'].forEach(k=>n[k]=$('#a_'+k).value.trim());n.register='CPA';
+    const err=$('#aErr');
+    if(!n.code&&!n.name){err.textContent='Enter a code or a name.';return}
+    if(n.status!=='Active'&&!n.closedAt){err.textContent='Enter the date closed or moved.';return}
+    if(n.status==='Active')n.closedAt='';
+    if(n.openedAt&&n.closedAt&&n.closedAt<n.openedAt){err.textContent='The closing date is before the date opened.';return}
+    if(n.openedAt&&n.openedAt>todayStr()){err.textContent='The date opened is in the future.';return}
+    const dup=n.code&&rows('accounts').find(x=>x.id!==id&&norm(x.code)===norm(n.code));if(dup){err.textContent='This account code already exists.';return}
+    const ch=[];[['code','Code'],['name','Name'],['holder','Holder'],['bank','Bank'],['accNo','Account number'],['openedAt','Date opened'],['status','Status'],['closedAt','Date closed'],['closeReason','Close reason'],['remark','Remark']].forEach(([k,l])=>{if((a[k]||'')!==n[k])ch.push(isNew?`${l}: ${n[k]||'—'}`:`${l}: ${a[k]||'—'} → ${n[k]||'—'}`)});
+    try{const nid=id||rid('ac');await db.doc('accounts/'+nid).set({...(isNew?{}:a),...n,updatedAt:new Date().toISOString(),updatedBy:ME.name});
+      await logH('Account',nid,aLabel(n),isNew?'Added':'Changed',ch.join(' · '));
+      if(isNew){UI.modal=null;accModal(nid);toast('Saved. Now add the timeline lines.')}else{closeModal();toast('Saved.')}
+    }catch(e){err.textContent='Could not save. You may only have view access.'}
+  };
+  if(isNew)return;
+  let editing=null;
+  const kindUi=()=>{const k=$('#l_kind').value;$('#l_cw').style.display=k==='Expenses'?'':'none';$('#l_proj').previousSibling&&0};
+  $('#l_kind').onchange=kindUi;kindUi();
+  document.querySelectorAll('tr.row[data-line]').forEach(tr=>{const go=()=>{const l=D.lines[tr.dataset.line];editing=tr.dataset.line;
+    $('#l_kind').value=l.kind;$('#l_kind').disabled=true;$('#l_proj').value=l.project||'';$('#l_co').value=l.company||'';$('#l_s').value=l.start||'';$('#l_e').value=l.end||'';$('#l_n').value=l.note||'';kindUi();
+    $('#lTitle')&&0;$('#lnTitle').textContent='Change this line';$('#lSave').textContent='Save line';$('#lCancel').hidden=false;$('#lnTitle').scrollIntoView({block:'center'})};tr.onclick=go;tr.onkeydown=e=>{if(e.key==='Enter')go()}});
+  $('#lCancel').onclick=()=>accModal(id);
+  $('#lSave').onclick=async()=>{
+    const err=$('#lErr');err.textContent='';
+    const kind=$('#l_kind').value,project=$('#l_proj').value.trim(),company=kind==='Expenses'?$('#l_co').value.trim():'',start=$('#l_s').value,end=$('#l_e').value,note=$('#l_n').value.trim();
+    if(kind==='Project'&&!project){err.textContent='Enter the project.';return}
+    if(kind==='Expenses'&&!project&&!company){err.textContent='Enter the project and/or the company.';return}
+    if(!start){err.textContent='Enter the start date.';return}
+    if(end&&end<start){err.textContent='The end date is before the start date.';return}
+    if(start>todayStr()&&false){}
+    const same=rows('lines').filter(l=>l.acctId===id&&l.kind===kind&&l.id!==editing);
+    const closeList=[];
+    if(!editing)same.filter(l=>!l.end&&l.start<start).forEach(l=>closeList.push(l));
+    const eff=same.map(l=>closeList.includes(l)?{...l,end:addDay(start,-1)}:l);
+    const e2=end||'9999-12-31';
+    const bad=eff.find(l=>l.start<=e2&&(l.end||'9999-12-31')>=start);
+    if(bad){err.textContent=`This overlaps "${lineName(bad)}" (${fmtD(bad.start)} to ${bad.end?fmtD(bad.end):'ongoing'}).`;return}
+    const b=$('#lSave');b.disabled=true;
+    try{
+      const lid=editing||rid('ln');const old=editing?D.lines[editing]:null;
+      for(const l of closeList){await db.doc('lines/'+l.id).set({...l,end:addDay(start,-1),updatedAt:new Date().toISOString(),updatedBy:ME.name});await logH(kind,id,aLabel(a),'Line ended',`${lineName(l)}: end → ${addDay(start,-1)} (new line started ${start})`)}
+      await db.doc('lines/'+lid).set({...(old||{createdAt:new Date().toISOString(),createdBy:ME.name}),acctId:id,kind,project,company,start,end,note,updatedAt:new Date().toISOString(),updatedBy:ME.name});
+      const ch=old?['project','company','start','end','note'].filter(k=>(old[k]||'')!==({project,company,start,end,note})[k]).map(k=>`${k}: ${old[k]||'—'} → ${({project,company,start,end,note})[k]||'—'}`).join(' · '):`${lineName({kind,project,company})}, ${start} to ${end||'ongoing'}`;
+      await logH(kind,id,aLabel(a),old?'Line changed':'Line added',ch);
+      toast('Saved.');accModal(id);
+    }catch(e){b.disabled=false;err.textContent='Could not save. You may only have view access.'}
+  };
+}
+
+async function saveX(sheets,filename){if(!can('export')){toast('Your position cannot export to Excel.');return}
+  if(!window.XLSX||!dl){toast('Download is not available here.');return}
+  const wb=XLSX.utils.book_new();
+  sheets.forEach(s=>{const ws=XLSX.utils.aoa_to_sheet(s.rows);ws['!cols']=s.rows[0].map(h=>({wch:Math.max(14,Math.min(44,String(h).length+4))}));XLSX.utils.book_append_sheet(wb,ws,s.name)});
+  try{const buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});await dl.save({filename,data:new Blob([buf])});toast('File ready.')}catch(e){if(!e||e.code!=='declined')toast('Could not save the file.')}
+}
+/* ---------- excel ---------- */
+const MONI={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+function parseDate(v){
+  if(v==null||v==='')return '';
+  if(v instanceof Date&&!isNaN(v))return `${v.getFullYear()}-${pad(v.getMonth()+1)}-${pad(v.getDate())}`;
+  if(typeof v==='number'&&v>20000&&v<80000){const p=XLSX.SSF.parse_date_code(v);return p?`${p.y}-${pad(p.m)}-${pad(p.d)}`:''}
+  const s=String(v).trim();let m;
+  if(m=/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/.exec(s))return `${m[1]}-${pad(+m[2])}-${pad(+m[3])}`;
+  if(m=/^(\d{1,2})[-\/ ]([A-Za-z]{3})[a-z]*[-\/ ,.]*(\d{2,4})$/.exec(s)){const mo=MONI[m[2].toLowerCase()];if(mo){const y=m[3].length===2?2000+ +m[3]:+m[3];return `${y}-${pad(mo)}-${pad(+m[1])}`}}
+  if(m=/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/.exec(s))return `${m[3]}-${pad(+m[2])}-${pad(+m[1])}`;
+  return '';
+}
+const TPL_A=['Account code','Account name','Holder (for example TW-OP)','Bank','Account number','Date opened (YYYY-MM-DD)','Date closed (blank if in service)','Reason for closing'];
+const TPL_L=['Account code','Type (Project or Expenses)','Project','Company (Expenses only, optional)','Start date (YYYY-MM-DD)','End date (blank = ongoing)','Note'];
+function tplDownload(){saveX([{name:'Accounts',rows:[TPL_A]},{name:'Timeline',rows:[TPL_L]},{name:'Read me',rows:[['How to fill this in'],['Accounts sheet: one row per account. A sheet exported from CPA Control V3.3 with a Code column also works; add a "Date opened" column to it.'],['Timeline sheet: one row per dated line. Type is Project (assigned to a project) or Expenses (expenses paid by a project and/or a company).'],['Leave End date blank for the line that is still running. Importing again never creates duplicates.']]}],'CPA_In_Service_template.xlsx')}
+const t=x=>String(x==null?'':x).trim();
+function showPlan(title,file,kv,note,count,go,extra){
+  openModal(title,esc(file),`<div class="kv">${kv.map(([a,b])=>`<div><span>${esc(a)}</span>${esc(b)}</div>`).join('')}</div>${extra||''}<div class="note">${esc(note)}</div><div class="faint" id="iErr" role="alert"></div>`,
+   `<button class="btn" type="button" id="mClose">Cancel</button><button class="btn pri" type="button" id="iGo" ${count?'':'disabled'}>Import ${count} row${count===1?'':'s'}</button>`);
+  $('#mClose').onclick=closeModal;
+  $('#iGo').onclick=async()=>{$('#iGo').disabled=true;$('#iErr').textContent='Importing…';try{await go();closeModal();toast('Imported.')}catch(e){$('#iErr').textContent='Import stopped part-way. Upload the file again; nothing is duplicated.';$('#iGo').disabled=false}};
+}
+const stamp=()=>({updatedAt:new Date().toISOString(),updatedBy:ME.name});
+const regOf=()=>'CPA';
+function importPick(kind){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.xlsx,.xls,.csv';
+  inp.onchange=async()=>{
+    const f=inp.files[0];if(!f)return;
+    try{
+      const wb=XLSX.read(new Uint8Array(await f.arrayBuffer()),{type:'array',cellDates:true});
+      kind==='accounts'?importAccounts(wb,f):importLines(wb,f);
+    }catch(e){toast('Could not read that file.')}
+  };inp.click();
+}
+function sheetWithCode(wb,pref){
+  const names=[...wb.SheetNames].sort((a,b)=>(new RegExp(pref,'i').test(b)?1:0)-(new RegExp(pref,'i').test(a)?1:0));
+  for(const sn of names){
+    const rs=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:'',raw:true,cellDates:true});
+    for(let r=0;r<Math.min(rs.length,8);r++){const j=rs[r].findIndex(c=>/^(account )?code$/i.test(t(c)));if(j>=0)return {rs,hi:r,ci:j,sn}}
+  }
+  return null;
+}
+function importAccounts(wb,f){
+  const S=sheetWithCode(wb,'account');if(!S){toast('No column called Code found.');return}
+  const {rs,hi,ci}=S,h=rs[hi].map(c=>t(c).toLowerCase());
+  const find=re=>h.findIndex((c,i)=>i!==ci&&re.test(c));
+  let ni=find(/account name|^name$|^account$|account holder|company/);if(ni<0)ni=ci+1;
+  const bi=find(/^bank/),ai=find(/account (no|number)|^number$|acc no/),oi=find(/opened/),di=find(/closed on|date closed|^closed/),ri=find(/reason/),gi=find(/^holder/);
+  const list=[];const seen={};
+  rs.slice(hi+1).forEach(r=>{const code=t(r[ci]);if(!code||!/[A-Za-z]/.test(code)||/total/i.test(code)||seen[code])return;seen[code]=1;
+    list.push({code,name:t(r[ni]),bank:bi>=0?t(r[bi]):'',accNo:ai>=0?t(r[ai]):'',openedAt:oi>=0?parseDate(r[oi]):'',closedAt:di>=0?parseDate(r[di]):'',closeReason:ri>=0?t(r[ri]):'',holder:gi>=0?t(r[gi]):'',register:'CPA'})});
+  const byCode={};rows('accounts').forEach(a=>{if(a.code)byCode[norm(a.code)]=a});
+  const nNew=list.filter(x=>!byCode[norm(x.code)]).length,nOpen=list.filter(x=>x.openedAt).length;
+  showPlan('Import accounts',f.name,[['Accounts read',list.length],['New',nNew],['Existing, updated',list.length-nNew],['With a date opened',nOpen]],'Accounts are matched by code. Existing dates, project lines and remarks are kept; a date opened in the file fills or replaces the one here only when the file has one.',list.length,async()=>{
+    for(const x of list){const o=byCode[norm(x.code)]||{};const id=o.id||'ac_'+norm(x.code);
+      const n={...o,code:x.code,name:x.name||o.name||'',bank:x.bank||o.bank||'',accNo:x.accNo||o.accNo||'',register:'CPA',holder:x.holder||o.holder||'',openedAt:x.openedAt||o.openedAt||'',closedAt:x.closedAt||o.closedAt||'',closeReason:x.closeReason||o.closeReason||'',status:(o.status&&o.status!=='Active')?o.status:(x.closedAt?'Closed':'Active'),...stamp()};
+      await db.doc('accounts/'+id).set(n)}
+    await logH('Account','',f.name,'Imported',`${list.length} row(s)`)});
+}
+function importLines(wb,f){
+  const S=sheetWithCode(wb,'timeline|line');if(!S){toast('No column called Account code found.');return}
+  const {rs,hi,ci}=S;
+  const byCode={};rows('accounts').forEach(a=>{if(a.code)byCode[norm(a.code)]=a});
+  const ok=[],bad=[];
+  const R=rs.slice(hi+1).filter(r=>r.some(c=>t(c)));
+  const pending={};
+  R.forEach((r,i)=>{
+    const code=t(r[ci]),a=byCode[norm(code)],kind=/^e/i.test(t(r[ci+1]))?'Expenses':/^p/i.test(t(r[ci+1]))?'Project':'';
+    const project=t(r[ci+2]),company=t(r[ci+3]),start=parseDate(r[ci+4]),end=parseDate(r[ci+5]),note=t(r[ci+6]);
+    const why=!a?'account code not found':!kind?'Type must be Project or Expenses':(kind==='Project'&&!project)?'project missing':(kind==='Expenses'&&!project&&!company)?'project and company missing':!start?'start date missing or not readable':(end&&end<start)?'end before start':'';
+    if(why){bad.push(`Row ${hi+2+i}: ${why}`);return}
+    const key=a.id+'|'+kind;const mine=[...rows('lines').filter(l=>l.acctId===a.id&&l.kind===kind),...(pending[key]||[])];
+    const id='ln_'+a.id+'_'+kind+'_'+start+'_'+norm(project+company);
+    if(D.lines[id]){bad.push(`Row ${hi+2+i}: already imported`);return}
+    const e2=end||'9999-12-31',ov=mine.find(l=>l.start<=e2&&(l.end||'9999-12-31')>=start);
+    if(ov){bad.push(`Row ${hi+2+i}: overlaps ${lineName(ov)} (${ov.start} to ${ov.end||'ongoing'})`);return}
+    const L={id,acctId:a.id,kind,project,company:kind==='Expenses'?company:'',start,end,note};(pending[key]=pending[key]||[]).push(L);ok.push({L,a});
+  });
+  showPlan('Import timeline',f.name,[['Rows read',R.length],['Lines to add',ok.length],['Skipped',bad.length]],'Each row is one dated line. Rows that overlap another line of the same type, or are already imported, are skipped.',ok.length,async()=>{
+    for(const {L,a} of ok){await db.doc('lines/'+L.id).set({...L,createdAt:new Date().toISOString(),createdBy:ME.name,...stamp()});await logH(L.kind,a.id,aLabel(a),'Line added',`${lineName(L)}, ${L.start} to ${L.end||'ongoing'} (import)`)}
+  },bad.length?`<div class="lock" style="max-height:140px;overflow:auto">${bad.slice(0,20).map(esc).join('<br>')}${bad.length>20?'<br>…':''}</div>`:'');
+}
+const XACC=['Account code','Account name','Holder','Bank','Account number','Date opened','Age','Age (days)','Project today','Project since','Expenses paid by today','Expenses since','Status','Date closed','Reason for closing','Remark'];
+const accRow=a=>[a.code||'',a.name||'',a.holder||'',a.bank||'',a.accNo||'',a.openedAt||'',ageTxt(a.age),a.age?a.age.days:'',lineName(a.curP),a.curP?a.curP.start:'',lineName(a.curE),a.curE?a.curE.start:'',a.closed?'Closed':'In service',a.closedAt||'',a.closeReason||'',a.remark||''];
+
+/* ---------- draw ---------- */
+const PAGE_N=20;
+function paginate(){
+  if(UI.tab==='access'||UI.tab==='lists')return;
+  const old=document.getElementById('pager');if(old)old.remove();
+  const big=[...document.querySelectorAll('#view .tbox table.t')].map(t=>({t,trs:[...(t.querySelector('tbody')||{children:[]}).children].filter(r=>!r.querySelector('td.empty'))})).filter(x=>x.trs.length>PAGE_N);
+  const key=UI.tab+'|'+[...document.querySelectorAll('#view input,#view select')].map(e=>e.value).join('|');if(UI.pgKey!==key){UI.pgKey=key;UI.pg=0}
+  if(big.length!==1)return;
+  const {t,trs}=big[0],n=trs.length,pages=Math.ceil(n/PAGE_N);UI.pg=Math.min(Math.max(UI.pg||0,0),pages-1);
+  trs.forEach((r,i)=>{r.style.display=Math.floor(i/PAGE_N)===UI.pg?'':'none'});
+  const box=t.closest('.tbox');
+  box.insertAdjacentHTML('afterend',`<div class="pager" id="pager"><span>${UI.pg*PAGE_N+1}–${Math.min(n,(UI.pg+1)*PAGE_N)} of ${n}</span><button class="btn sm" type="button" data-pg="-1" ${UI.pg===0?'disabled':''}>Previous</button><span>Page ${UI.pg+1} of ${pages}</span><button class="btn sm" type="button" data-pg="1" ${UI.pg>=pages-1?'disabled':''}>Next</button></div>`);
+  document.querySelectorAll('#pager [data-pg]').forEach(b=>b.onclick=()=>{UI.pg+=+b.dataset.pg;draw();const bx=document.querySelector('#view .tbox');if(bx)bx.scrollTop=0});
+}
+function draw(){if(ME&&!menuOk(UI.tab)){const f=MENUS.find(m=>menuOk(m[0]));UI.tab=f?f[0]:'none'}
+  $('#nav').innerHTML=tabsHtml();
+  $('#todayTxt').textContent=fmtD(todayStr());
+  $('#pageTitle').textContent=TITLES[UI.tab][0];$('#pageSub').textContent=TITLES[UI.tab][1];
+  const tb=UI.tab;
+  $('#view').innerHTML=tb==='access'?accessView():tb==='lists'?listsView():tb==='none'?'<div class="empty">No menu is assigned to your position. Ask the Master Admin.</div>':tb==='users'?usersView():tb==='rec'?recView():tb==='dash'?dashView():tb==='acc'?accView():tb==='mov'?movView():tb==='stats'?statsView():tb==='att'?attView():tb==='alert'?alertView():tb==='risk'?riskView():histView();
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{UI.tab=b.dataset.tab;UI.q='';UI.reg='';UI.proj='';UI.band='';UI.kind='';UI.hk='';UI.bank='';UI.v33='';UI.cdb='';UI.st='Active';draw()});
+  document.querySelectorAll('tr.row[data-ac]').forEach(el=>{const go=()=>accModal(el.dataset.ac);el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter')go()}});
+  document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{const g=b.dataset.go;if(g==='addA')accModal(null);else if(g==='tpl')tplDownload();else if(g.startsWith('imp:'))importPick(g.slice(4))});
+  document.querySelectorAll('[data-df]').forEach(el=>{const go=()=>{const f=JSON.parse(el.dataset.df);Object.assign(UI,{q:'',reg:'',proj:'',band:'',kind:'',hk:'',bank:'',v33:'',cdb:'',st:'Active',tab:'acc'},f);draw();window.scrollTo(0,0)};el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter')go()}});
+  document.querySelectorAll('[data-clr]').forEach(b=>b.onclick=()=>{UI.bank='';UI.v33='';UI.cdb='';draw()});
+  const on=(id,ev,fn)=>{const e=$('#'+id);if(e)e[ev]=fn};
+  on('xRec','onclick',()=>{const r=recCalc();if(r)saveX([{name:'Differences',rows:[['Account code','Account name','Issue','Source','Here'],...r.out.map(d=>[d.code||'',d.name||'',d.issue,d.src,d.pg])]}],`CPA_In_Service_matches_source_${todayStr()}.xlsx`)});
+  on('fq','oninput',e=>{UI.q=e.target.value;UI.keep='fq';draw()});
+  [['fr','reg'],['fp','proj'],['fb','band'],['fs','st'],['fk','kind'],['fh','hk'],['frl','rl']].forEach(([id,k])=>on(id,'onchange',e=>{UI[k]=e.target.value;draw()}));
+  on('xAcc','onclick',()=>saveX([{name:'Accounts',rows:[XACC,...aFilt(views()).sort((a,b)=>(a.code||'').localeCompare(b.code||'')).map(accRow)]},{name:'Timeline',rows:[['Account code','Account name','Type','Project','Company','Start','End','Days','Note'],...rows('lines').map(l=>{const a=D.accounts[l.acctId]||{};return [a.code||'',a.name||'',l.kind,l.project||'',l.company||'',l.start||'',l.end||'',ageParts(l.start,l.end||todayStr()).days+1,l.note||'']}).sort((x,y)=>x[0].localeCompare(y[0])||x[5].localeCompare(y[5]))]}],`CPA_In_Service_${todayStr()}.xlsx`));
+  on('xMov','onclick',()=>saveX([{name:'Movements',rows:[['Date','Type','Account code','Account name','What','Until','Note'],...movRows().sort((a,b)=>b.d.localeCompare(a.d)).map(m=>[m.d,m.type,m.a.code||'',m.a.name||'',m.what,m.end||'',m.note||''])]}],`CPA_movements_${todayStr()}.xlsx`));
+  on('xHist','onclick',()=>saveX([{name:'History',rows:[['Date and time','By','Type','Account','Action','What changed'],...rows('hist').sort((a,b)=>(b.at||'').localeCompare(a.at||'')).map(h=>[fmtDT(h.at),h.byName||'',h.kind||'',h.label||'',h.action||'',h.detail||''])]}],`CPA_history_${todayStr()}.xlsx`));
+  on('rkRules','onclick',riskRulesModal);
+  on('xRisk','onclick',()=>{const M=riskMap();saveX([{name:'Risk summary',rows:[['Account code','Account name','Bank','Account number','Status','Blocked (times)','Blocked (days)','Sign out (times)','Sign out (days)','Complaint (times)','Complaint (days)','Dormant (times)','Dormant (days)','Unblock failed after visit','Unblock visits','SOF requests','Cheque rejected','Ongoing events','Risk level'],...riskRows().map(({a,s})=>[a.code||'',a.name||'',a.bank||'',a.accNo||'',a.status||'Active',s['Blocked'].n,s['Blocked'].days,s['Sign out'].n,s['Sign out'].days,s['Complaint'].n,s['Complaint'].days,s['Dormant'].n,s['Dormant'].days,s['Failed unblock'].n,s.visits,s['SOF request'].n,s['Cheque rejected'].n,s.ongoing,s.total?s.level:'No events'])]},{name:'Risk events',rows:[['Account code','Account name','Account number','Event','Date / start','End','Days','Result','Note','Recorded by'],...rows('risk').map(e=>{const a=D.accounts[e.acctId]||{};const dur=['Blocked','Sign out','Complaint','Dormant'].includes(e.type);return [a.code||'',a.name||'',a.accNo||'',e.type,e.start||'',e.end||(dur?'Ongoing':''),dur?evDays(e):'',e.result||'',e.note||'',e.byName||'']}).sort((x,y)=>x[0].localeCompare(y[0])||y[4].localeCompare(x[4]))]}],`Risk_control_${todayStr()}.xlsx`)});
+  alBind();
+  paginate();
+  if(UI.keep){const e=$('#'+UI.keep);if(e){e.focus();const n=e.value.length;e.setSelectionRange&&e.setSelectionRange(n,n)}UI.keep=null}
+}
+function refresh(){
+  if(!ME||Object.keys(READY).length<6)return;
+  const m=UI.modal;
+  if(!m||!$('#ov'))draw();else{$('#nav').innerHTML=tabsHtml();document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{closeModal();UI.tab=b.dataset.tab;draw()})}
+}
+
+
+/* ---------- auth (same as Central Database) ---------- */
+async function sha(x){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(x));return [...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,'0')).join('')}
+const hashPw=(salt,pw)=>sha(salt+':'+pw);
+const newSalt=()=>[...crypto.getRandomValues(new Uint8Array(12))].map(x=>x.toString(16).padStart(2,'0')).join('');
+async function bootstrapAdmin(){
+  if(!db||!READY.users||Object.keys(D.users).length||bootstrapAdmin.done)return;bootstrapAdmin.done=true;
+  try{const salt=newSalt();await db.doc('users/admin').set({u:'admin',name:'Administrator',role:'Admin',salt,hash:await hashPw(salt,'admin123'),mustChange:true,active:true,lastLogin:null})}catch(e){}
+}
+async function doLogin(ev){
+  ev.preventDefault();const u=$('#lu').value.trim().toLowerCase(),p=$('#lp').value;const err=$('#loginErr');err.textContent='';
+  const rec=D.users[u];
+  if(!rec||rec.active===false||await hashPw(rec.salt,p)!==rec.hash){err.textContent='Wrong username or password.';return}
+  ME={u,name:rec.name,role:rec.role};store.set('as_user',u);logAct('Sign in','','');
+  try{await db.doc('users/'+u).update({lastLogin:new Date().toISOString()})}catch(e){}
+  enterApp();
+  if(rec.mustChange)passwordModal(true);
+}
+function enterApp(){
+  $('#login').classList.add('hidden');$('#app').classList.remove('hidden');
+  $('#who').innerHTML=`<b style="color:#fff">${esc(ME.name)}</b><br><small>${esc(rl(ME.role))} · ${esc(ME.u)}</small>`;
+  draw();
+}
+function logout(){logAct('Sign out','','');ME=null;store.del('as_user');$('#app').classList.add('hidden');$('#login').classList.remove('hidden');$('#lp').value='';closeModal()}
+function checkSession(){
+  if(ME){const rec=D.users[ME.u];if(!rec||rec.active===false){logout();return}ME.role=rec.role;ME.name=rec.name;return}
+  const u=store.get('as_user');if(u&&D.users[u]&&D.users[u].active!==false&&!D.users[u].mustChange){ME={u,name:D.users[u].name,role:D.users[u].role};enterApp()}
+}
+function openModalC(title,body,footer,opt={}){
+  $('#modalRoot').innerHTML=`<div class="ov" id="ov"><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}" style="${opt.narrow?'max-width:440px':''}"><header><h2>${esc(title)}</h2>${opt.force?'':'<button class="x" type="button" aria-label="Close" id="mx">×</button>'}</header><div class="mb" id="mbody">${body}</div><footer id="mfoot">${footer}</footer></div></div>`;
+  if(!opt.force){$('#mx').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal()})}
+  document.onkeydown=e=>{if(e.key==='Escape'&&!opt.force)closeModal()};
+  const f=$('#mbody input:not([disabled]),#mbody select:not([disabled])');if(f)f.focus();
+}
+function passwordModal(force){
+  const body=`${force?'':'<label class="f full">Current password<input class="i" id="pw0" type="password" autocomplete="current-password"></label>'}
+    <label class="f full">New password (at least 6 characters)<input class="i" id="pw1" type="password" autocomplete="new-password"></label>
+    <label class="f full">Repeat new password<input class="i" id="pw2" type="password" autocomplete="new-password"></label><div class="err full" id="pwErr" role="alert"></div>`;
+  openModalC(force?'Choose a new password':'Change password',body,`<span class="sp"></span>${force?'':'<button class="btn" type="button" id="pwCancel">Cancel</button>'}<button class="btn pri" type="button" id="pwSave">Save password</button>`,{force,narrow:1});
+  if(!force)$('#pwCancel').onclick=closeModal;
+  $('#pwSave').onclick=async()=>{
+    const err=$('#pwErr');const p1=$('#pw1').value,p2=$('#pw2').value;const rec=D.users[ME.u];
+    if(!force&&await hashPw(rec.salt,$('#pw0').value)!==rec.hash){err.textContent='Current password is wrong.';return}
+    if(p1.length<6){err.textContent='Use at least 6 characters.';return}
+    if(p1!==p2){err.textContent='The two passwords do not match.';return}
+    if(p1==='admin123'){err.textContent='Choose a different password.';return}
+    const salt=newSalt();
+    try{await db.doc('users/'+ME.u).update({salt,hash:await hashPw(salt,p1),mustChange:false});logAct('Change password','','');closeModal();toast('Password changed.')}catch(e){err.textContent='Could not save. Try again.'}
+  };
+}
+function usersView(){
+  if(!can('admin'))return '<div class="empty">Only a Master Admin can manage users.</div>';
+  const rows=Object.entries(D.users).map(([id,u])=>({...u,id})).sort((a,b)=>a.u.localeCompare(b.u));
+  setTimeout(()=>{document.querySelectorAll('#view tr.row[data-u]').forEach(tr=>{tr.onclick=()=>userModal(tr.dataset.u);tr.onkeydown=e=>{if(e.key==='Enter')userModal(tr.dataset.u)}});const a=$('#btnAddU');if(a)a.onclick=()=>userModal(null)},0);
+  return `<div class="toolbar"><span class="sp"></span><button class="btn pri" id="btnAddU" type="button">+ Add user</button></div><div class="tbox"><table class="t" style="min-width:600px"><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Status</th><th>Last sign-in</th></tr></thead><tbody>${rows.map(r=>`<tr class="row" tabindex="0" data-u="${esc(r.id)}"><td class="mono">${esc(r.u)}</td><td>${esc(r.name)}</td><td>${esc(rl(r.role))}</td><td>${r.active===false?'<span class="pill x">Disabled</span>':'<span class="pill g">Active</span>'}</td><td>${r.lastLogin?esc(fmtDT(r.lastLogin)):'<span class="faint">Never</span>'}</td></tr>`).join('')}</tbody></table></div>`;
+}
+function accessView(){
+  if(!can('admin'))return '<div class="empty">Only a Master Admin can manage access.</div>';
+  const defs=posDefs(),names=Object.keys(defs),builtin=['Admin','Editor','Viewer'],n2=names.length+1;
+  const cnt=n=>Object.values(D.users).filter(u=>u.role===n).length;
+  const row=(label,type,key)=>`<tr><td>${esc(label)}</td>${names.map(n=>{const lk=n==='Admin',on=lk||(type==='d'?(defs[n].docs===undefined||!(defs[n].dk||[]).includes(key)?(key.startsWith('vw:')?true:defs[n].acts.includes(DACT[key.slice(0,2)])):defs[n].docs.includes(key)):(type==='m'?defs[n].menus:defs[n].acts).includes(key));return `<td style="text-align:center"><input type="checkbox" class="ac" data-n="${esc(n)}" data-t="${type}" data-k="${esc(key)}" ${on?'checked':''} ${lk?'disabled':''} aria-label="${esc(rl(n))}: ${esc(label)}"></td>`}).join('')}</tr>`;
+  setTimeout(bindAccess,0);
+  return `<div class="defbox"><b>How it works:</b> each column is a position. Tick what that position can open and do, then press <b>Save access</b>. Give a position to a person in <b>Users</b>. Users and Access control are always for the Master Admin only. This controls what each person sees in this page. For a job that only some people can do (for example, upload one document type), add a position for that job, tick only its rows, and give that position to those people in <b>Users</b>.</div>
+  <div class="tbox"><table class="t" style="min-width:${180+110*names.length}px"><thead><tr><th>Permission</th>${names.map(n=>`<th style="text-align:center">${esc(rl(n))}<div class="faint">${cnt(n)} user${cnt(n)===1?'':'s'}</div>${builtin.includes(n)?'':`<a href="#" data-delpos="${esc(n)}">Remove</a>`}</th>`).join('')}</tr></thead><tbody>
+  <tr><td colspan="${n2}"><b>Menus they can open</b></td></tr>${MENUS.map(m=>row(m[1],'m',m[0])).join('')}
+  <tr><td colspan="${n2}"><b>What they can do</b></td></tr>${ACTS.map(a=>row(a[1],'a',a[0])).join('')}
+  <tr><td colspan="${n2}"><b>Upload documents of this type</b> <span class="faint">(also needs Upload files)</span></td></tr>${drTypes().map(t=>row(t||'No type (old files)','d','up:'+t)).join('')}
+  <tr><td colspan="${n2}"><b>View or download documents of this type</b></td></tr>${drTypes().map(t=>row(t||'No type (old files)','d','vw:'+t)).join('')}
+  <tr><td colspan="${n2}"><b>Replace or delete documents of this type</b> <span class="faint">(also needs Delete)</span></td></tr>${drTypes().map(t=>row(t||'No type (old files)','d','dl:'+t)).join('')}</tbody></table></div>
+  <div class="addrow" style="margin-top:12px"><input class="i" id="posNew" placeholder="New position, for example Finance" maxlength="30"><button class="btn" type="button" id="posAdd">+ Add position</button></div>
+  <div class="toolbar" style="margin-top:12px"><span class="err" id="acErr" role="alert"></span><span class="sp"></span><button class="btn pri" type="button" id="acSave">Save access</button></div>`;
+}
+function readAccess(){
+  const o={};posNames().filter(n=>n!=='Admin').forEach(n=>o[n]={menus:[],acts:[],docs:[],dk:[]});
+  document.querySelectorAll('input.ac').forEach(c=>{const q=o[c.dataset.n];if(!q)return;if(c.dataset.t==='d'){q.dk.push(c.dataset.k);if(c.checked)q.docs.push(c.dataset.k)}else if(c.checked)(c.dataset.t==='m'?q.menus:q.acts).push(c.dataset.k)});return o}
+function bindAccess(){
+  const err=$('#acErr');if(!err)return;
+  const put=async(list,msg)=>{try{await db.doc('settings/positions').set({list,updatedAt:new Date().toISOString(),updatedBy:ME.name});logAct('Access control','',msg);toast('Saved.');return true}catch(e){err.textContent='Could not save.';return false}};
+  $('#acSave').onclick=async()=>{err.textContent='';await put(readAccess(),'Access saved for: '+Object.keys(readAccess()).join(', '))};
+  $('#posAdd').onclick=async()=>{err.textContent='';const v=$('#posNew').value.trim();
+    if(!v){err.textContent='Type the position name.';return}
+    if(posNames().some(n=>n.toLowerCase()===v.toLowerCase())||/^master admin$/i.test(v)){err.textContent='That position already exists.';return}
+    const l=readAccess();l[v]={menus:MENUS.map(m=>m[0]),acts:[]};if(await put(l,'Position added: '+v))$('#posNew').value=''};
+  let armed=null;
+  document.querySelectorAll('[data-delpos]').forEach(a=>a.onclick=async e=>{e.preventDefault();err.textContent='';const n=a.dataset.delpos;
+    if(Object.values(D.users).some(u=>u.role===n)){err.textContent=n+' still has users. Move them to another position first.';return}
+    if(armed!==n){armed=n;a.textContent='Click again to remove';return}
+    const l=readAccess();delete l[n];await put(l,'Position removed: '+n)});
+}
+function userModal(id){
+  const isNew=!id;const r=isNew?{u:'',name:'',role:'Editor',active:true}:D.users[id];
+  openModalC(isNew?'Add user':'Edit user',`<label class="f" for="u_u">Username<input class="i" id="u_u" value="${esc(r.u)}" ${isNew?'':'disabled'} autocomplete="off"></label>
+   <label class="f" for="u_n">Full name<input class="i" id="u_n" value="${esc(r.name)}"></label>
+   <label class="f" for="u_r">Role<select class="i" id="u_r">${posNames().map(x=>`<option value="${x}" ${x===r.role?'selected':''}>${esc(rl(x))}</option>`).join('')}</select></label>
+   <label class="f" for="u_a">Status<select class="i" id="u_a"><option value="1" ${r.active!==false?'selected':''}>Active</option><option value="0" ${r.active===false?'selected':''}>Disabled</option></select></label>
+   <label class="f full" for="u_p">${isNew?'Temporary password':'Reset password (leave blank to keep)'}<input class="i" id="u_p" type="text" autocomplete="off"></label>`,
+   `<span class="sp"></span><span class="err" id="mErr" role="alert"></span><button class="btn" type="button" id="mCancel">Cancel</button><button class="btn pri" type="button" id="mSave">Save</button>`);
+  $('#mCancel').onclick=closeModal;
+  $('#mSave').onclick=async()=>{
+    const err=$('#mErr');const u=(isNew?$('#u_u').value:r.u).trim().toLowerCase(),name=$('#u_n').value.trim(),role=$('#u_r').value,active=$('#u_a').value==='1',pw=$('#u_p').value;
+    if(!/^[a-z0-9._-]{3,30}$/.test(u)){err.textContent='Username: 3 to 30 letters, numbers, dot, dash or underscore.';return}
+    if(!name){err.textContent='Enter a name.';return}
+    if(isNew&&D.users[u]){err.textContent='That username exists.';return}
+    if(isNew&&pw.length<6){err.textContent='Temporary password needs 6+ characters.';return}
+    const admins=Object.entries(D.users).filter(([k,x])=>x.role==='Admin'&&x.active!==false&&k!==u).length;
+    if((role!=='Admin'||!active)&&!isNew&&r.role==='Admin'&&admins===0){err.textContent='Keep at least one active Master Admin.';return}
+    if(!isNew&&u===ME.u&&!active){err.textContent='You cannot disable yourself.';return}
+    const doc={...(isNew?{lastLogin:null,mustChange:true}:JSON.parse(JSON.stringify(r))),u,name,role,active};delete doc.id;
+    if(pw){doc.salt=newSalt();doc.hash=await hashPw(doc.salt,pw);doc.mustChange=true}
+    try{await db.doc('users/'+u).set(doc);logAct(isNew?'Add user':'Edit user',u,`${name}, ${rl(role)}, ${active?'active':'disabled'}${pw?', password reset':''}`);closeModal();toast('Saved.')}catch(e){err.textContent='Could not save.'}
+  };
+}
+
+/* ---------- upload docs ---------- */
+const DOCMAX=700*1024;
+const KINDMAP={};
+const DKEY={upload:'up',view:'vw',change:'dl'},DACT={up:'files',dl:'delete'};
+function permKey(k){
+  if(!ME)return false;if(ME.role==='Admin')return true;
+  const q=posDefs()[ME.role];if(!q)return false;
+  if(q.docs===undefined||!(q.dk||[]).includes(k))return k.startsWith('vw:')?true:q.acts.includes(DACT[k.slice(0,2)]);
+  return q.docs.includes(k)}
+const docT=d=>(d&&(d.docType||KINDMAP[d.kind]))||'';
+const docOk=(t,act)=>(act==='upload'?can('files'):act==='change'?can('delete'):true)&&permKey(DKEY[act]+':'+(t||''));
+const drTypes=()=>[...new Set([...[],...(()=>{const x=D.settings&&D.settings.docTypes;return x&&Array.isArray(x.list)&&x.list.length?x.list:DEFT0})(),...Object.values(D.docs||{}).map(docT).filter(Boolean)])].concat(['']);
+async function posRenameDoc(o,n){
+  const q=(D.settings&&D.settings.positions||{}).list||{},q2=JSON.parse(JSON.stringify(q));let ch=false;
+  const fx=z=>/^(up|vw|dl):/.test(z)&&z.slice(3)===o?z.slice(0,3)+n:z;
+  Object.values(q2).forEach(x=>{if(x.docs){x.docs=x.docs.map(fx);ch=true}if(x.dk){x.dk=x.dk.map(fx);ch=true}});
+  if(ch)await db.doc('settings/positions').set({list:q2,updatedAt:new Date().toISOString(),updatedBy:ME.name})}
+
+const docLab=a=>a?[a.code,a.name].filter(Boolean).join(' · '):'';
+const docTargets=()=>rows('accounts').map(a=>({key:'accounts/'+a.id,group:'Accounts',label:docLab(a)||a.id})).sort((x,y)=>x.label.localeCompare(y.label));
+const fsz=n=>n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
+const readFile=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(f)});
+const imgShrink=url=>new Promise(res=>{const i=new Image();i.onload=()=>{const s=Math.min(1,1600/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*s);c.height=Math.round(i.height*s);c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.8))};i.onerror=()=>res(url);i.src=url});
+const dataToBlob=u=>{const m=/^data:([^;,]*)(;base64)?,(.*)$/.exec(u)||[];const bin=atob(m[3]||'');const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new Blob([a],{type:m[1]||'application/octet-stream'})};
+async function docGet(id){const s=await db.doc('docdata/'+id).get();return s.exists?s.data().data:null}
+function docsModal(pre,lock){
+  if(!ME)return;
+  const T=docTargets(),groups=[...new Set(T.map(t=>t.group))];
+  const DEFT=['Bank letter','Account opening form','ID / KYC','SOF explanation','Cheque rejection notice','Complaint','Unblock visit report','Bank statement','Other'];
+  const types=()=>{const x=D.settings&&D.settings.docTypes;return x&&Array.isArray(x.list)&&x.list.length?x.list:DEFT};
+  const saveTypes=async l=>{await db.doc('settings/docTypes').set({list:l,updatedAt:new Date().toISOString(),updatedBy:ME.name})};
+  const nz=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  const KW=[[/letter/i,'Bank letter'],[/open|form/i,'Account opening form'],[/\bid\b|kyc|passport|nid/i,'ID / KYC'],[/sof|source.?of.?fund/i,'SOF explanation'],[/cheque|check|reject/i,'Cheque rejection notice'],[/complain/i,'Complaint'],[/visit|unblock/i,'Unblock visit report'],[/statement|stmt/i,'Bank statement']];
+  const guessType=(name,hdr)=>{const n=nz(name),L=types();
+    if(hdr){const h=nz(hdr);const hit=(/balance|debit|credit/.test(h)?'Bank statement':'');if(hit&&L.includes(hit))return hit}
+    for(const [re,t] of KW){if(re.test(name)&&L.includes(t))return t}return ''};
+  const accOf=t=>{const m=/^accounts\/(.+)$/.exec(t.key);return m?D.accounts[m[1]]:null};
+  const detect=(name,cells)=>{const n=nz(name),cs=cells||new Set(),hits={};
+    T.forEach(t=>{const a=accOf(t);if(!a)return;let sc=0;const code=nz(a.code),no=nz(a.accNo),nm=nz(a.name);
+      if(code.length>=4&&(n.includes(code)||cs.has(code)))sc=3;
+      if(no.length>=6&&(n.includes(no)||cs.has(no)))sc=3;
+      if(!sc&&nm.length>=6&&n.includes(nm))sc=2;
+      if(sc)hits[t.key]=sc});
+    const mx=Math.max(0,...Object.values(hits)),top=Object.keys(hits).filter(k=>hits[k]===mx);
+    return {key:top.length===1?top[0]:'',many:top.length>1?top.map(k=>(T.find(t=>t.key===k)||{}).label):[]}};
+  const recSel=(id,val)=>`<select class="i" id="${id}"><option value="">Choose…</option>${groups.map(g=>`<optgroup label="${esc(g)}">${T.filter(t=>t.group===g).map(t=>`<option value="${esc(t.key)}" ${t.key===val?'selected':''}>${esc(t.label)}</option>`).join('')}</optgroup>`).join('')}</select>`;
+  const typeSel=(id,val)=>`<select class="i" id="${id}"><option value="">Choose the type…</option>${types().filter(x=>docOk(x,'upload')||x===val).map(x=>`<option value="${esc(x)}" ${x===val?'selected':''}>${esc(x)}</option>`).join('')}<option value="__new">+ Add new type…</option></select>`;
+  const body=`<div class="full" id="dcUpBox">${can('files')?`<div class="faint" style="margin-bottom:6px">Step 1: choose files. Step 2: check the preview, the type and the account. Step 3: confirm. Nothing is saved until you confirm. (PDF, image, Word, Excel; up to ${fsz(DOCMAX)} each)</div><div class="addrow"><input class="i" id="dcF" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.doc,.docx,.xls,.xlsx,.csv,.txt"><button class="btn pri" type="button" id="dcRev">Review files</button> ${can('admin')?'<button class="btn" type="button" id="dcTypes">Manage types</button>':''}</div><div class="faint" id="dcMsg" role="alert" style="margin-top:4px"></div><div id="dcStage"></div>`:'<div class="faint">You have view access: you can open and download documents but not upload.</div>'}</div>
+   <div class="full toolbar" style="margin:8px 0 0"><label class="f" ${lock?'style="display:none"':''}>Account<select class="i" id="dcT"><option value="">All records</option>${groups.map(g=>`<optgroup label="${esc(g)}">${T.filter(t=>t.group===g).map(t=>`<option value="${esc(t.key)}" ${t.key===pre?'selected':''}>${esc(t.label)}</option>`).join('')}</optgroup>`).join('')}</select></label><label class="f">Type<select class="i" id="dcTy"><option value="">All types</option>${types().map(x=>`<option>${esc(x)}</option>`).join('')}<option value="__none">No type</option></select></label></div>
+   <div class="full" id="dcList"></div>`;
+  openModalC(lock?'Documents · '+((T.find(t=>t.key===pre)||{}).label||''):'Documents',body,`<span class="sp"></span><button class="btn" type="button" id="dcClose">Close</button>`);
+  $('#dcClose').onclick=closeModal;
+  const labOf=k=>(T.find(t=>t.key===k)||{}).label||'(record removed)';
+  function list(){
+    const k=$('#dcT').value,ty=$('#dcTy').value;let ds=Object.entries(D.docs||{}).map(([id,d])=>({...d,id})).filter(d=>(!k||d.target===k)&&(!ty||(ty==='__none'?!d.docType:d.docType===ty))).sort((a,b)=>(b.at||'').localeCompare(a.at||''));const hid=ds.filter(d=>!docOk(docT(d),'view')).length;ds=ds.filter(d=>docOk(docT(d),'view'));
+    $('#dcList').innerHTML=ds.length?`<table class="t" style="min-width:0"><thead><tr><th>File</th><th>Type</th>${k?'':'<th>Record</th>'}<th>Added</th><th></th></tr></thead><tbody>${ds.map(d=>`<tr><td><b>${esc(d.name)}</b><div class="faint">${esc(fsz(d.size||0))}${d.note?' · '+esc(d.note):''}</div></td><td>${d.docType?esc(d.docType):'<span class="faint">–</span>'}</td>${k?'':`<td>${esc(labOf(d.target))}</td>`}<td>${esc(fmtDT(d.at))}<div class="faint">${esc(d.byName||'')}</div></td><td style="white-space:nowrap"><button class="btn" type="button" data-v="${d.id}">${/^image\//.test(d.mime||'')?'View':'Download'}</button>${/^image\//.test(d.mime||'')?` <button class="btn" type="button" data-d="${d.id}">Download</button>`:''}${can('delete')&&docOk(docT(d),'change')?` <button class="btn" type="button" data-x="${d.id}">Delete</button>`:''}</td></tr>`).join('')}</tbody></table>`:'<div class="faint">No documents yet.</div>';
+    if(hid)$('#dcList').insertAdjacentHTML('beforeend','<div class="faint" style="margin-top:6px">'+hid+' file'+(hid===1?' is':'s are')+' restricted to assigned people.</div>');
+    $('#dcList').querySelectorAll('[data-v],[data-d]').forEach(b=>b.onclick=async()=>{
+      const id=b.dataset.v||b.dataset.d,d=D.docs[id];if(!docOk(docT(d),'view')){toast('Only assigned people can open this file.');return}b.disabled=true;
+      try{const u=await docGet(id);if(!u){toast('The file could not be found.');return}
+        if(b.dataset.v&&/^image\//.test(d.mime||''))lightbox(u);else{await dl.save({filename:d.name,data:dataToBlob(u)});toast('File ready.')}
+      }catch(e){if(!e||e.code!=='declined')toast('Could not open the file.')}finally{b.disabled=false}});
+    $('#dcList').querySelectorAll('[data-x]').forEach(b=>b.onclick=async()=>{
+      const id=b.dataset.x,d=D.docs[id];if(!docOk(docT(d),'change')){toast('Only assigned people can delete this file.');return}if(!confirm('Delete "'+d.name+'"?'))return;
+      try{await db.doc('docs/'+id).delete();await db.doc('docdata/'+id).delete();logAct('Document deleted',labOf(d.target),d.name);toast('Deleted.');setTimeout(list,150)}catch(e){toast('Could not delete.')}});
+  }
+  $('#dcT').onchange=list;$('#dcTy').onchange=list;list();
+  const tm=$('#dcTypes');if(tm)tm.onclick=()=>{
+    const L=[...types()],box=$('#dcStage');
+    const paint=()=>{box.innerHTML=`<div class="tbox" style="margin-top:8px"><table class="t" style="min-width:0"><thead><tr><th>Document types</th><th></th></tr></thead><tbody>${L.map((x,i)=>`<tr><td><input class="i ty_n" data-i="${i}" value="${esc(x)}"></td><td><button class="btn sm" type="button" data-tr="${i}">Remove</button></td></tr>`).join('')}</tbody></table></div><div class="addrow"><input class="i" id="tyNew" placeholder="New type"><button class="btn" type="button" id="tyAdd">Add</button><button class="btn pri" type="button" id="tySave">Save types</button><button class="btn" type="button" id="tyDef">Reset to default</button><button class="btn" type="button" id="tyX">Cancel</button></div><div class="faint">Renaming a type here does not change files already saved with the old name.</div>`;
+      box.querySelectorAll('.ty_n').forEach(e=>e.oninput=()=>L[+e.dataset.i]=e.value);
+      box.querySelectorAll('[data-tr]').forEach(b=>b.onclick=()=>{L.splice(+b.dataset.tr,1);paint()});
+      $('#tyAdd').onclick=()=>{const v=$('#tyNew').value.trim();if(v&&!L.includes(v)){L.push(v);paint()}};
+      $('#tyDef').onclick=()=>{L.splice(0,L.length,...DEFT);paint()};$('#tyX').onclick=()=>{box.innerHTML=''};
+      $('#tySave').onclick=async()=>{const c=L.map(x=>x.trim()).filter(Boolean);if(!c.length){toast('Keep at least one type.');return}try{await saveTypes([...new Set(c)]);logAct('Document types','',c.join(', '));toast('Types saved.');closeModal();setTimeout(()=>docsModal(pre),200)}catch(e){toast('Could not save.')}}};
+    paint()};
+  const rv=$('#dcRev');if(!rv)return;
+  let ST=[];
+  const preview=async s=>{
+    const f=s.f,n=f.name.toLowerCase();
+    if(/^image\//.test(f.type)){s.url=await readFile(f);return `<img src="${s.url}" alt="Preview" style="max-width:100%;max-height:180px;border-radius:4px;border:1px solid var(--line)">`}
+    if(/\.pdf$/i.test(n)||f.type==='application/pdf'){s.blob=URL.createObjectURL(f);return `<iframe src="${s.blob}" title="Preview" style="width:100%;height:220px;border:1px solid var(--line);border-radius:4px;background:#fff"></iframe><div class="faint">If the preview is blank, the file will still be saved correctly.</div>`}
+    if(/\.(xlsx|xls|csv)$/i.test(n)&&window.XLSX){try{const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];const a=XLSX.utils.sheet_to_json(ws,{header:1,defval:''}).slice(0,6);s.hdr=(a[0]||[]).join(' ');s.cells=new Set();XLSX.utils.sheet_to_json(ws,{header:1,defval:''}).slice(0,300).forEach(r=>r.forEach(c=>{const v=nz(c);if(v&&v.length<40)s.cells.add(v)}));return `<div class="tbox" style="max-height:200px"><table class="t" style="min-width:0">${a.map((r,i)=>`<tr>${r.slice(0,8).map(c=>i?`<td>${esc(c)}</td>`:`<th>${esc(c)}</th>`).join('')}</tr>`).join('')}</table></div><div class="faint">First rows of sheet "${esc(wb.SheetNames[0])}".</div>`}catch(e){}}
+    if(/\.txt$/i.test(n)){return `<pre style="max-height:160px;overflow:auto;margin:0;white-space:pre-wrap">${esc((await f.text()).slice(0,800))}</pre>`}
+    return `<div class="faint">No preview for this file type. It will be saved as it is.</div>`};
+  rv.onclick=async()=>{
+    const fs=[...$('#dcF').files],msg=$('#dcMsg');msg.textContent='';
+    if(!fs.length){msg.textContent='Choose a file.';return}
+    rv.disabled=true;ST=[];
+    for(const f of fs){const s={f};s.pv=await preview(s);s.type=guessType(f.name,s.hdr);if(lock){s.rec=pre}else{const d=detect(f.name,s.cells),d2=d.key?d:detect('',s.cells);s.rec=d.key||d2.key||(pre||'');s.many=d.key?[]:(d.many.length?d.many:d2.many);if(d.key)s.from=(d2.key===d.key&&s.cells&&s.cells.size&&!nz(f.name).includes(nz((accOf({key:d.key})||{}).code||'~~'))&&!nz(f.name).includes(nz((accOf({key:d.key})||{}).accNo||'~~')))?'sheet':'file name';else if(d2.key)s.from='sheet'}ST.push(s)}
+    rv.disabled=false;paintStage()};
+  function paintStage(){
+    const box=$('#dcStage');
+    if(!ST.length){box.innerHTML='';return}
+    box.innerHTML=`<div style="margin-top:10px;display:grid;gap:10px">${ST.map((s,i)=>`<div class="rs"><div class="meta"><b>${esc(s.f.name)}</b> · ${esc(fsz(s.f.size))} ${s.f.size>DOCMAX&&!/^image\//.test(s.f.type)?'<span class="pill r">Too large</span>':''} <a href="#" data-sr="${i}">Remove</a></div><div>${s.pv}</div>
+      <div class="grid2" style="margin-top:8px"><label class="f">Document type${s.type?' (suggested from the file)':''}${typeSel('st_t'+i,s.type)}</label>${lock?`<div class="f">Account<b style="color:var(--ink)">${esc(labOf(pre))}</b></div>`:`<label class="f">Account${s.from?' (detected from the '+s.from+')':''}${s.many&&s.many.length?' · several match: '+esc(s.many.join(' / ')):''}${recSel('st_r'+i,s.rec)}</label>`}</div>
+      <label class="f" style="margin-top:6px">Note (optional)<input class="i" id="st_n${i}" maxlength="200"></label></div>`).join('')}
+      <div class="addrow"><button class="btn pri" type="button" id="stOk">Confirm and save ${ST.length} file${ST.length===1?'':'s'}</button><button class="btn" type="button" id="stNo">Cancel</button></div></div>`;
+    box.querySelectorAll('[data-sr]').forEach(a=>a.onclick=e=>{e.preventDefault();ST.splice(+a.dataset.sr,1);keep();paintStage()});
+    ST.forEach((s,i)=>{$('#st_t'+i).onchange=async e=>{if(e.target.value!=='__new'){s.type=e.target.value;return}
+        const v=(prompt('New document type')||'').trim();if(!v){e.target.value=s.type||'';return}
+        const L=types();if(!L.includes(v)){try{await saveTypes([...L,v])}catch(x){toast('Could not save the type.');e.target.value=s.type||'';return}}
+        s.type=v;keep();setTimeout(paintStage,250)};
+      if($('#st_r'+i))$('#st_r'+i).onchange=e=>s.rec=e.target.value});
+    $('#stNo').onclick=()=>{ST=[];paintStage()};
+    $('#stOk').onclick=save}
+  const keep=()=>ST.forEach((s,i)=>{const n=$('#st_n'+i);if(n)s.note=n.value});
+  async function save(){
+    keep();const msg=$('#dcMsg');
+    const nope=ST.findIndex(s=>s.type&&!docOk(s.type,'upload'));if(nope>=0){msg.textContent='File '+(nope+1)+': you are not assigned to upload this document type.';return}
+    const bad0=ST.findIndex(s=>!s.type||!s.rec);
+    if(bad0>=0){msg.textContent='File '+(bad0+1)+': choose the document type'+(lock?'.':' and the account.');return}
+    const ok=$('#stOk');ok.disabled=true;let n=0,bad=[];
+    for(const s of ST){const f=s.f;
+      try{let u=s.url||await readFile(f),mime=f.type||'application/octet-stream';
+        if(/^image\//.test(mime)&&mime!=='image/gif'){u=await imgShrink(u);mime='image/jpeg'}
+        if(u.length*0.75>DOCMAX){bad.push(f.name+' (too large)');continue}
+        const id=rid('d');
+        await db.doc('docdata/'+id).set({data:u});
+        await db.doc('docs/'+id).set({target:s.rec,docType:s.type,name:f.name,mime,size:Math.round(u.length*0.75),note:(s.note||'').trim(),at:new Date().toISOString(),by:ME.u,byName:ME.name});
+        logAct('Document uploaded',labOf(s.rec),s.type+' · '+f.name);n++}
+      catch(e){bad.push(f.name)}}
+    ST.forEach(s=>{if(s.blob)URL.revokeObjectURL(s.blob)});
+    ST=[];$('#dcF').value='';paintStage();msg.textContent=(n?n+' saved. ':'')+(bad.length?'Not saved: '+bad.join(', '):'');setTimeout(list,250)}
+}
+
+/* ---------- Lists: the Master Admin can add, rename, move and delete dropdown choices ---------- */
+const LST=[];
+function lstReg(r){r.def=r.kv?r.keys.map(k=>({k,l:r.labels[k]||k})):(r.arr?r.arr.slice():(r.store?r.store.read():[]));LST.push(r);return r}
+const lstAll=()=>(D.settings&&D.settings.lists)||{};
+function lstRead(r){
+  if(r.store&&!r.kv)return r.store.read();
+  const s=lstAll()[r.key];
+  if(r.kv)return s&&Array.isArray(s.items)&&s.items.length?s.items.map(x=>({k:x.k,l:x.l})):r.def.map(x=>({...x}));
+  return s&&Array.isArray(s.items)&&s.items.length?s.items.slice():r.def.slice();
+}
+function lstSync(){LST.forEach(r=>{const v=lstRead(r);
+  if(r.kv){r.keys.splice(0,r.keys.length,...v.map(x=>x.k));v.forEach(x=>{r.labels[x.k]=x.l;(r.labels2||[]).forEach((m,mi)=>{if(x.k in m||(mi===0&&!(r.locked||[]).includes(x.k)))m[x.k]=x.l})})}
+  else if(r.arr)r.arr.splice(0,r.arr.length,...v)})}
+const lstVal=(r,it)=>r.kv?it.l:it;
+function lstUsed(r,it){const val=r.kv?it.k:it;if(r.countFn)return r.countFn(val);let n=0;(r.uses||[]).forEach(([c,f])=>Object.values(D[c]||{}).forEach(x=>{if(x&&x[f]===val)n++}));return n}
+async function lstWrite(r,items,msg){
+  if(r.store&&!r.kv)await r.store.write(items);
+  else await db.doc('settings/lists').set({...lstAll(),[r.key]:{items,updatedAt:new Date().toISOString(),updatedBy:ME.name}});
+  logAct('List changed',r.title,msg);
+}
+async function lstMass(r,oldV,newV){
+  if(r.key==='docTypes'||r.key==='doct')await posRenameDoc(oldV,newV);
+  if(r.massFn)return r.massFn(oldV,newV);
+  const jobs=[];(r.uses||[]).forEach(([c,f])=>Object.entries(D[c]||{}).forEach(([id,x])=>{if(x&&x[f]===oldV)jobs.push([c,id,f])}));
+  for(let i=0;i<jobs.length;i+=20)await Promise.all(jobs.slice(i,i+20).map(([c,id,f])=>db.doc(c+'/'+id).update({[f]:newV})));
+  return jobs.length;
+}
+UI.lst=null;
+function listsView(){
+  if(!can('admin'))return '<div class="empty">Only a Master Admin can manage lists.</div>';
+  const box=r=>{const items=lstRead(r),ed=UI.lst&&UI.lst.k===r.key?UI.lst.i:-1;
+    return `<div class="lbox" data-lk="${esc(r.key)}"><h3>${esc(r.title)}</h3><div class="lsub">${esc(r.hint||'')}</div>
+    <div class="tbox" style="max-height:none"><table class="t tight" style="min-width:0"><thead><tr><th>Choice</th><th class="n">In use</th><th></th></tr></thead><tbody>${items.length?items.map((it,i)=>{const v=lstVal(r,it),n=lstUsed(r,it);
+      return `<tr>${ed===i?`<td><input class="i" data-lstin value="${esc(v)}" maxlength="60"></td><td class="n">${n}</td><td class="act"><button class="btn sm pri" type="button" data-lst="save" data-i="${i}">Save</button> <button class="btn sm" type="button" data-lst="cancel">Cancel</button></td>`
+      :`<td>${esc(v)}${r.kv&&(r.locked||[]).includes(it.k)?' <span class="faint">(built in)</span>':''}</td><td class="n">${n}</td><td class="act"><button class="btn sm" type="button" data-lst="up" data-i="${i}" aria-label="Move up" ${i?'':'disabled'}>↑</button> <button class="btn sm" type="button" data-lst="dn" data-i="${i}" aria-label="Move down" ${i<items.length-1?'':'disabled'}>↓</button> <button class="btn sm" type="button" data-lst="ren" data-i="${i}">Rename</button> <button class="btn sm danger" type="button" data-lst="del" data-i="${i}">Delete</button></td>`}</tr>`}).join(''):'<tr><td colspan="3" class="empty">No choices yet.</td></tr>'}</tbody></table></div>
+    <div class="addrow"><input class="i" data-lstnew placeholder="Add a new choice…" maxlength="60"><button class="btn pri" type="button" data-lst="add">Add</button><button class="btn" type="button" data-lst="reset">Reset to default</button></div><div class="err" data-lsterr role="alert"></div></div>`};
+  return `<div class="defbox"><b>Lists.</b> Every dropdown with fixed choices is managed here. <b>Add</b> a choice and it appears in the dropdown straight away. <b>Rename</b> updates every record that uses it. <b>Delete</b> works only when no record uses the choice. Only the Master Admin can change lists.</div><div class="lgrid">${LST.map(box).join('')}</div>`;
+}
+async function lstClick(e){
+  const b=e.target.closest('[data-lst]');if(!b||!can('admin'))return;
+  const bx=b.closest('[data-lk]'),r=LST.find(x=>x.key===bx.dataset.lk),err=bx.querySelector('[data-lsterr]'),act=b.dataset.lst,i=+b.dataset.i;
+  const say=t=>{err.textContent=t};say('');
+  const items=lstRead(r),dup=(v,skip)=>items.some((it,j)=>j!==skip&&lstVal(r,it).toLowerCase()===v.toLowerCase());
+  try{
+    if(act==='ren'){UI.lst={k:r.key,i};draw();const inp=document.querySelector('[data-lk="'+r.key+'"] [data-lstin]');if(inp){inp.focus();inp.select()}return}
+    if(act==='cancel'){UI.lst=null;draw();return}
+    if(act==='add'){const inp=bx.querySelector('[data-lstnew]'),v=inp.value.trim();if(!v){say('Type the new choice first.');return}if(dup(v,-1)){say('That choice already exists.');return}
+      const nv=r.kv?[...items,{k:'F'+Date.now().toString(36),l:v}]:[...items,v];await lstWrite(r,nv,'Added: '+v);toast('Added.');return}
+    if(act==='save'){const v=bx.querySelector('[data-lstin]').value.trim(),it=items[i],old=lstVal(r,it);
+      if(!v){say('The choice cannot be empty.');return}if(v!==old&&dup(v,i)){say('That choice already exists.');return}
+      if(v===old){UI.lst=null;draw();return}
+      const n=lstUsed(r,it);if(n&&!r.kv&&!confirm('Rename "'+old+'" to "'+v+'"? This also changes '+n+' record'+(n===1?'':'s')+'.'))return;
+      const nv=items.map((x,j)=>j===i?(r.kv?{k:x.k,l:v}:v):x);
+      b.disabled=true;await lstWrite(r,nv,'Renamed: '+old+' → '+v);if(!r.kv&&n)await lstMass(r,old,v);UI.lst=null;toast(n&&!r.kv?'Renamed. '+n+' record'+(n===1?'':'s')+' updated.':'Renamed.');draw();return}
+    if(act==='del'){const it=items[i],v=lstVal(r,it);
+      if(r.kv&&(r.locked||[]).includes(it.k)){say('"'+v+'" is built in and follows the account type. You can rename it but not delete it.');return}
+      const n=lstUsed(r,it);if(n){say('"'+v+'" is used by '+n+' record'+(n===1?'':'s')+'. Rename it, or change those records first.');return}
+      if(items.length<2&&!r.allowEmpty){say('Keep at least one choice.');return}
+      if(!confirm('Delete "'+v+'"?'))return;
+      await lstWrite(r,items.filter((x,j)=>j!==i),'Deleted: '+v);toast('Deleted.');return}
+    if(act==='up'||act==='dn'){const j=act==='up'?i-1:i+1;if(j<0||j>=items.length)return;const nv=items.slice();[nv[i],nv[j]]=[nv[j],nv[i]];await lstWrite(r,nv,'Moved: '+lstVal(r,items[i]));return}
+    if(act==='reset'){if(!confirm('Put "'+r.title+'" back to its original choices? Records keep what they already have.'))return;
+      await lstWrite(r,r.kv?r.def.map(x=>({...x})):r.def.slice(),'Reset to default');toast('Reset.');return}
+  }catch(x){say('Could not save. Try again.')}
+}
+document.addEventListener('click',lstClick);
+(function(){const s=document.createElement('style');s.textContent='.lgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}@media(max-width:1000px){.lgrid{grid-template-columns:minmax(0,1fr)}}.lbox{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px}.lbox h3{font-family:var(--head);font-size:16px;margin:0 0 2px}.lbox .lsub{color:var(--faint);font-size:12px;margin-bottom:10px}.lbox .addrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.lbox .addrow .i{flex:1 1 160px;width:auto}.lbox td.act{white-space:nowrap;text-align:right}.lbox .btn.danger{color:var(--red);border-color:var(--red)}.tbox table.t.tight td,.tbox table.t.tight th{padding:6px 8px}';document.head.appendChild(s)})();
+
+const DEFT0=['Bank letter','Account opening form','ID / KYC','SOF explanation','Cheque rejection notice','Complaint','Unblock visit report','Bank statement','Other'];
+lstReg({key:'docTypes',title:'Document types',hint:'Used when attaching documents.',store:{read:()=>{const x=D.settings&&D.settings.docTypes;return x&&Array.isArray(x.list)&&x.list.length?x.list.slice():DEFT0.slice()},write:l=>db.doc('settings/docTypes').set({list:l,updatedAt:new Date().toISOString(),updatedBy:ME.name})},uses:[['docs','docType']]});
+/* ---------- boot ---------- */
+async function boot(){
+  try{db=await window.claude.use('db');dl=await window.claude.use('downloads')}catch(e){}
+  if(!db){$('#loginBtn').textContent='Unavailable';$('#loginErr').textContent='Open this page signed in to claude.ai to reach the database.';return}
+  let t;
+  const sub=(c,q)=>(q||db.collection(c)).onSnapshot(s=>{
+    const o={};s.docs.forEach(d=>o[d.id]=d.data());D[c]=o;READY[c]=1;if(c==='settings')lstSync();
+    if(c==='users'){bootstrapAdmin();checkSession();const b=$('#loginBtn');if(!b.dataset.ready){b.disabled=false;b.textContent='Sign in';b.dataset.ready=1}}
+    clearTimeout(t);t=setTimeout(refresh,50)},()=>{READY[c]=1;if(c==='users'){$('#loginErr').textContent='Could not read the database.'}});
+  sub('source');sub('accounts');sub('lines');sub('risk');sub('alerts');sub('hist',db.collection('hist').orderBy('at','desc').limit(500));sub('settings');sub('users');sub('docs',db.collection('docs').orderBy('at','desc').limit(500));sub('log',db.collection('log').orderBy('at','desc').limit(200));
+  $('#loginForm').addEventListener('submit',doLogin);
+  $('#nav').addEventListener('click',e=>{if(e.target.closest('[data-docs]'))docsModal()});$('#btnPw').onclick=()=>passwordModal(false);$('#btnOut').onclick=logout;
+  setInterval(()=>{if(ME&&!$('#ov'))draw()},3600*1000);
+}
+boot();
+})();
+</script>
+
+</body></html>

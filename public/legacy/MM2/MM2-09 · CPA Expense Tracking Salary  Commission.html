@@ -1,0 +1,1008 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>MM2-09 · CPA Expense Tracking (Salary &amp; Commission)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600&display=swap">
+<style>
+
+/* Layout: dark navy sidebar + paper work area, same family as CPA Control. Grouped ledgers read like the Excel sheets (band, rows, sub-total, grand total). */
+:root{
+  --paper:#F2F4F6;--surface:#FFFFFF;--ink:#17212C;--muted:#5E6B78;--faint:#8A96A3;--line:#DCE1E6;--line2:#EBEEF1;
+  --steel:#23507A;--steel-d:#1A3D5E;--steel-l:#E6EEF5;--on-steel:#FFFFFF;
+  --side:#132230;--side-2:#1C3043;--side-ink:#C8D4DF;--side-line:#2B435A;
+  --red:#B42318;--red-l:#FDECEA;--amber:#B54708;--amber-l:#FEF3E2;--green:#067647;--green-l:#E7F6EC;
+  --band:#EEF2F5;--grand:#DDE8F2;--shadow:0 8px 30px rgba(15,30,45,.22);
+  --head:"Barlow Semi Condensed","Bahnschrift","DIN Alternate","Roboto Condensed","Arial Narrow",sans-serif;
+  --body:"Segoe UI","Inter",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular",Consolas,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#0E151C;--surface:#162029;--ink:#E6ECF1;--muted:#9AA8B5;--faint:#6F7E8C;--line:#2A3947;--line2:#223039;
+    --steel:#6FA3D6;--steel-d:#8DB8E3;--steel-l:#1B3248;--on-steel:#0E151C;
+    --side:#0A1118;--side-2:#14212C;--side-ink:#AEBBC8;--side-line:#243543;
+    --red:#F07A6C;--red-l:#3A1A16;--amber:#E3A948;--amber-l:#33270F;--green:#5CC98A;--green-l:#15301F;
+    --band:#1B2630;--grand:#1F3A52;--shadow:0 8px 30px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#0E151C;--surface:#162029;--ink:#E6ECF1;--muted:#9AA8B5;--faint:#6F7E8C;--line:#2A3947;--line2:#223039;
+  --steel:#6FA3D6;--steel-d:#8DB8E3;--steel-l:#1B3248;--on-steel:#0E151C;
+  --side:#0A1118;--side-2:#14212C;--side-ink:#AEBBC8;--side-line:#243543;
+  --red:#F07A6C;--red-l:#3A1A16;--amber:#E3A948;--amber-l:#33270F;--green:#5CC98A;--green-l:#15301F;
+  --band:#1B2630;--grand:#1F3A52;--shadow:0 8px 30px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--paper);color:var(--ink);font:14px/1.45 var(--body);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--head);font-weight:600;margin:0;letter-spacing:.01em;text-wrap:balance}
+h1{font-size:24px}h2{font-size:18px}h3{font-size:15px}
+:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
+.hidden{display:none!important}
+.mono{font-family:var(--mono);font-size:12.5px}
+.muted{color:var(--muted)}.faint{color:var(--faint)}
+small{font-size:11.5px}
+
+/* controls */
+.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:600;min-width:0}
+.i{width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:8px 10px;font-weight:400;font-size:14px;min-width:0}
+.i:disabled{background:var(--paper);color:var(--muted)}
+textarea.i{min-height:64px;resize:vertical}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:7px 12px;cursor:pointer;font-weight:600;font-size:13px}
+.btn:hover{border-color:var(--steel)}
+.btn.pri{background:var(--steel);border-color:var(--steel);color:var(--on-steel)}
+.btn.pri:hover{background:var(--steel-d);border-color:var(--steel-d)}
+.btn.danger{color:var(--red);border-color:var(--red)}
+.btn.sm{padding:4px 9px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:default}
+.err{color:var(--red);font-size:13px;min-height:18px}
+.hint{font-size:12px;color:var(--muted)}
+
+/* app shell */
+#app{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh}
+aside{background:var(--side);color:var(--side-ink);display:flex;flex-direction:column;position:sticky;top:env(safe-area-inset-top,0px);align-self:start;height:100vh;max-height:100vh;overflow:auto}
+.brand{padding:18px 18px 14px;border-bottom:1px solid var(--side-line)}
+.brand b{display:block;font:600 19px var(--head);color:#fff}
+.brand small{color:#8397AA}
+nav{padding:10px 8px;display:flex;flex-direction:column;gap:2px;flex:1}
+.ng{font:600 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:#6F8499;padding:12px 10px 4px}
+nav button{all:unset;box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;color:var(--side-ink);font-size:13.5px}
+nav a.navlink{box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;color:var(--side-ink);font-size:13.5px;text-decoration:none}
+nav a.navlink:hover{background:var(--side-2)}
+nav a.navlink:focus-visible{outline:2px solid #8DB8E3}
+nav button:hover{background:var(--side-2)}
+nav button:focus-visible{outline:2px solid #8DB8E3}
+nav button[aria-current="page"]{background:var(--steel);color:var(--on-steel);font-weight:600}
+nav .ct{font:11px var(--mono);opacity:.7}
+.side-foot{padding:14px 18px;border-top:1px solid var(--side-line);font-size:12.5px}
+.side-foot .btns{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.side-foot .btn{background:transparent;color:var(--side-ink);border-color:var(--side-line)}
+main{padding:22px clamp(16px,3vw,36px) 48px;min-width:0}
+.topbar{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;margin-bottom:16px}
+.topbar .sub{color:var(--muted);font-size:13px}
+.sync{margin-left:auto;font:12px var(--mono);color:var(--muted)}
+@media (max-width:860px){
+  #app{grid-template-columns:1fr}
+  aside{position:static;max-height:none;height:auto}
+  nav{flex-direction:row;overflow-x:auto;padding:8px;flex:none}
+  .ng{display:none}
+  nav button{white-space:nowrap}
+  .side-foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 16px}
+  .side-foot .btns{margin-top:0}
+}
+
+/* toolbar + summary */
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:12px}
+.toolbar .f{min-width:120px}
+.toolbar .grow{flex:1 1 220px}
+.toolbar .sp{flex:1}
+.sumstrip{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.chip{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 14px;min-width:120px}
+.chip span{display:block;font:600 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.chip b{font:600 22px var(--head);font-variant-numeric:tabular-nums}
+.chip.big b{font-size:28px;color:var(--steel)}
+
+/* tables */
+.tbox{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:auto;max-height:calc(100vh - 230px)}
+.pager{display:flex;align-items:center;gap:8px;justify-content:flex-end;margin:8px 0;font-size:13px;color:var(--muted)}
+.pager .btn[disabled]{opacity:.4;cursor:default}
+table.t{border-collapse:collapse;width:100%;min-width:760px;font-size:13px}
+table.t th{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);background:var(--band);white-space:nowrap;position:sticky;top:0;z-index:3;box-shadow:0 1px 0 var(--line)}
+table.t td{padding:8px 10px;border-bottom:1px solid var(--line2);vertical-align:top}
+table.t td.n,table.t th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.n small{display:block;color:var(--muted);font-size:10.5px}
+td.neg{color:var(--red)}
+tr.row{cursor:pointer}
+tr.row:hover td{background:var(--steel-l)}
+tr.row:focus-visible{outline:2px solid var(--steel);outline-offset:-2px}
+tr.band td{background:var(--band);font:600 13px var(--head);letter-spacing:.04em;text-transform:uppercase;color:var(--steel);padding:7px 10px;border-bottom:1px solid var(--line)}
+tr.band td span{font:11px var(--mono);color:var(--muted);text-transform:none;letter-spacing:0;margin-left:8px}
+tr.sub td{background:var(--steel-l);font-weight:600;border-bottom:1px solid var(--line)}
+tr.grand td{background:var(--grand);font:600 14px var(--head);border-bottom:0}
+td.rem{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+td.wrap{max-width:300px}
+.pill{display:inline-flex;align-items:center;gap:5px;font:600 11.5px var(--body);padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.g{color:var(--green);background:var(--green-l)}
+.pill.a{color:var(--amber);background:var(--amber-l)}
+.pill.x{color:var(--muted);background:var(--band)}
+.tag{font:600 11px var(--mono);padding:2px 7px;border-radius:4px;background:var(--band);color:var(--muted);white-space:nowrap}
+.tag.in{background:var(--green-l);color:var(--green)}.tag.out{background:var(--amber-l);color:var(--amber)}
+.bank{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.bank i{width:9px;height:9px;border-radius:2px;display:inline-block}
+.stale{color:var(--amber)}
+.empty{padding:36px 16px;text-align:center;color:var(--muted)}
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;padding:5px 10px;border:1px solid var(--line,#ccc);border-radius:8px;cursor:pointer}
+.chk input{margin:0}
+.defbox{background:var(--steel-l);border-left:3px solid var(--steel);border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.5}
+.defbox b{font-weight:700}
+.note{font-size:12.5px;color:var(--muted);margin-top:10px}
+.warn{background:var(--amber-l);color:var(--amber);border-radius:6px;padding:8px 12px;font-size:13px;margin-top:10px}
+
+/* overview */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:6px;cursor:pointer;text-align:left}
+.card:hover{border-color:var(--steel)}
+.card .k{font:600 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.card .v{font:600 28px var(--head);font-variant-numeric:tabular-nums}
+.card .m{font-size:12.5px;color:var(--muted)}
+.ok{color:var(--green)}.bad{color:var(--red)}
+.sec{display:flex;flex-direction:column;gap:10px;margin-bottom:22px}
+.mini{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(10,18,26,.55);display:flex;align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 16px 16px;overflow:auto;z-index:50}
+.modal{background:var(--surface);border-radius:10px;width:100%;max-width:760px;box-shadow:var(--shadow);margin:auto 0}
+.modal header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.modal .x{all:unset;cursor:pointer;font-size:22px;line-height:1;padding:2px 8px;color:var(--muted)}
+.modal .x:focus-visible{outline:2px solid var(--steel)}
+.mb{padding:16px 18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.mb .full{grid-column:1/-1}
+.modal footer{display:flex;flex-wrap:wrap;gap:8px;padding:12px 18px;border-top:1px solid var(--line);align-items:center}
+.modal footer .sp{flex:1}
+@media (max-width:560px){.mb{grid-template-columns:1fr}}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pc{display:inline-flex;align-items:center;gap:4px;background:var(--steel-l);color:var(--steel);border-radius:999px;padding:3px 4px 3px 10px;font-size:12.5px;font-weight:600}
+.pc button{all:unset;cursor:pointer;padding:0 6px;font-size:15px;line-height:1}
+.addrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.addrow .i{flex:1 1 140px;width:auto}
+.hist{grid-column:1/-1;border:1px solid var(--line);border-radius:6px;overflow:auto}
+.hist table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:380px}
+.hist th,.hist td{padding:5px 8px;text-align:left;border-bottom:1px solid var(--line2)}
+.hist th{font:600 10.5px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--band)}
+.hist td.n,.hist th.n{text-align:right;font-variant-numeric:tabular-nums}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:8px;font-size:13px;z-index:80;max-width:calc(100vw - 32px)}
+.ck{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-bottom:1px solid var(--line2)}
+.ck:last-child{border-bottom:0}
+.ck input{margin-top:3px;width:17px;height:17px;flex:none}
+.ck.done .tx{color:var(--muted);text-decoration:line-through}
+.ck .ar{font:600 11px var(--mono);color:var(--steel);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* login */
+#login{min-height:100vh;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
+.login-art{background:var(--side);color:#fff;padding:48px clamp(24px,5vw,64px);display:flex;flex-direction:column;justify-content:space-between;gap:32px}
+.login-art h1{font-size:clamp(28px,4vw,40px);color:#fff;margin-top:14px;line-height:1.1}
+.login-art p{color:#A9B9C9;max-width:44ch;margin:14px 0 0}
+.login-art .eb{color:#8397AA;font-size:13px}
+.codes{display:flex;flex-wrap:wrap;gap:8px}
+.codes span{font:600 12px var(--mono);letter-spacing:.06em;border:1px solid #2B435A;color:#C8D4DF;padding:4px 9px;border-radius:4px}
+.login-form{display:flex;align-items:center;justify-content:center;padding:32px 16px}
+.login-form form{width:100%;max-width:340px;display:flex;flex-direction:column;gap:14px}
+@media (max-width:760px){#login{grid-template-columns:1fr}.login-art{padding:28px 16px;gap:18px}}
+
+
+/* Statement Alert additions */
+.sumstrip .chip.bad b{color:var(--red)}
+.pill.r{color:var(--red);background:var(--red-l)}
+.days{font:600 18px var(--head);color:var(--red);font-variant-numeric:tabular-nums}
+.empty b{display:block;color:var(--ink);font:600 20px var(--head);margin-bottom:6px}
+.empty .acts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.grp{margin-bottom:18px}
+.grp>header{display:flex;gap:10px;align-items:baseline;margin-bottom:6px}
+.grp>header .c{font:600 11.5px var(--mono);color:var(--red)}
+.cell{display:inline-block;min-width:78px;text-align:center;border-radius:4px;padding:3px 6px;font:600 12px var(--mono);cursor:pointer;border:0}
+.cell.ok{background:var(--green-l);color:var(--green)}.cell.late{background:var(--red-l);color:var(--red)}
+.cell.warn{background:var(--amber-l);color:var(--amber)}.cell.none{background:var(--band);color:var(--muted)}
+.modal .body{padding:16px 18px;display:grid;gap:16px}
+.modal h2{font-size:18px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kv div>span:first-child{display:block;font:600 10.5px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.tl{display:grid;gap:12px}
+.rs{border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--paper)}
+.rs .meta{font:600 11.5px var(--mono);color:var(--muted);margin-bottom:6px}
+.rs p{margin:0;white-space:pre-wrap}
+.shots{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.shots img{height:84px;max-width:140px;object-fit:cover;border-radius:4px;border:1px solid var(--line);cursor:zoom-in;background:var(--band)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.lock{font:600 12px var(--mono);color:var(--muted);border:1px dashed var(--line);border-radius:5px;padding:8px 10px}
+.light{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:90;padding:16px}
+.light img{max-width:100%;max-height:100%;border-radius:4px}
+.cgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;align-items:stretch}.cgrid>.cbox:last-child{grid-column:span 2}@media(max-width:1100px){.cgrid{grid-template-columns:repeat(2,1fr)}.cgrid>.cbox:last-child{grid-column:1/-1}}@media(max-width:700px){.cgrid{grid-template-columns:1fr}}
+.cbox{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.cbox h3{font-family:var(--head);font-size:16px;margin:0 0 2px}.cbox .sub{color:var(--faint);font-size:12px;margin-bottom:10px}
+.dnw{display:flex;align-items:center;gap:18px;flex-wrap:wrap}.dnw svg{flex:0 0 auto}
+.leg{display:flex;flex-direction:column;gap:6px;flex:1;min-width:140px;font-size:13px}
+.leg div{display:flex;align-items:center;gap:8px}.leg i{width:10px;height:10px;border-radius:3px;flex:0 0 auto}.leg b{margin-left:auto}
+.leg div[data-loc]{cursor:pointer}.leg div[data-loc]:hover{text-decoration:underline}
+.brow{display:grid;grid-template-columns:minmax(90px,38%) 1fr auto;align-items:center;gap:10px;font-size:13px;margin:7px 0}
+.brow .tr{height:12px;background:var(--line2);border-radius:6px;overflow:hidden;display:flex}.brow .tr span{display:block;height:100%}
+.brow .n{font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+.cbox .tot{font-family:var(--head);font-size:26px;fill:var(--ink)}.cbox .tl{font-size:11px;fill:var(--faint)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}.card{min-height:96px}@media(max-width:1000px){.cards{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.cards{grid-template-columns:1fr}}
+td.act{white-space:nowrap}
+.cards{grid-template-columns:repeat(3,1fr)}@media(min-width:1500px){.cards{grid-template-columns:repeat(6,1fr)}}@media(max-width:1000px){.cards{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.cards{grid-template-columns:1fr}}
+.card{cursor:default}.card:hover{border-color:var(--line)}.mb>.kv,.mb>.grid2,.mb>.lock,.mb>.chk,.mb>.f:not(.full),.mb>.faint{grid-column:1/-1}.mb>.grid2{display:grid}
+.card.clk,.brow.clk,.leg div.clk{cursor:pointer}.card.clk:hover{border-color:var(--accent,#1F4E79)}.brow.clk:hover,.leg div.clk:hover{background:rgba(0,0,0,.05)}.shw{border:0;background:none;color:var(--accent,#1F4E79);cursor:pointer;font:inherit;font-size:12px;text-decoration:underline;padding:0 2px}.acct{white-space:nowrap}.acct+.acct{margin-top:2px}.warn a[data-go]{color:inherit;font-weight:600;text-decoration:underline}.tbox th.s:hover{color:var(--ink)}.cbox select.i{width:100%}
+</style>
+<div id="login">
+  <div class="login-art">
+    <div>
+      <div class="eb">IR Group · PSS Department</div>
+      <h1>MM2-09 · CPA Expense Tracking (Salary &amp; Commission)</h1>
+      <p>Salary and Commission monitoring: did the Company send the funds, did PSS pay each person on time, how late, and who is late most often. No amounts are kept here.</p>
+    </div>
+    <div class="codes"><span>DASHBOARD</span><span>MONTHLY TRACKER</span><span>FUNDS RECEIVED</span><span>ALERTS</span><span>LATE RANKING</span></div>
+  </div>
+  <div class="login-form">
+    <form id="loginForm" autocomplete="on">
+      <h2>Sign in</h2>
+      <label class="f" for="lu">Username<input class="i" id="lu" autocomplete="username" required></label>
+      <label class="f" for="lp">Password<input class="i" id="lp" type="password" autocomplete="current-password" required></label>
+      <div class="err" id="loginErr" role="alert"></div>
+      <button class="btn pri" id="loginBtn" type="submit" style="justify-content:center;padding:10px" disabled>Connecting…</button>
+      <p class="hint" style="margin:0">Ask your Admin for an account. Sign-in locks the page; it is not bank-grade security.</p>
+      <p class="hint" style="margin:0">Version 1.1 · 20 Oct 2026 · DUMMY DATA</p>
+    </form>
+  </div>
+</div>
+<div id="app" class="hidden">
+  <aside>
+    <div class="brand"><b>MM2-09 · CPA Expense Tracking (Salary &amp; Commission)</b><small>IR Group · PSS Department</small></div>
+    <nav id="nav" aria-label="CPA Expense Tracking"></nav>
+    <div class="side-foot"><div id="who"></div><div class="btns"><button class="btn sm" id="btnPw" type="button">Password</button><button class="btn sm" id="btnOut" type="button">Sign out</button></div></div>
+  </aside>
+  <main><div class="topbar"><h1 id="pageTitle"></h1><span class="sub" id="pageSub"></span><span class="sync" id="todayTxt"></span></div><section id="view"><div class="empty">Loading…</div></section></main>
+</div>
+<div id="modalRoot"></div><div id="toastRoot"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="application/json" id="seedp">[{"name": "DUMMY Staff 001", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 002", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 003", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 004", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 005", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 006", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 007", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 008", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 009", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 010", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 011", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 012", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 013", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 014", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 015", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 016", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 017", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA, ACLEDA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 018", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 019", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 020", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA, ACLEDA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 021", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA, ACLEDA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 022", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA, ACLEDA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 023", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Taiwan-B777", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 024", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Taiwan-B777", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 025", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA, ACLEDA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 026", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA, ACLEDA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 027", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA, ACLEDA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 028", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA, ACLEDA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 029", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Taiwan-B777", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 030", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA, ACLEDA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 031", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 032", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 033", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 034", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 035", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 036", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 037", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 038", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 039", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 040", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 041", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 042", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 043", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 044", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 045", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 046", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 047", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 048", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 049", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 050", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 051", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 052", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 053", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 054", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 0.5}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 055", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 0.5}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 056", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 057", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 058", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 059", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 060", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 061", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 062", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Taiwan", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 063", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Taiwan", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 064", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Taiwan", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 065", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Taiwan", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 066", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 067", "agent": "DUMMY Agent A", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Taiwan", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 068", "agent": "DUMMY Agent A", "company": "CO-B", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Taiwan-B777", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 069", "agent": "DUMMY Agent A", "company": "CO-B", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Taiwan-B777", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 070", "agent": "DUMMY Agent A", "company": "CO-B", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 071", "agent": "DUMMY Agent A", "company": "CO-B", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 072", "agent": "DUMMY Agent A", "company": "CO-B", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 073", "agent": "DUMMY Agent A", "company": "CO-B", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 074", "agent": "DUMMY Agent A", "company": "CO-B", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Taiwan-B777", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 075", "agent": "DUMMY Agent A", "company": "CO-B", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Taiwan-B777", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 076", "agent": "DUMMY Agent A", "company": "CO-C", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 077", "agent": "DUMMY Agent A", "company": "CO-C", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 078", "agent": "DUMMY Agent A", "company": "CO-D", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 079", "agent": "DUMMY Agent A", "company": "CO-D", "sal": {"pay": true, "frac": 0.5}, "comm": {"pay": true, "frac": 0.5}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 080", "agent": "DUMMY Agent A", "company": "CO-D", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 081", "agent": "DUMMY Agent A", "company": "CO-D", "sal": {"pay": true, "frac": 0.5}, "comm": {"pay": true, "frac": 0.5}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 082", "agent": "DUMMY Agent A", "company": "CO-D", "sal": {"pay": true, "frac": 0.5}, "comm": {"pay": true, "frac": 0.5}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 083", "agent": "DUMMY Agent A", "company": "CO-E", "sal": {"pay": false, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 084", "agent": "DUMMY Agent B", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 085", "agent": "DUMMY Agent B", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 086", "agent": "DUMMY Agent B", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 087", "agent": "DUMMY Agent B", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 088", "agent": "DUMMY Agent B", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 089", "agent": "DUMMY Agent B", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 090", "agent": "DUMMY Agent B", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 091", "agent": "DUMMY Agent B", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 092", "agent": "DUMMY Agent B", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 093", "agent": "DUMMY Agent B", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 094", "agent": "DUMMY Agent B", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 095", "agent": "DUMMY Agent B", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 096", "agent": "DUMMY Agent B", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 097", "agent": "DUMMY Agent B", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 098", "agent": "DUMMY Agent B", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 099", "agent": "DUMMY Agent B", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 100", "agent": "DUMMY Agent B", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 101", "agent": "DUMMY Agent B", "company": "CO-F", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 102", "agent": "DUMMY Agent B", "company": "CO-F", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 103", "agent": "DUMMY Agent B", "company": "CO-F", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 104", "agent": "DUMMY Agent B", "company": "CO-F", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 105", "agent": "DUMMY Agent B", "company": "CO-F", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 106", "agent": "DUMMY Agent B", "company": "CO-F", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 107", "agent": "DUMMY Agent B", "company": "CO-F", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 108", "agent": "DUMMY Agent B", "company": "CO-F", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 109", "agent": "DUMMY Agent B", "company": "CO-F", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 110", "agent": "DUMMY Agent B", "company": "CO-F", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 111", "agent": "DUMMY Agent B", "company": "CO-F", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 112", "agent": "DUMMY Agent C", "company": "CO-G", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 113", "agent": "DUMMY Agent C", "company": "CO-G", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 114", "agent": "DUMMY Agent C", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 115", "agent": "DUMMY Agent C", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 116", "agent": "DUMMY Agent C", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 117", "agent": "DUMMY Agent C", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 118", "agent": "DUMMY Agent C", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 119", "agent": "DUMMY Agent C", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 120", "agent": "DUMMY Agent C", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 121", "agent": "DUMMY Agent C", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 122", "agent": "DUMMY Agent C", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 123", "agent": "DUMMY Agent C", "company": "CO-H", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 124", "agent": "DUMMY Agent C", "company": "CO-H", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 125", "agent": "DUMMY Agent C", "company": "CO-H", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 126", "agent": "DUMMY Agent C", "company": "CO-H", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 127", "agent": "DUMMY Agent C", "company": "CO-F", "sal": {"pay": true, "frac": 0.5}, "comm": {"pay": true, "frac": 0.5}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 128", "agent": "DUMMY Agent C", "company": "CO-D", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 129", "agent": "DUMMY Agent C", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 130", "agent": "DUMMY Agent C", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 131", "agent": "DUMMY Agent C", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 132", "agent": "DUMMY Agent C", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 133", "agent": "DUMMY Agent C", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 134", "agent": "DUMMY Agent C", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 135", "agent": "DUMMY Agent C", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 136", "agent": "DUMMY Agent C", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 137", "agent": "DUMMY Agent C", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 138", "agent": "DUMMY Agent C", "company": "CO-B", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Taiwan-B777", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 139", "agent": "DUMMY Agent C", "company": "CO-B", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Taiwan-B777", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 140", "agent": "DUMMY Agent C", "company": "CO-B", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Taiwan-B777", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 141", "agent": "DUMMY Agent D", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 142", "agent": "DUMMY Agent D", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 143", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 144", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA, ACLEDA", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 145", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA, ACLEDA", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 146", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 147", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 148", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA, ACLEDA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 149", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA, ACLEDA, PiPAY", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 150", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 151", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing", "project": "Unassigned", "holder": "PSS-KH2", "remark": ""}, {"name": "DUMMY Staff 152", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA, ACLEDA, PiPAY", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 153", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA, ACLEDA, PiPAY", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 154", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA, ACLEDA", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 155", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA, ACLEDA, PiPAY", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 156", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA, ACLEDA", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 157", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 158", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 159", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA, ACLEDA, PiPAY", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 160", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 161", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "PSS-KH", "remark": ""}, {"name": "DUMMY Staff 162", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing", "project": "Unassigned", "holder": "PSS-KH2", "remark": ""}, {"name": "DUMMY Staff 163", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 164", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 165", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 166", "agent": "DUMMY Agent D", "company": "CO-F", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 167", "agent": "DUMMY Agent D", "company": "CO-F", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 168", "agent": "DUMMY Agent D", "company": "CO-F", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 169", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "PSS-KH2", "remark": ""}, {"name": "DUMMY Staff 170", "agent": "DUMMY Agent D", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": false, "frac": 1}, "banks": "Wing, ABA, ACLEDA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 171", "agent": "DUMMY Agent E", "company": "CO-I", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 172", "agent": "DUMMY Agent E", "company": "CO-I", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 173", "agent": "DUMMY Agent E", "company": "CO-I", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 174", "agent": "DUMMY Agent E", "company": "CO-I", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 175", "agent": "DUMMY Agent E", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 176", "agent": "DUMMY Agent E", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 177", "agent": "DUMMY Agent E", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 178", "agent": "DUMMY Agent E", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 179", "agent": "DUMMY Agent E", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 180", "agent": "DUMMY Agent E", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 181", "agent": "DUMMY Agent E", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 182", "agent": "DUMMY Agent E", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 183", "agent": "DUMMY Agent E", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 184", "agent": "DUMMY Agent E", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 185", "agent": "DUMMY Agent E", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 186", "agent": "DUMMY Agent E", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 187", "agent": "DUMMY Agent E", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 188", "agent": "DUMMY Agent E", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 189", "agent": "DUMMY Agent E", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 190", "agent": "DUMMY Agent E", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 191", "agent": "DUMMY Agent E", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 192", "agent": "DUMMY Agent E", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 193", "agent": "DUMMY Agent E", "company": "CO-E", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 194", "agent": "DUMMY Agent E", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 195", "agent": "DUMMY Agent E", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 196", "agent": "DUMMY Agent E", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 197", "agent": "DUMMY Agent E", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 198", "agent": "DUMMY Agent E", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 199", "agent": "DUMMY Agent E", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 200", "agent": "DUMMY Agent E", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 201", "agent": "DUMMY Agent E", "company": "CO-A", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "Wing, ABA", "project": "Unassigned", "holder": "TW-OP", "remark": ""}, {"name": "DUMMY Staff 202", "agent": "DUMMY Agent E", "company": "CO-H", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 203", "agent": "DUMMY Agent E", "company": "CO-H", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 204", "agent": "DUMMY Agent E", "company": "CO-F", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}, {"name": "DUMMY Staff 205", "agent": "DUMMY Agent E", "company": "CO-F", "sal": {"pay": true, "frac": 1}, "comm": {"pay": true, "frac": 1}, "banks": "", "project": "", "holder": "", "remark": ""}]</script>
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const pad=n=>String(n).padStart(2,'0');
+const todayStr=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+const addMonth=(ym,n)=>{let [y,m]=ym.split('-').map(Number);m+=n;y+=Math.floor((m-1)/12);m=((m-1)%12+12)%12+1;return `${y}-${pad(m)}`};
+const monthLabel=ym=>ym?`${MON[+ym.slice(5)-1]} ${ym.slice(0,4)}`:'';
+const dueOf=ym=>addMonth(ym,1)+'-05';
+const fmtD=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||'');return m?`${+m[3]} ${MON[+m[2]-1]} ${m[1]}`:''};
+const dayDiff=(a,b)=>Math.round((Date.parse(a+'T00:00:00Z')-Date.parse(b+'T00:00:00Z'))/864e5);
+const fmtDT=iso=>{if(!iso)return '';const d=new Date(iso);if(isNaN(d))return '';return `${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())}`};
+const toLocalInput=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const uniq=a=>[...new Set(a.filter(Boolean))].sort((x,y)=>x.localeCompare(y));
+const rid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function toast(t){const r=$('#toastRoot');r.innerHTML=`<div class="toast" role="status">${esc(t)}</div>`;clearTimeout(toast.t);toast.t=setTimeout(()=>r.innerHTML='',3000)}
+
+let db=null,dl=null,ME=null;
+const MENUS=[["dash","Dashboard"],["trk","Monthly tracker"],["fund","Funds received"],["alerts","Alerts"],["rank","Late ranking"],["people","Pay list"],["set","Settings"],["hist","History"]];
+const ACTS=[['edit','Add and edit pay list and settings'],['mark','Mark lines paid or skipped'],['funds','Record funds received'],['files','Upload docs'],['delete','Delete documents'],['export','Excel export'],['accts','See bank and account numbers']];
+const posDefs=()=>{const L=((D.settings&&D.settings.positions)||{}).list||{},all=(typeof MENUS!=='undefined'?MENUS:[]).map(m=>m[0]);
+  const def={Admin:{menus:all,acts:ACTS.map(a=>a[0])},Editor:{menus:all,acts:['edit','files','export']},Viewer:{menus:all,acts:[]}};
+  const o={};Object.keys(def).forEach(k=>o[k]=k!=='Admin'&&L[k]?{menus:L[k].menus||[],acts:L[k].acts||[]}:def[k]);
+  Object.keys(L).forEach(k=>{if(!def[k])o[k]={menus:L[k].menus||[],acts:L[k].acts||[]}});return o};
+const posNames=()=>Object.keys(posDefs());
+const rl=r=>r==='Admin'?'Master Admin':r;
+const can=p=>{if(!ME)return false;if(p==='view')return true;if(ME.role==='Admin')return true;if(p==='admin')return false;const q=posDefs()[ME.role];if(!q)return false;return p.startsWith('m:')?q.menus.includes(p.slice(2)):q.acts.includes(p)};
+const menuOk=k=>k==='users'||k==='access'||k==='lists'?can('admin'):can('m:'+k);
+const fixT=T=>{let o=T.filter(x=>x[0]==='g'||menuOk(x[0]));if(can('admin')){if(!o.some(x=>x[0]==='users'))o.push(['g','Tools']);if(!o.some(x=>x[0]==='access'))o.push(['access','Access control'])}if(can('admin')&&!o.some(x=>x[0]==='lists'))o.push(['lists','Lists']);return o.filter((x,i,a)=>x[0]!=='g'||(a[i+1]&&a[i+1][0]!=='g'))};
+const store={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
+const D={persons:{},accts:{},lines:{},funds:{},settings:{},docs:{},log:{},users:{}};
+const READY={};
+const UI={tab:'dash',m:'',ag:'',co:'',kd:'sal',st:'',q:'',pq:'',pst:'',hq:'',gr:'agent',rf:'',rt:'',rk:['late',-1],sel:new Set(),pg:0};
+
+/* ---------- model ---------- */
+const KL={sal:'Salary',comm:'Commission'};
+const STL={ok:['On time','g'],late:['Late','r'],overdue:['Waiting for funds','r'],await:['Awaiting update','x'],soon:['Due soon','a'],pending:['Pending','x'],nodue:['No due day set','x'],skip:['Skipped','x'],np:['Not payable','x']};
+const STC={ok:'var(--green)',late:'var(--red)',overdue:'#7A1710',await:'#6B7C93',soon:'var(--amber)',pending:'#8A96A3',skip:'#B9C2CB',np:'#DCE1E6',nodue:'#C9CFD6'};
+const LATE=['Waiting for approval','Account blocked or cannot log in','Insufficient fund','Public holiday / bank closed'];
+const SKIPR=['On leave','Resigned / no longer working','Account stopped'];
+const curM=()=>todayStr().slice(0,7);
+const DEMO_DUE={salDay:5,commDay:15,halfDay:'',fundSalDay:2,fundCommDay:15,afterDays:1,alertDays:3,agents:{'DUMMY Agent A':{salDay:6,commDay:16,halfDay:''},'DUMMY Agent B':{salDay:7,commDay:17,halfDay:20},'DUMMY Agent C':{salDay:8,commDay:18,halfDay:''},'DUMMY Agent D':{salDay:10,commDay:20,halfDay:25},'DUMMY Agent E':{salDay:'',commDay:'',halfDay:''}},companies:{}};
+const S=()=>(D.settings&&D.settings.due)||DEMO_DUE;
+const num=v=>{const n=parseInt(v,10);return n>=1&&n<=31?n:null};
+const num0=v=>{if(v===''||v==null)return null;const n=parseInt(v,10);return n>=0&&n<=60?n:null};
+const dateOf=(ym,day)=>{if(!day)return '';const [y,m]=ym.split('-').map(Number);return `${ym}-${pad(Math.min(day,new Date(y,m,0).getDate()))}`};
+const addDays=(d,n)=>{const t=new Date(Date.parse(d+'T00:00:00Z')+n*864e5);return `${t.getUTCFullYear()}-${pad(t.getUTCMonth()+1)}-${pad(t.getUTCDate())}`};
+const alertDays=()=>{const v=num0(S().alertDays);return v==null?3:v};
+const trackStart=()=>{const t=D.settings&&D.settings.track;return t&&/^\d{4}-\d{2}$/.test(t.startMonth||'')?t.startMonth:'2026-08'};
+const months=()=>{const s=trackStart(),o=[];if(!s)return o;for(let m=s;m<=curM()&&o.length<120;m=addMonth(m,1))o.push(m);return o};
+const personRows=()=>Object.entries(D.persons).map(([id,p])=>({...p,id}));
+const pDay=(agent,kind,frac)=>{const s=S(),ag=((s.agents||{})[agent])||{};
+  if(frac<1){const h=num(ag.halfDay)||num(s.halfDay);if(h)return h}
+  return kind==='sal'?(num(ag.salDay)||num(s.salDay)):(num(ag.commDay)||num(s.commDay))};
+function lineBase(p,ym,kind){const k=p[kind]||{},frac=+k.frac||1;
+  return {id:`${ym}_${p.id}_${kind}`,month:ym,pid:p.id,kind,name:p.name,agent:p.agent||'',company:p.company||'',frac,payable:!!k.pay,due:dateOf(ym,pDay(p.agent,kind,frac))}}
+function monthLines(ym){const out=[];
+  personRows().forEach(p=>['sal','comm'].forEach(kind=>{const id=`${ym}_${p.id}_${kind}`,st=D.lines[id];
+    if(p.active===false&&!st)return;
+    const l=st?{...lineBase(p,ym,kind),...st,id}:lineBase(p,ym,kind);
+    if(!l.due&&l.payable)l.due=dateOf(ym,pDay(l.agent,kind,l.frac));
+    out.push(l)}));
+  return out}
+const allLines=ms=>(ms||months()).flatMap(monthLines);
+const fundDay=(co,kind)=>{const s=S(),c=((s.companies||{})[co])||{};return num(kind==='sal'?c.salDay:c.commDay)||num(kind==='sal'?s.fundSalDay:s.fundCommDay)};
+function fundOf(ym,co,kind){const id=`${ym}_${co}_${kind}`,d=D.funds[id]||{};
+  return {id,month:ym,company:co,kind,expected:d.expected!==undefined?d.expected:dateOf(ym,fundDay(co,kind)),received:d.received||'',ref:d.ref||'',note:d.note||'',stored:!!D.funds[id]}}
+function fundSt(f){const t=todayStr();
+  if(f.received)return {s:f.expected&&f.received>f.expected?'late':'ok',days:f.expected&&f.received>f.expected?dayDiff(f.received,f.expected):0};
+  if(!f.expected)return {s:'nodue',days:0};
+  const d=dayDiff(t,f.expected);if(d>0)return {s:'overdue',days:d};if(-d<=alertDays())return {s:'soon',days:-d};return {s:'pending',days:0}}
+function stOf(l){const t=todayStr();
+  if(!l.payable)return {s:'np',days:0};
+  if(l.skipped)return {s:'skip',days:0};
+  const f=fundOf(l.month,l.company,l.kind),n=num0(S().afterDays);
+  let lim=l.due||'';
+  if(f.received&&n!=null){const x=addDays(f.received,n);if(!lim||x>lim)lim=x}
+  const fundsLate=!!(f.received&&l.due&&f.received>l.due);
+  if(l.paidDate){if(!lim)return {s:'ok',days:0,lim,fundsLate};const d=dayDiff(l.paidDate,lim);return d>0?{s:'late',days:d,lim,cause:'pss'}:{s:'ok',days:0,lim,fundsLate}}
+  if(!lim)return {s:'nodue',days:0,lim};
+  const d=dayDiff(t,lim);
+  if(d>0)return (!f.received&&f.expected)?{s:'overdue',days:d,lim,cause:'funds'}:{s:'await',days:d,lim,cause:'pss'};
+  if(-d<=alertDays())return {s:'soon',days:-d,lim};
+  return {s:'pending',days:0,lim}}
+const withSt=l=>({...l,st:stOf(l)});
+const evalL=l=>l.st.s==='ok'||l.st.s==='late';
+const lateL=l=>l.st.s==='late';
+const fundWaitL=l=>l.st.s==='overdue'&&l.st.cause==='funds';
+const pill=l=>{const s=l.st.s,x=STL[s];return `<span class="pill ${x[1]}">${x[0]}${(s==='late'||s==='overdue'||s==='await')&&l.st.days?` · ${l.st.days}d`:''}</span>${l.st.fundsLate&&s==='ok'?' <span class="faint">Funds came late</span>':''}`};
+const fpill=f=>{const x=fundSt(f),m={ok:['Received','g'],late:['Received late','a'],overdue:['Not received','r'],soon:['Due soon','a'],pending:['Pending','x'],nodue:['No day set','x']}[x.s];return `<span class="pill ${m[1]}">${m[0]}${x.s==='overdue'||x.s==='late'?` · ${x.days}d`:''}</span>`};
+const companies=()=>uniq(personRows().map(p=>p.company));
+const agents=()=>uniq(personRows().map(p=>p.agent));
+const hostOk=u=>/^https?:\/\/\S+$/i.test(u||'');
+const rate=(a,b)=>b?Math.round(a/b*100)+'%':'–';
+
+let ENS={busy:false,done:{}};
+async function ensureLines(){
+  if(!db||!ME||!can('edit')||ENS.busy||!READY.persons||!READY.lines||!READY.settings)return;
+  const ms=months();if(!ms.length)return;const miss=[];
+  ms.forEach(ym=>personRows().filter(p=>p.active!==false).forEach(p=>['sal','comm'].forEach(k=>{const id=`${ym}_${p.id}_${k}`;if(!D.lines[id]&&!ENS.done[id])miss.push(lineBase(p,ym,k))})));
+  if(!miss.length)return;ENS.busy=true;
+  try{for(let i=0;i<miss.length;i+=20){await Promise.all(miss.slice(i,i+20).map(l=>{ENS.done[l.id]=1;const {id,...rest}=l;return db.doc('lines/'+id).set({...rest,createdAt:new Date().toISOString()})}))}}catch(e){}
+  ENS.busy=false}
+
+async function writeLine(l,patch){
+  const id=l.id,base={month:l.month,pid:l.pid,kind:l.kind,name:l.name,agent:l.agent,company:l.company,frac:l.frac,payable:l.payable,due:l.due||''};
+  const p={...patch,updatedAt:new Date().toISOString(),updatedBy:ME.name};
+  if(D.lines[id])await db.doc('lines/'+id).update(p);else await db.doc('lines/'+id).set({...base,...p,createdAt:new Date().toISOString()})}
+const lineLab=l=>`${l.name} · ${KL[l.kind]} · ${monthLabel(l.month)}`;
+
+/* ---------- audit ---------- */
+
+const AC=()=>can('accts');
+const acctOf=pid=>((D.accts||{})[pid]||{}).list||[];
+const maskNo=n=>{n=String(n||'');return n.length>4?'•'.repeat(Math.min(n.length-4,6))+n.slice(-4):n};
+const acctHtml=pid=>acctOf(pid).map(x=>`<div class="acct"><b>${esc(x.bank)}</b> <span class="mono an" data-no="${esc(x.no)}" data-m="${esc(maskNo(x.no))}">${esc(maskNo(x.no))}</span> <button type="button" class="shw">Show</button></div>`).join('');
+const acctTxt=pid=>acctOf(pid).map(x=>x.bank+' '+x.no).join('\n');
+const acctParse=t=>String(t||'').split(/\n/).map(r=>r.trim()).filter(Boolean).map(r=>{const m=r.match(/^([^|\t]+?)\s*[|\t]\s*(.+)$/)||r.match(/^(\S+(?: \S+)*?)\s{2,}(.+)$/);return m?{bank:m[1].trim(),no:m[2].replace(/\s+/g,'')}:null});
+async function logAct(action,target,detail){try{await db.collection('log').doc(rid('l')).set({at:new Date().toISOString(),by:ME?ME.u:'',name:ME?ME.name:'',action,target,detail:detail||''})}catch(e){}}
+
+/* ---------- modal ---------- */
+function openModal(title,sub,body,footer){
+  $('#modalRoot').innerHTML=`<div class="ov" id="ov"><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><header><div><h2>${esc(title)}</h2>${sub?`<div class="faint">${sub}</div>`:''}</div><button class="x" type="button" id="mx" aria-label="Close">×</button></header><div class="body">${body}</div>${footer?`<footer>${footer}</footer>`:''}</div></div>`;
+  $('#mx').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal()});
+  document.onkeydown=e=>{if(e.key==='Escape'){if($('.light'))$('.light').remove();else closeModal()}};
+}
+const closeModal=()=>{$('#modalRoot').innerHTML='';document.onkeydown=null;UI.modal=null;if(ME&&typeof draw==='function')draw()};
+function lightbox(src){const d=document.createElement('div');d.className='light';d.innerHTML=`<img alt="Screenshot" src="${src}">`;d.onclick=()=>d.remove();document.body.appendChild(d)}
+
+async function saveX(sheets,filename){if(!can('export')){toast('Your position cannot export to Excel.');return}
+  if(!window.XLSX||!dl){toast('Download is not available here.');return}
+  const wb=XLSX.utils.book_new();
+  sheets.forEach(s=>{const ws=XLSX.utils.aoa_to_sheet(s.rows);ws['!cols']=s.rows[0].map(h=>({wch:Math.max(14,Math.min(44,String(h).length+4))}));XLSX.utils.book_append_sheet(wb,ws,s.name)});
+  try{const buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});await dl.save({filename,data:new Blob([buf])});toast('File ready.')}catch(e){if(!e||e.code!=='declined')toast('Could not save the file.')}
+}
+/* ---------- views ---------- */
+const TITLES={dash:['Dashboard','Salary and Commission payments: paid on time, late, overdue'],trk:['Monthly tracker','One row per person and payment for the chosen month'],fund:['Funds received','Did each Company send the money to PSS on time?'],alerts:['Alerts','What is overdue, waiting for Company funds, or due soon'],rank:['Late ranking','Who is late most often'],people:['Pay list','The persons paid Salary and Commission, copied from CPA Control'],set:['Settings','Due days, funds days, alert days and the start month'],hist:['History','Who changed what'],lists:['Lists','Add, rename, reorder or delete the choices in dropdowns'],access:['Access control','Positions: what each person can open and do'],users:['Users','People who can sign in'],none:['No access','Ask the Master Admin to give your position a menu']};
+const selOpts=(arr,v,all)=>`<option value="">${all}</option>`+arr.map(x=>`<option value="${esc(x)}" ${x===v?'selected':''}>${esc(x)}</option>`).join('');
+function ensureM(){const ms=months();if(ms.length&&(!UI.m||!ms.includes(UI.m)))UI.m=ms[ms.length-1]}
+const noStart=()=>`<div class="tbox"><div class="empty"><b>Set the start month first</b>Tracking begins from the month you choose in Settings. Until then no lines are created.<div class="acts">${can('edit')?'<button class="btn pri" type="button" data-tab="set">Open Settings</button>':''}</div></div></div>`;
+function filterBar(o){o=o||{};ensureM();if(!UI.kd)UI.kd='sal';
+  return `<div class="toolbar">${o.month===false?'':`<label class="f">Month<select class="i" id="fm">${months().slice().reverse().map(m=>`<option value="${m}" ${m===UI.m?'selected':''}>${esc(monthLabel(m))}</option>`).join('')}</select></label>`}
+  <label class="f">Agent<select class="i" id="fa">${selOpts(agents(),UI.ag,'All')}</select></label>
+  <label class="f">Company<select class="i" id="fc">${selOpts(companies(),UI.co,'All')}</select></label>
+  <label class="f">Type<select class="i" id="fk"><option value="sal" ${UI.kd==='sal'?'selected':''}>Salary</option><option value="comm" ${UI.kd==='comm'?'selected':''}>Commission</option></select></label>
+  ${o.status?`<label class="f">Status<select class="i" id="fs"><option value="">All</option><option value="__pay" ${UI.st==='__pay'?'selected':''}>Payable (all)</option><option value="__eval" ${UI.st==='__eval'?'selected':''}>Paid (on time + late)</option><option value="__open" ${UI.st==='__open'?'selected':''}>Open, not yet due</option><option value="__pend" ${UI.st==='__pend'?'selected':''}>Pending (not yet due)</option>${Object.keys(STL).map(k=>`<option value="${k}" ${UI.st===k?'selected':''}>${STL[k][0]}</option>`).join('')}</select></label>`:''}
+  ${o.q===false?'':`<label class="f" style="flex:1;min-width:160px">Search<input class="i" id="fq" type="search" value="${esc(UI.q)}" placeholder="Name, agent, company, proof…"></label>`}${o.extra||''}</div>`}
+function wireFilters(){
+  const w=(id,k,fn)=>{const e=$('#'+id);if(e)e.onchange=ev=>{UI[k]=ev.target.value;UI.sel=new Set();if(fn)fn();draw()}};
+  w('fm','m');w('fa','ag');w('fc','co');w('fk','kd');w('fs','st');
+  const q=$('#fq');if(q)q.oninput=e=>{UI.q=e.target.value;UI.keep='fq';draw()}}
+const stOk=l=>!UI.st||(UI.st==='__pay'?l.payable:UI.st==='__eval'?evalL(l):UI.st==='__open'?['soon','pending','nodue'].includes(l.st.s):UI.st==='__pend'?['pending','nodue'].includes(l.st.s):l.st.s===UI.st);
+function viewLines(){ensureM();const q=UI.q.toLowerCase();
+  return monthLines(UI.m).map(withSt).filter(l=>(!UI.ag||l.agent===UI.ag)&&(!UI.co||l.company===UI.co)&&(!UI.kd||l.kind===UI.kd)&&stOk(l)&&(!q||[l.name,l.agent,l.company,l.proofRef,l.lateReason,l.skipReason].join(' ').toLowerCase().includes(q)))
+    .sort((a,b)=>a.agent.localeCompare(b.agent)||a.name.localeCompare(b.name)||a.kind.localeCompare(b.kind))}
+const proofCell=l=>l.paidDate?(l.proofRef||l.proofLink?`${esc(l.proofRef||'')}${hostOk(l.proofLink)?` <a href="${esc(l.proofLink)}" target="_blank" rel="noopener" data-stop="1">Open</a>`:''}`:'<span class="faint">No proof</span>'):'';
+function fundRecs(ms){const o=[];(ms||months()).forEach(ym=>{const seen={};monthLines(ym).forEach(l=>{if(l.payable&&l.company)seen[l.company+'|'+l.kind]=1});Object.keys(seen).forEach(k=>{const [co,kind]=k.split('|');o.push(fundOf(ym,co,kind))})});return o}
+const kLines=()=>allLines().filter(l=>!UI.kd||l.kind===UI.kd);
+function bannerHtml(){if(!months().length)return '';
+  const ls=kLines().map(withSt),od=ls.filter(l=>l.st.s==='await').length,fw=ls.filter(fundWaitL).length,so=ls.filter(l=>l.st.s==='soon').length,fo=fundRecs().filter(f=>(!UI.kd||f.kind===UI.kd)&&fundSt(f).s==='overdue').length;
+  if(!od&&!fw&&!so&&!fo)return '';
+  return `<div class="warn" role="alert" style="margin:0 0 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span><b>Alerts (${UI.kd==='comm'?'Commission':UI.kd==='sal'?'Salary':'All'}):</b> <a href="#" data-go="alerts" data-sc="sec-await">${od} awaiting update</a> · <a href="#" data-go="alerts" data-sc="sec-funds">${fw} waiting for Company funds</a> · <a href="#" data-go="alerts" data-sc="sec-soon">${so} due within ${alertDays()} days</a> · <a href="#" data-go="alerts" data-sc="sec-cfunds">${fo} Company funds not received</a></span><button class="btn sm" type="button" data-tab="alerts">Open Alerts</button></div>`}
+function lineRowsHtml(ls,sel){return ls.map(l=>`<tr class="row" tabindex="0" data-l="${esc(l.id)}">${sel?`<td><input type="checkbox" class="selc" data-id="${esc(l.id)}" ${UI.sel.has(l.id)?'checked':''} ${l.payable&&!l.paidDate&&!l.skipped?'':'disabled'} aria-label="Select ${esc(l.name)}"></td>`:''}<td><b>${esc(l.name)}</b>${sel?'':`<div class="faint">${esc(monthLabel(l.month))}</div>`}</td><td>${esc(l.agent)}</td><td>${esc(l.company)}</td>${AC()?`<td>${acctHtml(l.pid)}</td>`:''}<td>${KL[l.kind]}${l.frac<1?' <span class="tag">Half month</span>':''}</td><td>${fmtD(l.due)||'<span class="faint">–</span>'}${l.st.lim&&l.st.lim!==l.due?`<div class="faint">limit ${fmtD(l.st.lim)}</div>`:''}</td><td>${pill(l)}</td><td>${fmtD(l.paidDate)}</td><td>${proofCell(l)}</td><td>${esc(l.skipped?l.skipReason||'':l.lateReason||'')}</td></tr>`).join('')}
+const LH=sel=>`<tr>${sel?'<th><input type="checkbox" id="selAll" aria-label="Select all"></th>':''}<th>Person</th><th>Agent</th><th>Company</th>${AC()?'<th>Bank and account</th>':''}<th>Type</th><th>Due</th><th>Status</th><th>Paid date</th><th>Proof</th><th>Reason</th></tr>`;
+
+function donutSvg(items,tot,lab){const R=62,C=2*Math.PI*R,sum=items.reduce((a,x)=>a+x.v,0);let off=0;
+  const arcs=sum?items.filter(x=>x.v>0).map(x=>{const len=x.v/sum*C,a=`<circle cx="80" cy="80" r="${R}" fill="none" stroke="${x.c}" stroke-width="22" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 80 80)"/>`;off+=len;return a}).join(''):`<circle cx="80" cy="80" r="${R}" fill="none" stroke="var(--line2)" stroke-width="22"/>`;
+  return `<svg width="160" height="160" viewBox="0 0 160 160" role="img" aria-label="${esc(lab)}">${arcs}<text x="80" y="82" text-anchor="middle" class="tot">${tot}</text><text x="80" y="98" text-anchor="middle" class="tl">${esc(lab)}</text></svg>`}
+const donutBox=(title,sub,items,lab)=>{const tot=items.reduce((a,x)=>a+x.v,0);return `<div class="cbox"><h3>${esc(title)}</h3><div class="sub">${esc(sub)}</div><div class="dnw">${donutSvg(items,tot,lab)}<div class="leg">${items.map(x=>`<div ${x.st&&menuOk('trk')?`class="clk" data-go="trk" data-st="${x.st}" role="button" tabindex="0"`:''}><i style="background:${x.c}"></i>${esc(x.l)}<b>${x.v}${tot?` <span class="faint" style="font-weight:400">${Math.round(x.v/tot*100)}%</span>`:''}</b></div>`).join('')}</div></div></div>`};
+const barsBox=(title,sub,rowsA,empty)=>{const mx=Math.max(1,...rowsA.map(r=>r.parts.reduce((a,p)=>a+p.v,0)));return `<div class="cbox"><h3>${esc(title)}</h3><div class="sub">${esc(sub)}</div>${rowsA.length?rowsA.map(r=>{const t=r.parts.reduce((a,p)=>a+p.v,0);return `<div class="brow${r.go&&menuOk('trk')?' clk':''}" ${r.go&&menuOk('trk')?`data-go="trk" data-st="__eval" ${r.go.ag!==undefined?`data-ag="${esc(r.go.ag)}" data-co=""`:`data-co="${esc(r.go.co)}" data-ag=""`} role="button" tabindex="0"`:''}><span>${esc(r.l)}</span><div class="tr">${r.parts.map(p=>`<span style="width:${p.v/mx*100}%;background:${p.c}"></span>`).join('')}</div><span class="n">${esc(r.n!=null?r.n:t)}</span></div>`}).join(''):`<div class="faint">${esc(empty||'No data yet.')}</div>`}</div>`};
+
+function dashView(){
+  if(!months().length)return noStart();ensureM();if(!UI.kd)UI.kd='sal';
+  const flt=l=>(!UI.ag||l.agent===UI.ag)&&(!UI.co||l.company===UI.co)&&(!UI.kd||l.kind===UI.kd);
+  const ls=monthLines(UI.m).filter(flt).map(withSt),c=k=>ls.filter(l=>l.st.s===k).length,ev=ls.filter(evalL).length;
+  const card=(k,v,m,st)=>`<div class="card${st&&menuOk('trk')?' clk':''}" ${st&&menuOk('trk')?`data-go="trk" data-st="${st}" role="button" tabindex="0"`:''}><span class="k">${esc(k)}</span><span class="v">${v}</span><span class="m">${m}</span></div>`;
+  const cards=`<div class="cards">${card('Payable lines',ls.filter(l=>l.payable).length,esc(monthLabel(UI.m)),'__pay')}${card('Paid on time',c('ok'),rate(c('ok'),ev)+' on-time rate','ok')}${card('Paid late',c('late'),'After the limit date','late')}${card('Awaiting update',c('await'),ls.filter(fundWaitL).length+' waiting for Company funds','await')}${card('Open, not yet due',c('soon')+c('pending')+c('nodue'),c('soon')+' due within '+alertDays()+' days','__open')}${card('Skipped',c('skip'),c('np')+' not payable','skip')}</div>`;
+  const dSt=[['ok','On time'],['late','Paid late'],['await','Awaiting update'],['overdue','Waiting for funds'],['soon','Due soon'],['pending','Pending'],['skip','Skipped']].map(([k,l])=>({l,v:k==='pending'?c('pending')+c('nodue'):c(k),c:STC[k],st:k==='pending'?'__pend':k}));
+  const grp=key=>uniq(ls.map(l=>l[key])).map(g=>{const r=ls.filter(l=>l[key]===g&&evalL(l)),ok=r.filter(l=>l.st.s==='ok').length;return {l:g,parts:[{v:ok,c:'var(--green)'},{v:r.length-ok,c:'var(--red)'}],n:rate(ok,r.length)+' ('+r.length+')',t:r.length,go:{[key==='agent'?'ag':'co']:g}}}).filter(x=>x.t).sort((a,b)=>b.t-a.t).slice(0,12);
+  const ms=months().slice(-6).reverse();
+  const trend=ms.map(m=>{const r=monthLines(m).filter(flt).map(withSt),k=s=>r.filter(l=>l.st.s===s).length;return {l:monthLabel(m),parts:[{v:k('ok'),c:'var(--green)'},{v:k('late'),c:'var(--red)'},{v:k('await'),c:'#6B7C93'}],n:`${k('late')} late · ${k('await')} awaiting / ${r.filter(l=>l.payable&&!l.skipped).length}`}});
+  const all=allLines().filter(flt).map(withSt).filter(lateL),pm={};
+  all.forEach(l=>{const k=l.pid;(pm[k]=pm[k]||{l:l.name+(l.agent?' · '+l.agent:''),n:0,d:0});pm[k].n++;pm[k].d+=l.st.days});
+  const top=Object.values(pm).sort((a,b)=>b.n-a.n||b.d-a.d).slice(0,10).map(x=>({l:x.l,parts:[{v:x.n,c:'var(--red)'}],n:x.n+' late · avg '+Math.round(x.d/x.n)+' days'}));
+  const fr=fundRecs([UI.m]).filter(f=>(!UI.co||f.company===UI.co)&&(!UI.kd||f.kind===UI.kd)),fc=s=>fr.filter(f=>fundSt(f).s===s).length;
+  const charts=`<div class="cgrid">${donutBox('Payment status','Lines for '+monthLabel(UI.m),dSt,'lines')}${barsBox('On-time rate by Agent','On time (green) and late (red). Click a row to see its paid lines.',grp('agent'),'No paid lines yet.')}${barsBox('On-time rate by Company','On time (green) and late (red). Click a row to see its paid lines.',grp('company'),'No paid lines yet.')}${barsBox('Last 6 months','On time (green), paid late (red), awaiting update (grey)',trend)}${barsBox('Late most often','Persons with the most late payments, all months',top,'No late payments yet.')}</div>`;
+  return `${bannerHtml()}${filterBar({q:false})}${cards}${charts}<div class="sumstrip"><div class="chip"><span>Company funds received</span><b>${fc('ok')+fc('late')} of ${fr.length}</b></div><div class="chip ${fc('overdue')?'bad':''}"><span>Funds not received</span><b>${fc('overdue')}</b></div><div class="chip"><span>Funds came late</span><b>${fc('late')}</b></div></div>`}
+
+function trkView(){
+  if(!months().length)return noStart();if(!UI.kd)UI.kd='sal';
+  const ls=viewLines(),mk=can('mark'),n=UI.sel.size;
+  const bulk=mk?`<div class="toolbar" style="margin-top:0"><span class="faint">${n} selected</span><button class="btn pri" type="button" id="bkPaid" ${n?'':'disabled'}>Mark selected paid</button><button class="btn" type="button" id="bkSkip" ${n?'':'disabled'}>Skip selected</button><button class="btn" type="button" id="bkClr" ${n?'':'disabled'}>Clear selection</button><span class="hint">Tip: filter by Agent or Company, tick the top box to select every open line shown.</span></div>`:'';
+  return `${bannerHtml()}${filterBar({status:1,extra:`<button class="btn" type="button" id="xTrk">Export Excel</button>`})}${bulk}<div class="tbox"><table class="t" style="min-width:1100px"><thead>${LH(mk)}</thead><tbody>${ls.length?lineRowsHtml(ls,mk):`<tr><td colspan="${(mk?10:9)+(AC()?1:0)}" class="empty">No lines match.</td></tr>`}</tbody></table></div>`}
+const XH=['Month','Person','Agent','Company','Type','Period','Due date','Limit date','Status','Days late','Paid date','Proof reference','Proof link','Reason'];
+const XHs=()=>AC()?[...XH.slice(0,4),'Bank and account',...XH.slice(4)]:XH;
+const xRow0=l=>[monthLabel(l.month),l.name,l.agent,l.company,KL[l.kind],l.frac<1?'Half month':'Full month',l.due||'',l.st.lim||'',STL[l.st.s][0]+(l.st.cause==='funds'?' (waiting for Company funds)':''),l.st.days||'',l.paidDate||'',l.proofRef||'',l.proofLink||'',l.skipped?l.skipReason||'':l.lateReason||''];
+
+function fundView(){
+  if(!months().length)return noStart();ensureM();
+  const fr=fundRecs([UI.m]).filter(f=>(!UI.co||f.company===UI.co)&&(!UI.kd||f.kind===UI.kd)).sort((a,b)=>a.company.localeCompare(b.company)||a.kind.localeCompare(b.kind));
+  const cnt=f=>monthLines(UI.m).filter(l=>l.payable&&l.company===f.company&&l.kind===f.kind).length;
+  return `${bannerHtml()}<div class="defbox"><b>Funds received.</b> The Company sends the money to PSS, then PSS pays the persons. Record the date each Company's money arrived. A payment is late only if it is paid after the later of its due day and the funds date plus the days set in Settings.</div>
+  <div class="toolbar"><label class="f">Month<select class="i" id="fm">${months().slice().reverse().map(m=>`<option value="${m}" ${m===UI.m?'selected':''}>${esc(monthLabel(m))}</option>`).join('')}</select></label><label class="f">Company<select class="i" id="fc">${selOpts(companies(),UI.co,'All')}</select></label><label class="f">Type<select class="i" id="fk"><option value="">All</option><option value="sal" ${UI.kd==='sal'?'selected':''}>Salary</option><option value="comm" ${UI.kd==='comm'?'selected':''}>Commission</option></select></label></div>
+  <div class="tbox"><table class="t" style="min-width:760px"><thead><tr><th>Company</th><th>Type</th><th>Expected</th><th>Received</th><th>Reference</th><th>Status</th><th class="n">Lines to pay</th></tr></thead><tbody>${fr.length?fr.map(f=>`<tr class="row" tabindex="0" data-fm="${esc(f.month)}" data-fc="${esc(f.company)}" data-fk="${f.kind}"><td><b>${esc(f.company)}</b></td><td>${KL[f.kind]}</td><td>${fmtD(f.expected)||'<span class="faint">–</span>'}</td><td>${fmtD(f.received)}</td><td>${esc(f.ref)}</td><td>${fpill(f)}</td><td class="n">${cnt(f)}</td></tr>`).join(''):'<tr><td colspan="7" class="empty">No payable lines this month.</td></tr>'}</tbody></table></div>`}
+function fundModal(ym,co,kind){
+  const f=fundOf(ym,co,kind),ed=can('funds');
+  openModalC(`Funds received · ${co} · ${KL[kind]} · ${monthLabel(ym)}`,
+   `<label class="f" for="fd_e">Expected date<input class="i" id="fd_e" type="date" value="${esc(f.expected)}" ${ed?'':'disabled'}></label>
+    <label class="f" for="fd_r">Date received<input class="i" id="fd_r" type="date" value="${esc(f.received)}" ${ed?'':'disabled'}></label>
+    <label class="f full" for="fd_f">Reference<input class="i" id="fd_f" value="${esc(f.ref)}" maxlength="80" ${ed?'':'disabled'}></label>
+    <label class="f full" for="fd_n">Note<input class="i" id="fd_n" value="${esc(f.note)}" maxlength="200" ${ed?'':'disabled'}></label>`,
+   `<span class="sp"></span><span class="err" id="mErr" role="alert"></span><button class="btn" type="button" id="mCancel">${ed?'Cancel':'Close'}</button>${ed?'<button class="btn pri" type="button" id="mSave">Save</button>':''}`);
+  $('#mCancel').onclick=closeModal;
+  if(ed)$('#mSave').onclick=async()=>{const err=$('#mErr'),e=$('#fd_e').value,r=$('#fd_r').value;
+    if(r&&r>todayStr()){err.textContent='The received date cannot be in the future.';return}
+    try{await db.doc('funds/'+f.id).set({month:ym,company:co,kind,expected:e,received:r,ref:$('#fd_f').value.trim(),note:$('#fd_n').value.trim(),updatedAt:new Date().toISOString(),updatedBy:ME.name});
+      logAct('Funds received',`${co} · ${KL[kind]} · ${monthLabel(ym)}`,r?`Received ${r}${f.received&&f.received!==r?' (was '+f.received+')':''}`:'Received date cleared');closeModal();toast('Saved.')}catch(x){err.textContent='Could not save.'}}}
+
+function alertsView(){
+  if(!months().length)return noStart();
+  const ls=kLines().map(withSt),od=ls.filter(l=>l.st.s==='await').sort((a,b)=>b.st.days-a.st.days),fw=ls.filter(fundWaitL).sort((a,b)=>b.st.days-a.st.days),so=ls.filter(l=>l.st.s==='soon').sort((a,b)=>a.st.days-b.st.days);
+  const fr=fundRecs().filter(f=>(!UI.kd||f.kind===UI.kd)&&['overdue','soon'].includes(fundSt(f).s)).sort((a,b)=>(a.expected||'').localeCompare(b.expected||''));
+  const sec=(t,sub,arr,id)=>`<h3 id="${id}" style="margin:18px 0 6px">${t} <span class="faint">(${arr.length})</span></h3><div class="faint" style="margin-bottom:6px">${sub}</div><div class="tbox"><table class="t" style="min-width:1000px"><thead>${LH(false)}</thead><tbody>${arr.length?lineRowsHtml(arr,false):'<tr><td colspan="'+(9+(AC()?1:0))+'" class="empty">Nothing here.</td></tr>'}</tbody></table></div>`;
+  return `<div class="toolbar"><label class="f">Type<select class="i" id="fk"><option value="sal" ${UI.kd!=='comm'?'selected':''}>Salary</option><option value="comm" ${UI.kd==='comm'?'selected':''}>Commission</option></select></label><span class="sp"></span><button class="btn" type="button" id="xAl">Export Excel</button></div>
+  ${sec('Awaiting update','Past the limit date and no payment update has come in yet. This is not a late mark.',od,'sec-await')}${sec('Waiting for Company funds','Past the due day, and the Company has not yet sent the money.',fw,'sec-funds')}${sec('Due soon','Due within '+alertDays()+' days.',so,'sec-soon')}
+  <h3 id="sec-cfunds" style="margin:18px 0 6px">Company funds <span class="faint">(${fr.length})</span></h3><div class="tbox"><table class="t" style="min-width:600px"><thead><tr><th>Month</th><th>Company</th><th>Type</th><th>Expected</th><th>Status</th></tr></thead><tbody>${fr.length?fr.map(f=>`<tr class="row" tabindex="0" data-fm="${esc(f.month)}" data-fc="${esc(f.company)}" data-fk="${f.kind}"><td>${esc(monthLabel(f.month))}</td><td><b>${esc(f.company)}</b></td><td>${KL[f.kind]}</td><td>${fmtD(f.expected)}</td><td>${fpill(f)}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">Nothing here.</td></tr>'}</tbody></table></div>`}
+
+function rankData(){
+  const ms=months().filter(m=>(!UI.rf||m>=UI.rf)&&(!UI.rt||m<=UI.rt)),g={};
+  allLines(ms).map(withSt).filter(l=>l.payable).forEach(l=>{const k=(UI.gr==='company'?l.company:UI.gr==='person'?l.name+(l.agent?' · '+l.agent:''):l.agent)||'(none)';
+    const r=g[k]=g[k]||{k,ev:0,ok:0,late:0,fw:0,d:0};
+    if(evalL(l)){r.ev++;if(l.st.s==='ok'){r.ok++;if(l.st.fundsLate)r.fw++}else{r.late++;r.d+=l.st.days}}else if(fundWaitL(l))r.fw++});
+  const rows=Object.values(g).map(r=>({...r,pct:r.ev?r.late/r.ev*100:0,avg:r.late?r.d/r.late:0})).filter(r=>r.ev||r.fw);
+  const [col,dir]=UI.rk;rows.sort((a,b)=>col==='k'?dir*a.k.localeCompare(b.k):dir*((a[col]||0)-(b[col]||0))||a.k.localeCompare(b.k));return rows}
+function rankView(){
+  if(!months().length)return noStart();
+  const rows=rankData(),th=(c,l,n)=>`<th class="${n?'n':''} s" data-rk="${c}" style="cursor:pointer">${l}${UI.rk[0]===c?(UI.rk[1]<0?' ▼':' ▲'):''}</th>`,ms=months();
+  return `${bannerHtml()}<div class="toolbar"><label class="f">Group by<select class="i" id="rg"><option value="agent" ${UI.gr==='agent'?'selected':''}>Agent</option><option value="company" ${UI.gr==='company'?'selected':''}>Company</option><option value="person" ${UI.gr==='person'?'selected':''}>Person</option></select></label>
+  <label class="f">From<select class="i" id="rf"><option value="">First month</option>${ms.map(m=>`<option value="${m}" ${UI.rf===m?'selected':''}>${esc(monthLabel(m))}</option>`).join('')}</select></label><label class="f">To<select class="i" id="rt"><option value="">This month</option>${ms.map(m=>`<option value="${m}" ${UI.rt===m?'selected':''}>${esc(monthLabel(m))}</option>`).join('')}</select></label><span class="sp"></span><button class="btn" type="button" id="xRk">Export Excel</button></div>
+  <div class="defbox">Click a column title to sort. <b>Late</b> counts payments paid after the limit date, inside PSS. Lines with no payment update yet are not counted. <b>Funds delay</b> counts lines that waited for the Company's money, and are not counted as PSS late.</div>
+  <div class="tbox"><table class="t" style="min-width:760px"><thead><tr>${th('k',UI.gr==='agent'?'Agent':UI.gr==='company'?'Company':'Person')}${th('ev','Lines judged',1)}${th('ok','On time',1)}${th('late','Late',1)}${th('pct','Late %',1)}${th('avg','Avg days late',1)}${th('fw','Funds delay',1)}</tr></thead><tbody>${rows.length?rows.map((r,i)=>`<tr><td><b>${i+1}. ${esc(r.k)}</b></td><td class="n">${r.ev}</td><td class="n">${r.ok}</td><td class="n">${r.late}</td><td class="n">${r.ev?Math.round(r.pct)+'%':'–'}</td><td class="n">${r.late?r.avg.toFixed(1):'–'}</td><td class="n">${r.fw}</td></tr>`).join(''):'<tr><td colspan="7" class="empty">No payments judged yet.</td></tr>'}</tbody></table></div>`}
+
+/* ---------- pay list ---------- */
+const perLab=k=>k&&k.pay?'Payable · '+((+k.frac||1)<1?'Half month':'Full month'):'Not payable';
+function peopleView(){
+  const q=(UI.pq||'').toLowerCase(),ps=personRows().filter(p=>(!UI.ag||p.agent===UI.ag)&&(!UI.co||p.company===UI.co)&&(!UI.pst||(UI.pst==='off'?p.active===false:p.active!==false))&&(!q||[p.name,p.agent,p.company,p.banks,p.project,p.holder].join(' ').toLowerCase().includes(q))).sort((a,b)=>a.agent.localeCompare(b.agent)||a.name.localeCompare(b.name));
+  const empty=!Object.keys(D.persons).length;
+  return `${empty?`<div class="defbox"><b>The pay list is empty.</b> ${ME.role==='Admin'?'<button class="btn pri" type="button" id="seedBtn">Load the pay list from CPA Control</button>':'Ask the Master Admin to load it.'}</div>`:''}
+  <div class="toolbar"><label class="f">Agent<select class="i" id="fa">${selOpts(agents(),UI.ag,'All')}</select></label><label class="f">Company<select class="i" id="fc">${selOpts(companies(),UI.co,'All')}</select></label><label class="f">Status<select class="i" id="pst"><option value="">All</option><option value="on" ${UI.pst==='on'?'selected':''}>Active</option><option value="off" ${UI.pst==='off'?'selected':''}>Left or stopped</option></select></label><label class="f" style="flex:1;min-width:160px">Search<input class="i" id="pq" type="search" value="${esc(UI.pq||'')}" placeholder="Name, agent, bank…"></label>
+  ${can('edit')?'<button class="btn pri" type="button" id="pAdd">+ Add person</button><button class="btn" type="button" id="pImp">Import from Excel</button>':''}<button class="btn" type="button" id="pTpl">Excel template</button><button class="btn" type="button" id="xPp">Export Excel</button></div>
+  <div class="tbox"><table class="t" style="min-width:1100px"><thead><tr><th>Name</th><th>Agent</th><th>Company</th><th>Salary</th><th>Commission</th><th>Banks</th>${AC()?'<th>Bank and account</th>':''}<th>Project</th><th>Holder</th><th>Pay remark</th><th>Status</th></tr></thead><tbody>${ps.length?ps.map(p=>`<tr class="row" tabindex="0" data-p="${esc(p.id)}"><td><b>${esc(p.name)}</b></td><td>${esc(p.agent)}</td><td>${esc(p.company)}</td><td>${perLab(p.sal)}</td><td>${perLab(p.comm)}</td><td>${esc(p.banks||'')}</td>${AC()?`<td>${acctHtml(p.id)}</td>`:''}<td>${esc(p.project||'')}</td><td>${esc(p.holder||'')}</td><td>${esc(p.remark||'')}</td><td>${p.active===false?'<span class="pill x">Left or stopped</span>':'<span class="pill g">Active</span>'}</td></tr>`).join(''):'<tr><td colspan="'+(10+(AC()?1:0))+'" class="empty">No persons match.</td></tr>'}</tbody></table></div>`}
+function personModal(id){
+  const isNew=!id,p=isNew?{name:'',agent:'',company:'',sal:{pay:true,frac:1},comm:{pay:true,frac:1},banks:'',project:'',holder:'',remark:'',active:true}:D.persons[id],ed=can('edit');
+  const sel=(i,k)=>`<select class="i" id="${i}" ${ed?'':'disabled'}><option value="1" ${(p[k]||{}).pay?'selected':''}>Payable</option><option value="0" ${(p[k]||{}).pay?'':'selected'}>Not payable</option></select>`;
+  const per=(i,k)=>`<select class="i" id="${i}" ${ed?'':'disabled'}><option value="1" ${(+(p[k]||{}).frac||1)<1?'':'selected'}>Full month</option><option value="0.5" ${(+(p[k]||{}).frac||1)<1?'selected':''}>Half month</option></select>`;
+  openModalC(isNew?'Add person':'Person',
+   `<label class="f full" for="pe_n">Name<input class="i" id="pe_n" value="${esc(p.name)}" ${ed?'':'disabled'}></label>
+    <label class="f" for="pe_a">Agent<input class="i" id="pe_a" list="dlA" value="${esc(p.agent)}" ${ed?'':'disabled'}><datalist id="dlA">${agents().map(x=>`<option value="${esc(x)}">`).join('')}</datalist></label>
+    <label class="f" for="pe_c">Company<input class="i" id="pe_c" list="dlC" value="${esc(p.company)}" ${ed?'':'disabled'}><datalist id="dlC">${companies().map(x=>`<option value="${esc(x)}">`).join('')}</datalist></label>
+    <label class="f" for="pe_s">Salary${sel('pe_s','sal')}</label><label class="f" for="pe_sf">Salary period${per('pe_sf','sal')}</label>
+    <label class="f" for="pe_m">Commission${sel('pe_m','comm')}</label><label class="f" for="pe_mf">Commission period${per('pe_mf','comm')}</label>
+    <label class="f full" for="pe_b">Banks<input class="i" id="pe_b" value="${esc(p.banks||'')}" ${ed?'':'disabled'}></label>
+    ${AC()?`<label class="f full" for="pe_ac">Bank and account numbers (one per line: Bank | Number)<textarea class="i" id="pe_ac" rows="3" ${ed?'':'disabled'} placeholder="Wing | 12345678">${esc(acctOf(id||'').map(x=>x.bank+' | '+x.no).join('\n'))}</textarea></label>`:''}
+    <label class="f" for="pe_p">Project<input class="i" id="pe_p" value="${esc(p.project||'')}" ${ed?'':'disabled'}></label><label class="f" for="pe_h">Holder code<input class="i" id="pe_h" value="${esc(p.holder||'')}" ${ed?'':'disabled'}></label>
+    <label class="f full" for="pe_r">Pay remark<input class="i" id="pe_r" value="${esc(p.remark||'')}" ${ed?'':'disabled'}></label>
+    <label class="f full" for="pe_t">Status<select class="i" id="pe_t" ${ed?'':'disabled'}><option value="1" ${p.active!==false?'selected':''}>Active</option><option value="0" ${p.active===false?'selected':''}>Left or stopped</option></select></label>`,
+   `<span class="sp"></span><span class="err" id="mErr" role="alert"></span><button class="btn" type="button" id="mCancel">${ed?'Cancel':'Close'}</button>${ed?'<button class="btn pri" type="button" id="mSave">Save</button>':''}`);
+  $('#mCancel').onclick=closeModal;
+  if(ed)$('#mSave').onclick=async()=>{const err=$('#mErr'),name=$('#pe_n').value.trim();if(!name){err.textContent='Enter the name.';return}
+    const doc={name,agent:$('#pe_a').value.trim(),company:$('#pe_c').value.trim(),sal:{pay:$('#pe_s').value==='1',frac:+$('#pe_sf').value},comm:{pay:$('#pe_m').value==='1',frac:+$('#pe_mf').value},banks:$('#pe_b').value.trim(),project:$('#pe_p').value.trim(),holder:$('#pe_h').value.trim(),remark:$('#pe_r').value.trim(),active:$('#pe_t').value==='1',updatedAt:new Date().toISOString(),updatedBy:ME.name};
+    if(!doc.company){err.textContent='Enter the company.';return}
+    let al=null;if(AC()){al=acctParse($('#pe_ac').value);if(al.some(x=>!x)){err.textContent='Write each account as Bank | Number.';return}}
+    try{const pid=id||rid('p');await db.doc('persons/'+pid).set({...(isNew?{}:p),...doc});if(al&&JSON.stringify(al)!==JSON.stringify(acctOf(pid)))await db.doc('accts/'+pid).set({list:al,updatedAt:new Date().toISOString(),updatedBy:ME.name});logAct(isNew?'Person added':'Person changed',name,`${doc.agent} · ${doc.company}`);closeModal();toast('Saved.')}catch(x){err.textContent='Could not save.'}}}
+const PTPL=['Name','Agent','Company','Salary (Payable/Not payable)','Salary period (Full/Half)','Commission (Payable/Not payable)','Commission period (Full/Half)','Banks (names only)','Project','Holder code','Pay remark'];
+const pRows=ps=>ps.map(p=>[p.name,p.agent,p.company,p.sal&&p.sal.pay?'Payable':'Not payable',(+(p.sal||{}).frac||1)<1?'Half':'Full',p.comm&&p.comm.pay?'Payable':'Not payable',(+(p.comm||{}).frac||1)<1?'Half':'Full',p.banks||'',p.project||'',p.holder||'',p.remark||'']);
+function importPick(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.xlsx,.xls,.csv';
+  inp.onchange=async()=>{const f=inp.files[0];if(!f)return;
+    try{const wb=XLSX.read(await f.arrayBuffer()),rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''}).filter(r=>r.some(x=>String(x).trim()));
+      if(rows.length<2){toast('The file has no rows.');return}
+      const H=rows[0].map(x=>String(x).trim().toLowerCase()),ix=(...ks)=>H.findIndex(h=>ks.some(k=>h.startsWith(k)));
+      const c={n:ix('name'),a:ix('agent'),co:ix('company'),s:ix('salary ('),sf:ix('salary period'),m:ix('commission ('),mf:ix('commission period'),b:ix('banks'),p:ix('project'),h:ix('holder'),r:ix('pay remark')};
+      if(c.n<0||c.co<0){toast('Use the Excel template: Name and Company columns are needed.');return}
+      const g=(r,i)=>i<0?'':String(r[i]).trim(),pay=v=>/^(payable|yes|y|1|true)$/i.test(v),fr=v=>/half/i.test(v)?0.5:1;
+      const byKey={};personRows().forEach(p=>byKey[(p.name+'|'+p.company).toUpperCase()]=p);
+      const add=[],upd=[];
+      rows.slice(1).forEach(r=>{const name=g(r,c.n),co=g(r,c.co);if(!name||!co)return;
+        const d={name,agent:g(r,c.a),company:co,sal:{pay:pay(g(r,c.s)),frac:fr(g(r,c.sf))},comm:{pay:pay(g(r,c.m)),frac:fr(g(r,c.mf))},banks:g(r,c.b),project:g(r,c.p),holder:g(r,c.h),remark:g(r,c.r)};
+        const ex=byKey[(name+'|'+co).toUpperCase()];if(ex)upd.push({id:ex.id,old:ex,d});else add.push(d)});
+      const chg=upd.filter(u=>JSON.stringify({a:u.old.agent,s:u.old.sal,m:u.old.comm,b:u.old.banks||'',p:u.old.project||'',h:u.old.holder||'',r:u.old.remark||''})!==JSON.stringify({a:u.d.agent,s:u.d.sal,m:u.d.comm,b:u.d.banks,p:u.d.project,h:u.d.holder,r:u.d.remark}));
+      openModalC('Import from Excel',`<div class="kv"><div><span>New persons</span><b>${add.length}</b></div><div><span>Changed</span><b>${chg.length}</b></div><div><span>Unchanged</span><b>${upd.length-chg.length}</b></div></div><div class="faint full">Nothing is deleted. Old months keep the Agent, Company and due day they had when created. Persons missing from the file stay as they are.</div>`,`<span class="sp"></span><span class="err" id="mErr" role="alert"></span><button class="btn" type="button" id="mCancel">Cancel</button><button class="btn pri" type="button" id="mSave" ${add.length+chg.length?'':'disabled'}>Apply import</button>`);
+      $('#mCancel').onclick=closeModal;
+      $('#mSave').onclick=async()=>{$('#mSave').disabled=true;try{const now=new Date().toISOString(),jobs=[...add.map(d=>db.doc('persons/'+rid('p')).set({...d,active:true,updatedAt:now,updatedBy:ME.name})),...chg.map(u=>db.doc('persons/'+u.id).update({...u.d,updatedAt:now,updatedBy:ME.name}))];
+        for(let i=0;i<jobs.length;i+=20)await Promise.all(jobs.slice(i,i+20));logAct('Pay list import',f.name,`${add.length} new, ${chg.length} changed`);closeModal();toast('Imported.')}catch(e){$('#mErr').textContent='Could not import.';$('#mSave').disabled=false}};
+    }catch(e){toast('Could not read the file.')}};
+  inp.click()}
+async function seedPeople(){
+  const seed=JSON.parse(document.getElementById('seedp').textContent);const now=new Date().toISOString();
+  const jobs=seed.map((p,i)=>db.doc('persons/p'+String(i+1).padStart(3,'0')).set({...p,active:true,updatedAt:now,updatedBy:ME.name}));
+  for(let i=0;i<jobs.length;i+=20)await Promise.all(jobs.slice(i,i+20));
+  logAct('Pay list loaded','CPA Control',seed.length+' persons');toast('Pay list loaded.')}
+
+/* ---------- settings ---------- */
+function setView(){
+  const s=S(),ed=can('edit'),d=ed?'':'disabled',n=(id,v,ph)=>`<input class="i" id="${id}" type="number" min="1" max="31" value="${v==null||v===''?'':esc(v)}" placeholder="${ph||'Day 1–31'}" ${d}>`,ag=s.agents||{},co=s.companies||{};
+  return `<div class="defbox"><b>How due days work.</b> A due day is the day of the month when the payment must be made, in the month shown on the line. Leave a field blank until you decide. A line with no due day shows "No due day set" and never raises an alert. Lines that already have a due date keep it when you change a day. Lines with no due date yet pick up the new day.</div>
+  <div class="grid2" style="margin-bottom:14px"><div class="cbox"><h3>PSS payment due days</h3><div class="sub">Default for everyone</div><div class="kv"><label class="f">Salary due day${n('s_sal',s.salDay)}</label><label class="f">Commission due day${n('s_comm',s.commDay)}</label><label class="f">Half-month due day${n('s_half',s.halfDay,'Blank = normal day')}</label></div></div>
+  <div class="cbox"><h3>Company funds</h3><div class="sub">When the Company should send the money to PSS</div><div class="kv"><label class="f">Salary funds day${n('s_fsal',s.fundSalDay)}</label><label class="f">Commission funds day${n('s_fcomm',s.fundCommDay)}</label><label class="f">PSS days after funds<input class="i" id="s_aft" type="number" min="0" max="60" value="${s.afterDays==null?'':esc(s.afterDays)}" placeholder="Blank = off" ${d}></label></div></div>
+  <div class="cbox"><h3>Alerts and start</h3><div class="sub">Alert days and the first month to track</div><div class="kv"><label class="f">Alert days before due<input class="i" id="s_alert" type="number" min="0" max="60" value="${s.alertDays==null?'':esc(s.alertDays)}" placeholder="3" ${d}></label><label class="f">Start month<input class="i" id="s_start" type="month" value="${esc(trackStart())}" ${d}></label></div></div></div>
+  <div class="cbox" style="margin-bottom:14px"><h3>Override per Agent</h3><div class="sub">Blank = use the default</div><div class="tbox" style="max-height:none"><table class="t tight" style="min-width:520px"><thead><tr><th>Agent</th><th>Salary day</th><th>Commission day</th><th>Half-month day</th></tr></thead><tbody>${agents().length?agents().map(a=>`<tr><td><b>${esc(a)}</b></td>${['salDay','commDay','halfDay'].map(f=>`<td><input class="i" type="number" min="1" max="31" data-ag="${esc(a)}" data-f="${f}" value="${(ag[a]||{})[f]==null?'':esc(ag[a][f])}" ${d}></td>`).join('')}</tr>`).join(''):'<tr><td colspan="4" class="empty">Load the pay list first.</td></tr>'}</tbody></table></div></div>
+  <div class="cbox" style="margin-bottom:14px"><h3>Override per Company (funds)</h3><div class="sub">Blank = use the default funds day</div><div class="tbox" style="max-height:none"><table class="t tight" style="min-width:420px"><thead><tr><th>Company</th><th>Salary funds day</th><th>Commission funds day</th></tr></thead><tbody>${companies().length?companies().map(c=>`<tr><td><b>${esc(c)}</b></td>${['salDay','commDay'].map(f=>`<td><input class="i" type="number" min="1" max="31" data-co="${esc(c)}" data-f="${f}" value="${(co[c]||{})[f]==null?'':esc(co[c][f])}" ${d}></td>`).join('')}</tr>`).join(''):'<tr><td colspan="3" class="empty">Load the pay list first.</td></tr>'}</tbody></table></div></div>
+  ${ed?'<div class="toolbar"><span class="err" id="stErr" role="alert"></span><span class="sp"></span><button class="btn pri" type="button" id="stSave">Save settings</button></div>':''}`}
+function bindSettings(){const b=$('#stSave');if(!b)return;
+  b.onclick=async()=>{const err=$('#stErr');err.textContent='';
+    const v=id=>$('#'+id).value.trim(),dn=id=>{const t=v(id);if(t==='')return null;const x=+t;if(!Number.isInteger(x)||x<1||x>31)throw new Error('Days must be 1 to 31.');return x},
+      d0=id=>{const t=v(id);if(t==='')return null;const x=+t;if(!Number.isInteger(x)||x<0||x>60)throw new Error('Days must be 0 to 60.');return x};
+    try{const o={salDay:dn('s_sal'),commDay:dn('s_comm'),halfDay:dn('s_half'),fundSalDay:dn('s_fsal'),fundCommDay:dn('s_fcomm'),afterDays:d0('s_aft'),alertDays:d0('s_alert'),agents:{},companies:{}};
+      document.querySelectorAll('[data-ag]').forEach(i=>{const t=i.value.trim();if(t==='')return;const x=+t;if(!Number.isInteger(x)||x<1||x>31)throw new Error('Days must be 1 to 31.');(o.agents[i.dataset.ag]=o.agents[i.dataset.ag]||{})[i.dataset.f]=x});
+      document.querySelectorAll('[data-co]').forEach(i=>{const t=i.value.trim();if(t==='')return;const x=+t;if(!Number.isInteger(x)||x<1||x>31)throw new Error('Days must be 1 to 31.');(o.companies[i.dataset.co]=o.companies[i.dataset.co]||{})[i.dataset.f]=x});
+      const sm=v('s_start');if(sm&&!/^\d{4}-\d{2}$/.test(sm))throw new Error('Choose the start month.');
+      const old=JSON.stringify(S()),oldS=trackStart();
+      await db.doc('settings/due').set({...o,updatedAt:new Date().toISOString(),updatedBy:ME.name});
+      await db.doc('settings/track').set({startMonth:sm,updatedAt:new Date().toISOString(),updatedBy:ME.name});
+      logAct('Settings saved','Due days',`Start ${sm||'not set'}${oldS!==sm?' (was '+(oldS||'not set')+')':''}`);toast('Saved.')}catch(e){err.textContent=e.message||'Could not save.'}}}
+
+function histView(){
+  const q=(UI.hq||'').toLowerCase(),rows=Object.values(D.log).sort((a,b)=>(b.at||'').localeCompare(a.at||'')).filter(r=>!q||[r.name,r.action,r.target,r.detail].join(' ').toLowerCase().includes(q));
+  return `<div class="toolbar"><label class="f" style="flex:1;min-width:200px">Search<input class="i" id="hq" type="search" value="${esc(UI.hq||'')}" placeholder="Person, action, user…"></label><span class="faint">Last 200 changes</span></div><div class="tbox"><table class="t" style="min-width:760px"><thead><tr><th>When</th><th>User</th><th>Action</th><th>What</th><th>Detail</th></tr></thead><tbody>${rows.length?rows.map(r=>`<tr><td>${esc(fmtDT(r.at))}</td><td>${esc(r.name||r.by||'')}</td><td>${esc(r.action)}</td><td>${esc(r.target||'')}</td><td>${esc(r.detail||'')}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">No history yet.</td></tr>'}</tbody></table></div>`}
+
+/* ---------- mark paid / skip ---------- */
+const reasonSel=(id,r,val)=>`<select class="i" id="${id}"><option value="">Choose…</option>${lstRead(r).map(x=>`<option ${x===val?'selected':''}>${esc(x)}</option>`).join('')}<option value="__new">+ Add new reason…</option></select><input class="i hidden" id="${id}_n" placeholder="Type the new reason" maxlength="60" style="margin-top:6px">`;
+function wireReason(id){const s=$('#'+id);if(!s)return;s.onchange=()=>{$('#'+id+'_n').classList.toggle('hidden',s.value!=='__new')}}
+async function reasonVal(id,r){const s=$('#'+id);if(!s)return '';let v=s.value;if(v==='__new'){v=$('#'+id+'_n').value.trim();if(!v)throw new Error('Type the new reason.');const items=lstRead(r);if(!items.some(x=>x.toLowerCase()===v.toLowerCase()))await lstWrite(r,[...items,v],'Added: '+v);else v=items.find(x=>x.toLowerCase()===v.toLowerCase())}return v}
+function lineModal(id){
+  const l0=monthLines(id.slice(0,7)).find(x=>x.id===id);if(!l0)return;const l=withSt(l0);
+  const locked=(l.paidDate||l.skipped)&&ME.role!=='Admin',ed=can('mark')&&!locked&&l.payable;
+  const kv=`<div class="kv"><div><span>Person</span><b>${esc(l.name)}</b></div><div><span>Agent</span>${esc(l.agent)||'–'}</div><div><span>Company</span>${esc(l.company)}</div><div><span>Payment</span>${KL[l.kind]}${l.frac<1?' · Half month':''}</div><div><span>Month</span>${esc(monthLabel(l.month))}</div><div><span>Due day</span>${fmtD(l.due)||'Not set'}</div><div><span>Limit date</span>${fmtD(l.st.lim)||'Not set'}</div><div><span>Status</span>${pill(l)}</div></div>`;
+  let form='';
+  if(!l.payable)form='<div class="lock">Not payable. No alerts for this line.</div>';
+  else if(!can('mark'))form='<div class="lock">Your position cannot mark payments.</div>';
+  else if(locked)form='<div class="lock">This line is already marked. Only the Master Admin can change it.</div>';
+  else form=`<div class="grid2"><label class="f">Paid date<input class="i" id="lp_d" type="date" value="${esc(l.paidDate||'')}"></label><label class="f">Proof reference number<input class="i" id="lp_r" value="${esc(l.proofRef||'')}" maxlength="80"></label></div>
+   <label class="f">Proof link (from the proof of payment system)<input class="i" id="lp_l" value="${esc(l.proofLink||'')}" placeholder="https://…" maxlength="400"></label>
+   <label class="f">Reason if late<div>${reasonSel('lp_lr',LST_LATE,l.lateReason||'')}</div></label>
+   <label class="chk"><input type="checkbox" id="lp_sk" ${l.skipped?'checked':''}> Skip this line (never counted as late)</label>
+   <label class="f" id="lp_skw">Skip reason<div>${reasonSel('lp_sr',LST_SKIP,l.skipReason||'')}</div></label>
+   <label class="f">Note<input class="i" id="lp_n" value="${esc(l.note||'')}" maxlength="200"></label>`;
+  openModalC(lineLab(l),kv+form+(l.paidBy?`<div class="faint">Marked by ${esc(l.paidBy)} on ${esc(fmtDT(l.paidAt))}</div>`:''),`<span class="sp"></span><span class="err" id="mErr" role="alert"></span>${ed&&ME.role==='Admin'&&(l.paidDate||l.skipped)?'<button class="btn danger" type="button" id="lpClr">Clear mark</button>':''}<button class="btn" type="button" id="mCancel">${ed?'Cancel':'Close'}</button>${ed?'<button class="btn pri" type="button" id="mSave">Save</button>':''}`);
+  $('#mCancel').onclick=closeModal;
+  if(!ed)return;
+  wireReason('lp_lr');wireReason('lp_sr');const tg=()=>{$('#lp_skw').style.display=$('#lp_sk').checked?'':'none'};$('#lp_sk').onchange=tg;tg();
+  const clr=$('#lpClr');if(clr)clr.onclick=async()=>{try{await writeLine(l,{paidDate:'',proofRef:'',proofLink:'',skipped:false,skipReason:'',paidBy:'',paidAt:''});logAct('Mark cleared',lineLab(l),`Was ${l.skipped?'skipped':'paid '+l.paidDate}`);closeModal();toast('Cleared.')}catch(e){$('#mErr').textContent='Could not save.'}};
+  $('#mSave').onclick=async()=>{const err=$('#mErr');err.textContent='';
+    try{const sk=$('#lp_sk').checked,note=$('#lp_n').value.trim(),lr=await reasonVal('lp_lr',LST_LATE);let patch;
+      if(sk){const sr=await reasonVal('lp_sr',LST_SKIP);if(!sr)throw new Error('Choose the skip reason.');patch={skipped:true,skipReason:sr,paidDate:'',proofRef:'',proofLink:'',lateReason:lr,note,paidBy:ME.name,paidAt:new Date().toISOString()}}
+      else{const d=$('#lp_d').value,r=$('#lp_r').value.trim(),u=$('#lp_l').value.trim();
+        if(d||r||u){if(!d)throw new Error('Enter the paid date.');if(!r)throw new Error('Enter the proof reference number.');if(!hostOk(u))throw new Error('Enter the proof link, starting with https://');if(d>todayStr())throw new Error('The paid date cannot be in the future.')}
+        patch={skipped:false,skipReason:'',paidDate:d,proofRef:r,proofLink:u,lateReason:lr,note,...(d?{paidBy:ME.name,paidAt:new Date().toISOString()}:{paidBy:'',paidAt:''})}}
+      await writeLine(l,patch);
+      logAct(patch.skipped?'Line skipped':patch.paidDate?(l.paidDate?'Paid line changed':'Marked paid'):'Line updated',lineLab(l),patch.skipped?'Skipped: '+patch.skipReason:patch.paidDate?`Paid ${patch.paidDate}, ref ${patch.proofRef}${l.paidDate&&(l.paidDate!==patch.paidDate||l.proofRef!==patch.proofRef)?` (was ${l.paidDate}, ref ${l.proofRef})`:''}`:'Reason or note');
+      closeModal();toast('Saved.')}catch(e){err.textContent=e.message||'Could not save.'}}}
+function bulkModal(skip){
+  const ls=[...UI.sel].map(id=>monthLines(id.slice(0,7)).find(x=>x.id===id)).filter(l=>l&&l.payable&&!l.paidDate&&!l.skipped);
+  if(!ls.length){toast('No open lines selected.');return}
+  openModalC(skip?`Skip ${ls.length} lines`:`Mark ${ls.length} lines paid`,skip?`<label class="f full">Skip reason<div>${reasonSel('bk_sr',LST_SKIP,'')}</div></label>`:`<label class="f">Paid date<input class="i" id="bk_d" type="date" value="${todayStr()}"></label><label class="f">Proof reference number<input class="i" id="bk_r" maxlength="80"></label><label class="f full">Proof link<input class="i" id="bk_l" placeholder="https://…" maxlength="400"></label><div class="faint full">The same date, reference and link are saved on every selected line. You can open a single line later to give it its own proof.</div>`,`<span class="sp"></span><span class="err" id="mErr" role="alert"></span><button class="btn" type="button" id="mCancel">Cancel</button><button class="btn pri" type="button" id="mSave">Save</button>`);
+  $('#mCancel').onclick=closeModal;if(skip)wireReason('bk_sr');
+  $('#mSave').onclick=async()=>{const err=$('#mErr');err.textContent='';
+    try{let patch;if(skip){const sr=await reasonVal('bk_sr',LST_SKIP);if(!sr)throw new Error('Choose the skip reason.');patch={skipped:true,skipReason:sr,paidBy:ME.name,paidAt:new Date().toISOString()}}
+      else{const d=$('#bk_d').value,r=$('#bk_r').value.trim(),u=$('#bk_l').value.trim();if(!d)throw new Error('Enter the paid date.');if(d>todayStr())throw new Error('The paid date cannot be in the future.');if(!r)throw new Error('Enter the proof reference number.');if(!hostOk(u))throw new Error('Enter the proof link, starting with https://');patch={skipped:false,paidDate:d,proofRef:r,proofLink:u,paidBy:ME.name,paidAt:new Date().toISOString()}}
+      $('#mSave').disabled=true;
+      for(let i=0;i<ls.length;i+=20)await Promise.all(ls.slice(i,i+20).map(l=>writeLine(l,patch)));
+      logAct(skip?'Bulk skip':'Bulk marked paid',`${ls.length} lines · ${monthLabel(UI.m)}`,skip?patch.skipReason:`Paid ${patch.paidDate}, ref ${patch.proofRef}`);
+      UI.sel=new Set();closeModal();toast('Saved '+ls.length+' lines.')}catch(e){err.textContent=e.message||'Could not save.';$('#mSave').disabled=false}}}
+
+
+const xRowS=l=>{const r=xRow0(l);return AC()?[...r.slice(0,4),acctTxt(l.pid),...r.slice(4)]:r};
+
+const pRowsA=ps=>ps.map(p=>AC()?[...pRows([p])[0],acctTxt(p.id)]:pRows([p])[0]);
+/* ---------- auth (same as Central Database) ---------- */
+async function sha(x){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(x));return [...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,'0')).join('')}
+const hashPw=(salt,pw)=>sha(salt+':'+pw);
+const newSalt=()=>[...crypto.getRandomValues(new Uint8Array(12))].map(x=>x.toString(16).padStart(2,'0')).join('');
+
+/* ---------- offline shared-folder shim (same as MM2-04 pilot) ---------- */
+const LOCAL={handle:{name:'this device'},subs:[],timer:null,data:(()=>{try{return JSON.parse(localStorage.getItem('irg-offline-'+location.pathname.split('/').pop())||'{}')}catch(e){return {}}})()};
+function colOf(name){if(!LOCAL.data[name])LOCAL.data[name]={};return LOCAL.data[name]}
+function emitAll(){LOCAL.subs.forEach(f=>{try{f()}catch(e){}})}
+function persistShared(){try{localStorage.setItem('irg-offline-'+location.pathname.split('/').pop(),JSON.stringify(LOCAL.data))}catch(e){}return;}function _unusedPersist(){
+  if(!LOCAL.handle)return;
+  clearTimeout(LOCAL.timer);
+  LOCAL.timer=setTimeout(async()=>{
+    try{const fh=await LOCAL.handle.getFileHandle('data.json',{create:true});const w=await fh.createWritable();await w.write(JSON.stringify(LOCAL.data));await w.close()}
+    catch(e){toast('Could not save to the shared folder. Check the folder permission.')}
+  },150);
+}
+function makeDb(){
+  const docRef=(col,id)=>({
+    id,
+    get:async()=>{const d=colOf(col)[id];return {exists:!!d,data:()=>d?JSON.parse(JSON.stringify(d)):undefined}},
+    set:async v=>{colOf(col)[id]=JSON.parse(JSON.stringify(v));persistShared();emitAll()},
+    update:async v=>{colOf(col)[id]={...(colOf(col)[id]||{}),...JSON.parse(JSON.stringify(v))};persistShared();emitAll()},
+    delete:async()=>{delete colOf(col)[id];persistShared();emitAll()},
+    onSnapshot:cb=>{const run=()=>{const d=colOf(col)[id];cb({exists:!!d,id,data:()=>d?JSON.parse(JSON.stringify(d)):undefined})};LOCAL.subs.push(run);run();return ()=>{}}
+  });
+  const colRef=name=>{
+    const q={order:null,dir:1,lim:null};
+    const api={
+      doc:id=>docRef(name,id),
+      orderBy:(f,dir)=>{q.order=f;q.dir=dir==='desc'?-1:1;return api},
+      limit:n=>{q.lim=n;return api},
+      get:async()=>{
+          let es=Object.entries(colOf(name)).map(([id,d])=>({id,d}));
+          if(q.order)es.sort((a,b)=>{const x=a.d[q.order]??'',y=b.d[q.order]??'';return (x>y?1:x<y?-1:0)*q.dir});
+          if(q.lim)es=es.slice(0,q.lim);
+          return {docs:es.map(e=>({id:e.id,data:()=>JSON.parse(JSON.stringify(e.d))}))};
+      },
+      onSnapshot:cb=>{
+        const run=()=>{
+          let es=Object.entries(colOf(name)).map(([id,d])=>({id,d}));
+          if(q.order)es.sort((a,b)=>{const x=a.d[q.order]??'',y=b.d[q.order]??'';return (x>y?1:x<y?-1:0)*q.dir});
+          if(q.lim)es=es.slice(0,q.lim);
+          cb({docs:es.map(e=>({id:e.id,data:()=>JSON.parse(JSON.stringify(e.d))}))});
+        };
+        LOCAL.subs.push(run);run();
+        return ()=>{};
+      }
+    };
+    return api;
+  };
+  return {collection:n=>colRef(n),doc:path=>{const i=path.indexOf('/');return docRef(path.slice(0,i),path.slice(i+1))}};
+}
+function makeDl(){
+  return {save:async({filename,data})=>{
+    const url=URL.createObjectURL(data);const a=document.createElement('a');
+    a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),2000);return true;
+  }};
+}
+
+async function bootstrapAdmin(){
+  if(!db||!READY.users||Object.keys(D.users).length||bootstrapAdmin.done)return;bootstrapAdmin.done=true;
+  try{const salt=newSalt();await db.doc('users/admin').set({u:'admin',name:'Administrator',role:'Admin',salt,hash:await hashPw(salt,'admin123'),mustChange:true,active:true,lastLogin:null})}catch(e){}
+}
+async function doLogin(ev){
+  ev.preventDefault();const u=$('#lu').value.trim().toLowerCase(),p=$('#lp').value;const err=$('#loginErr');err.textContent='';
+  const rec=D.users[u];
+  if(!rec||rec.active===false||await hashPw(rec.salt,p)!==rec.hash){err.textContent='Wrong username or password.';return}
+  ME={u,name:rec.name,role:rec.role};store.set('ex_user',u);logAct('Sign in','','');
+  try{await db.doc('users/'+u).update({lastLogin:new Date().toISOString()})}catch(e){}
+  enterApp();
+  if(rec.mustChange)passwordModal(true);
+}
+function enterApp(){
+  $('#login').classList.add('hidden');$('#app').classList.remove('hidden');
+  $('#who').innerHTML=`<b style="color:#fff">${esc(ME.name)}</b><br><small>${esc(rl(ME.role))} · ${esc(ME.u)}</small>`;
+  draw();
+}
+function logout(){logAct('Sign out','','');ME=null;store.del('ex_user');$('#app').classList.add('hidden');$('#login').classList.remove('hidden');$('#lp').value='';closeModal()}
+function checkSession(){
+  if(ME){const rec=D.users[ME.u];if(!rec||rec.active===false){logout();return}ME.role=rec.role;ME.name=rec.name;return}
+  const u=store.get('ex_user');if(u&&D.users[u]&&D.users[u].active!==false&&!D.users[u].mustChange){ME={u,name:D.users[u].name,role:D.users[u].role};enterApp()}
+}
+window.__mfsModuleSignIn=function(user){const u=String(user&&user.u||'').trim().toLowerCase();if(!u)return;const current=D.users[u]||{};D.users[u]={...current,u,name:user.name||current.name||u,role:user.role||current.role||'Viewer',active:true,mustChange:false};ME={u,name:D.users[u].name,role:D.users[u].role};store.set('ex_user',u);enterApp()};
+function openModalC(title,body,footer,opt={}){
+  $('#modalRoot').innerHTML=`<div class="ov" id="ov"><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}" style="${opt.narrow?'max-width:440px':''}"><header><h2>${esc(title)}</h2>${opt.force?'':'<button class="x" type="button" aria-label="Close" id="mx">×</button>'}</header><div class="mb" id="mbody">${body}</div><footer id="mfoot">${footer}</footer></div></div>`;
+  if(!opt.force){$('#mx').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal()})}
+  document.onkeydown=e=>{if(e.key==='Escape'&&!opt.force)closeModal()};
+  const f=$('#mbody input:not([disabled]),#mbody select:not([disabled])');if(f)f.focus();
+}
+function passwordModal(force){
+  const body=`${force?'':'<label class="f full">Current password<input class="i" id="pw0" type="password" autocomplete="current-password"></label>'}
+    <label class="f full">New password (at least 6 characters)<input class="i" id="pw1" type="password" autocomplete="new-password"></label>
+    <label class="f full">Repeat new password<input class="i" id="pw2" type="password" autocomplete="new-password"></label><div class="err full" id="pwErr" role="alert"></div>`;
+  openModalC(force?'Choose a new password':'Change password',body,`<span class="sp"></span>${force?'':'<button class="btn" type="button" id="pwCancel">Cancel</button>'}<button class="btn pri" type="button" id="pwSave">Save password</button>`,{force,narrow:1});
+  if(!force)$('#pwCancel').onclick=closeModal;
+  $('#pwSave').onclick=async()=>{
+    const err=$('#pwErr');const p1=$('#pw1').value,p2=$('#pw2').value;const rec=D.users[ME.u];
+    if(!force&&await hashPw(rec.salt,$('#pw0').value)!==rec.hash){err.textContent='Current password is wrong.';return}
+    if(p1.length<6){err.textContent='Use at least 6 characters.';return}
+    if(p1!==p2){err.textContent='The two passwords do not match.';return}
+    if(p1==='admin123'){err.textContent='Choose a different password.';return}
+    const salt=newSalt();
+    try{await db.doc('users/'+ME.u).update({salt,hash:await hashPw(salt,p1),mustChange:false});logAct('Change password','','');closeModal();toast('Password changed.')}catch(e){err.textContent='Could not save. Try again.'}
+  };
+}
+function usersView(){
+  if(!can('admin'))return '<div class="empty">Only a Master Admin can manage users.</div>';
+  const rows=Object.entries(D.users).map(([id,u])=>({...u,id})).sort((a,b)=>a.u.localeCompare(b.u));
+  setTimeout(()=>{document.querySelectorAll('#view tr.row[data-u]').forEach(tr=>{tr.onclick=()=>userModal(tr.dataset.u);tr.onkeydown=e=>{if(e.key==='Enter')userModal(tr.dataset.u)}});const a=$('#btnAddU');if(a)a.onclick=()=>userModal(null)},0);
+  return `<div class="toolbar"><span class="sp"></span><button class="btn pri" id="btnAddU" type="button">+ Add user</button></div><div class="tbox"><table class="t" style="min-width:600px"><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Status</th><th>Last sign-in</th></tr></thead><tbody>${rows.map(r=>`<tr class="row" tabindex="0" data-u="${esc(r.id)}"><td class="mono">${esc(r.u)}</td><td>${esc(r.name)}</td><td>${esc(rl(r.role))}</td><td>${r.active===false?'<span class="pill x">Disabled</span>':'<span class="pill g">Active</span>'}</td><td>${r.lastLogin?esc(fmtDT(r.lastLogin)):'<span class="faint">Never</span>'}</td></tr>`).join('')}</tbody></table></div>`;
+}
+function accessView(){
+  if(!can('admin'))return '<div class="empty">Only a Master Admin can manage access.</div>';
+  const defs=posDefs(),names=Object.keys(defs),builtin=['Admin','Editor','Viewer'],n2=names.length+1;
+  const cnt=n=>Object.values(D.users).filter(u=>u.role===n).length;
+  const row=(label,type,key)=>`<tr><td>${esc(label)}</td>${names.map(n=>{const lk=n==='Admin',on=lk||(type==='m'?defs[n].menus:defs[n].acts).includes(key);return `<td style="text-align:center"><input type="checkbox" class="ac" data-n="${esc(n)}" data-t="${type}" data-k="${esc(key)}" ${on?'checked':''} ${lk?'disabled':''} aria-label="${esc(rl(n))}: ${esc(label)}"></td>`}).join('')}</tr>`;
+  setTimeout(bindAccess,0);
+  return `<div class="defbox"><b>How it works:</b> each column is a position. Tick what that position can open and do, then press <b>Save access</b>. Give a position to a person in <b>Users</b>. Users and Access control are always for the Master Admin only. This controls what each person sees in this page.</div>
+  <div class="tbox"><table class="t" style="min-width:${180+110*names.length}px"><thead><tr><th>Permission</th>${names.map(n=>`<th style="text-align:center">${esc(rl(n))}<div class="faint">${cnt(n)} user${cnt(n)===1?'':'s'}</div>${builtin.includes(n)?'':`<a href="#" data-delpos="${esc(n)}">Remove</a>`}</th>`).join('')}</tr></thead><tbody>
+  <tr><td colspan="${n2}"><b>Menus they can open</b></td></tr>${MENUS.map(m=>row(m[1],'m',m[0])).join('')}
+  <tr><td colspan="${n2}"><b>What they can do</b></td></tr>${ACTS.map(a=>row(a[1],'a',a[0])).join('')}</tbody></table></div>
+  <div class="addrow" style="margin-top:12px"><input class="i" id="posNew" placeholder="New position, for example Finance" maxlength="30"><button class="btn" type="button" id="posAdd">+ Add position</button></div>
+  <div class="toolbar" style="margin-top:12px"><span class="err" id="acErr" role="alert"></span><span class="sp"></span><button class="btn pri" type="button" id="acSave">Save access</button></div>`;
+}
+function readAccess(){
+  const o={};posNames().filter(n=>n!=='Admin').forEach(n=>o[n]={menus:[],acts:[]});
+  document.querySelectorAll('input.ac').forEach(c=>{const q=o[c.dataset.n];if(q&&c.checked)(c.dataset.t==='m'?q.menus:q.acts).push(c.dataset.k)});return o}
+function bindAccess(){
+  const err=$('#acErr');if(!err)return;
+  const put=async(list,msg)=>{try{await db.doc('settings/positions').set({list,updatedAt:new Date().toISOString(),updatedBy:ME.name});logAct('Access control','',msg);toast('Saved.');return true}catch(e){err.textContent='Could not save.';return false}};
+  $('#acSave').onclick=async()=>{err.textContent='';await put(readAccess(),'Access saved for: '+Object.keys(readAccess()).join(', '))};
+  $('#posAdd').onclick=async()=>{err.textContent='';const v=$('#posNew').value.trim();
+    if(!v){err.textContent='Type the position name.';return}
+    if(posNames().some(n=>n.toLowerCase()===v.toLowerCase())||/^master admin$/i.test(v)){err.textContent='That position already exists.';return}
+    const l=readAccess();l[v]={menus:MENUS.map(m=>m[0]),acts:[]};if(await put(l,'Position added: '+v))$('#posNew').value=''};
+  let armed=null;
+  document.querySelectorAll('[data-delpos]').forEach(a=>a.onclick=async e=>{e.preventDefault();err.textContent='';const n=a.dataset.delpos;
+    if(Object.values(D.users).some(u=>u.role===n)){err.textContent=n+' still has users. Move them to another position first.';return}
+    if(armed!==n){armed=n;a.textContent='Click again to remove';return}
+    const l=readAccess();delete l[n];await put(l,'Position removed: '+n)});
+}
+function userModal(id){
+  const isNew=!id;const r=isNew?{u:'',name:'',role:'Editor',active:true}:D.users[id];
+  openModalC(isNew?'Add user':'Edit user',`<label class="f" for="u_u">Username<input class="i" id="u_u" value="${esc(r.u)}" ${isNew?'':'disabled'} autocomplete="off"></label>
+   <label class="f" for="u_n">Full name<input class="i" id="u_n" value="${esc(r.name)}"></label>
+   <label class="f" for="u_r">Role<select class="i" id="u_r">${posNames().map(x=>`<option value="${x}" ${x===r.role?'selected':''}>${esc(rl(x))}</option>`).join('')}</select></label>
+   <label class="f" for="u_a">Status<select class="i" id="u_a"><option value="1" ${r.active!==false?'selected':''}>Active</option><option value="0" ${r.active===false?'selected':''}>Disabled</option></select></label>
+   <label class="f full" for="u_p">${isNew?'Temporary password':'Reset password (leave blank to keep)'}<input class="i" id="u_p" type="text" autocomplete="off"></label>`,
+   `<span class="sp"></span><span class="err" id="mErr" role="alert"></span><button class="btn" type="button" id="mCancel">Cancel</button><button class="btn pri" type="button" id="mSave">Save</button>`);
+  $('#mCancel').onclick=closeModal;
+  $('#mSave').onclick=async()=>{
+    const err=$('#mErr');const u=(isNew?$('#u_u').value:r.u).trim().toLowerCase(),name=$('#u_n').value.trim(),role=$('#u_r').value,active=$('#u_a').value==='1',pw=$('#u_p').value;
+    if(!/^[a-z0-9._-]{3,30}$/.test(u)){err.textContent='Username: 3 to 30 letters, numbers, dot, dash or underscore.';return}
+    if(!name){err.textContent='Enter a name.';return}
+    if(isNew&&D.users[u]){err.textContent='That username exists.';return}
+    if(isNew&&pw.length<6){err.textContent='Temporary password needs 6+ characters.';return}
+    const admins=Object.entries(D.users).filter(([k,x])=>x.role==='Admin'&&x.active!==false&&k!==u).length;
+    if((role!=='Admin'||!active)&&!isNew&&r.role==='Admin'&&admins===0){err.textContent='Keep at least one active Master Admin.';return}
+    if(!isNew&&u===ME.u&&!active){err.textContent='You cannot disable yourself.';return}
+    const doc={...(isNew?{lastLogin:null,mustChange:true}:JSON.parse(JSON.stringify(r))),u,name,role,active};delete doc.id;
+    if(pw){doc.salt=newSalt();doc.hash=await hashPw(doc.salt,pw);doc.mustChange=true}
+    try{await db.doc('users/'+u).set(doc);logAct(isNew?'Add user':'Edit user',u,`${name}, ${rl(role)}, ${active?'active':'disabled'}${pw?', password reset':''}`);closeModal();toast('Saved.')}catch(e){err.textContent='Could not save.'}
+  };
+}
+
+/* ---------- upload docs ---------- */
+const DOCMAX=700*1024;
+const docLab=a=>a?[a.code,a.name].filter(Boolean).join(' · '):'';
+const docTargets=()=>personRows().map(p=>({key:'persons/'+p.id,group:'Persons',label:[p.name,p.agent,p.company].filter(Boolean).join(' · ')})).sort((x,y)=>x.label.localeCompare(y.label));
+const fsz=n=>n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
+const readFile=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(f)});
+const imgShrink=url=>new Promise(res=>{const i=new Image();i.onload=()=>{const s=Math.min(1,1600/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*s);c.height=Math.round(i.height*s);c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.8))};i.onerror=()=>res(url);i.src=url});
+const dataToBlob=u=>{const m=/^data:([^;,]*)(;base64)?,(.*)$/.exec(u)||[];const bin=atob(m[3]||'');const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new Blob([a],{type:m[1]||'application/octet-stream'})};
+async function docGet(id){const s=await db.doc('docdata/'+id).get();return s.exists?s.data().data:null}
+function docsModal(pre){
+  if(!ME)return;
+  const T=docTargets(),groups=[...new Set(T.map(t=>t.group))];
+  const body=`<label class="f full" for="dcT">Record<select class="i" id="dcT"><option value="">All records (view only)</option>${groups.map(g=>`<optgroup label="${esc(g)}">${T.filter(t=>t.group===g).map(t=>`<option value="${esc(t.key)}" ${t.key===pre?'selected':''}>${esc(t.label)}</option>`).join('')}</optgroup>`).join('')}</select></label>
+   <div class="faint full">Use this window for other files, for example approvals or notes. Proof of payment itself stays in your proof of payment system; save its reference and link on the line.</div>
+   ${can('files')?`<label class="f full" for="dcF">Files (PDF, image, Word, Excel; up to ${fsz(DOCMAX)} each)<input class="i" id="dcF" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.doc,.docx,.xls,.xlsx,.csv,.txt"></label>
+   <label class="f full" for="dcN">Note (optional)<input class="i" id="dcN" maxlength="200"></label>
+   <div class="full"><button class="btn pri" type="button" id="dcUp">Upload docs</button> <span class="faint" id="dcMsg" role="alert"></span></div>`:'<div class="faint full">You have view access: you can open and download documents but not upload.</div>'}
+   <div class="full" id="dcList"></div>`;
+  openModalC('Documents',body,`<span class="sp"></span><button class="btn" type="button" id="dcClose">Close</button>`);
+  $('#dcClose').onclick=closeModal;
+  const labOf=k=>(T.find(t=>t.key===k)||{}).label||'(record removed)';
+  function list(){
+    const k=$('#dcT').value,ds=Object.entries(D.docs||{}).map(([id,d])=>({...d,id})).filter(d=>!k||d.target===k).sort((a,b)=>(b.at||'').localeCompare(a.at||''));
+    $('#dcList').innerHTML=ds.length?`<table class="t" style="min-width:0"><thead><tr><th>File</th>${k?'':'<th>Record</th>'}<th>Added</th><th></th></tr></thead><tbody>${ds.map(d=>`<tr><td><b>${esc(d.name)}</b><div class="faint">${esc(fsz(d.size||0))}${d.note?' · '+esc(d.note):''}</div></td>${k?'':`<td>${esc(labOf(d.target))}</td>`}<td>${esc(fmtDT(d.at))}<div class="faint">${esc(d.byName||'')}</div></td><td style="white-space:nowrap"><button class="btn" type="button" data-v="${d.id}">${/^image\//.test(d.mime||'')?'View':'Download'}</button>${/^image\//.test(d.mime||'')?` <button class="btn" type="button" data-d="${d.id}">Download</button>`:''}${can('delete')?` <button class="btn" type="button" data-x="${d.id}">Delete</button>`:''}</td></tr>`).join('')}</tbody></table>`:'<div class="faint">No documents yet.</div>';
+    $('#dcList').querySelectorAll('[data-v],[data-d]').forEach(b=>b.onclick=async()=>{
+      const id=b.dataset.v||b.dataset.d,d=D.docs[id];b.disabled=true;
+      try{const u=await docGet(id);if(!u){toast('The file could not be found.');return}
+        if(b.dataset.v&&/^image\//.test(d.mime||''))lightbox(u);else{await dl.save({filename:d.name,data:dataToBlob(u)});toast('File ready.')}
+      }catch(e){if(!e||e.code!=='declined')toast('Could not open the file.')}finally{b.disabled=false}});
+    $('#dcList').querySelectorAll('[data-x]').forEach(b=>b.onclick=async()=>{
+      const id=b.dataset.x,d=D.docs[id];if(!confirm('Delete "'+d.name+'"?'))return;
+      try{await db.doc('docs/'+id).delete();await db.doc('docdata/'+id).delete();logAct('Document deleted',labOf(d.target),d.name);toast('Deleted.');setTimeout(list,150)}catch(e){toast('Could not delete.')}});
+  }
+  $('#dcT').onchange=list;list();
+  const up=$('#dcUp');if(up)up.onclick=async()=>{
+    const k=$('#dcT').value,fs=[...$('#dcF').files],msg=$('#dcMsg');
+    if(!k){msg.textContent='Choose the record first.';return}
+    if(!fs.length){msg.textContent='Choose a file.';return}
+    up.disabled=true;let ok=0,bad=[];
+    for(const f of fs){
+      try{let u=await readFile(f),mime=f.type||'application/octet-stream',name=f.name;
+        if(/^image\//.test(mime)&&mime!=='image/gif'){u=await imgShrink(u);mime='image/jpeg'}
+        if(u.length*0.75>DOCMAX){bad.push(f.name+' (too large)');continue}
+        const id=rid('d');
+        await db.doc('docdata/'+id).set({data:u});
+        await db.doc('docs/'+id).set({target:k,name,mime,size:Math.round(u.length*0.75),note:$('#dcN').value.trim(),at:new Date().toISOString(),by:ME.u,byName:ME.name});
+        logAct('Document uploaded',labOf(k),name);ok++}
+      catch(e){bad.push(f.name)}
+    }
+    up.disabled=false;$('#dcF').value='';msg.textContent=(ok?ok+' uploaded. ':'')+(bad.length?'Not uploaded: '+bad.join(', '):'');
+    setTimeout(list,200);
+  };
+}
+
+/* ---------- Lists: the Master Admin can add, rename, move and delete dropdown choices ---------- */
+const LST=[];
+function lstReg(r){r.def=r.kv?r.keys.map(k=>({k,l:r.labels[k]||k})):(r.arr?r.arr.slice():(r.store?r.store.read():[]));LST.push(r);return r}
+const lstAll=()=>(D.settings&&D.settings.lists)||{};
+function lstRead(r){
+  if(r.store&&!r.kv)return r.store.read();
+  const s=lstAll()[r.key];
+  if(r.kv)return s&&Array.isArray(s.items)&&s.items.length?s.items.map(x=>({k:x.k,l:x.l})):r.def.map(x=>({...x}));
+  return s&&Array.isArray(s.items)&&s.items.length?s.items.slice():r.def.slice();
+}
+function lstSync(){LST.forEach(r=>{const v=lstRead(r);
+  if(r.kv){r.keys.splice(0,r.keys.length,...v.map(x=>x.k));v.forEach(x=>{r.labels[x.k]=x.l;(r.labels2||[]).forEach((m,mi)=>{if(x.k in m||(mi===0&&!(r.locked||[]).includes(x.k)))m[x.k]=x.l})})}
+  else if(r.arr)r.arr.splice(0,r.arr.length,...v)})}
+const lstVal=(r,it)=>r.kv?it.l:it;
+function lstUsed(r,it){const val=r.kv?it.k:it;let n=0;(r.uses||[]).forEach(([c,f])=>Object.values(D[c]||{}).forEach(x=>{if(x&&x[f]===val)n++}));return n}
+async function lstWrite(r,items,msg){
+  if(r.store&&!r.kv)await r.store.write(items);
+  else await db.doc('settings/lists').set({...lstAll(),[r.key]:{items,updatedAt:new Date().toISOString(),updatedBy:ME.name}});
+  logAct('List changed',r.title,msg);
+}
+async function lstMass(r,oldV,newV){
+  const jobs=[];(r.uses||[]).forEach(([c,f])=>Object.entries(D[c]||{}).forEach(([id,x])=>{if(x&&x[f]===oldV)jobs.push([c,id,f])}));
+  for(let i=0;i<jobs.length;i+=20)await Promise.all(jobs.slice(i,i+20).map(([c,id,f])=>db.doc(c+'/'+id).update({[f]:newV})));
+  return jobs.length;
+}
+UI.lst=null;
+function listsView(){
+  if(!can('admin'))return '<div class="empty">Only a Master Admin can manage lists.</div>';
+  const box=r=>{const items=lstRead(r),ed=UI.lst&&UI.lst.k===r.key?UI.lst.i:-1;
+    return `<div class="lbox" data-lk="${esc(r.key)}"><h3>${esc(r.title)}</h3><div class="lsub">${esc(r.hint||'')}</div>
+    <div class="tbox" style="max-height:none"><table class="t tight" style="min-width:0"><thead><tr><th>Choice</th><th class="n">In use</th><th></th></tr></thead><tbody>${items.length?items.map((it,i)=>{const v=lstVal(r,it),n=lstUsed(r,it);
+      return `<tr>${ed===i?`<td><input class="i" data-lstin value="${esc(v)}" maxlength="60"></td><td class="n">${n}</td><td class="act"><button class="btn sm pri" type="button" data-lst="save" data-i="${i}">Save</button> <button class="btn sm" type="button" data-lst="cancel">Cancel</button></td>`
+      :`<td>${esc(v)}${r.kv&&(r.locked||[]).includes(it.k)?' <span class="faint">(built in)</span>':''}</td><td class="n">${n}</td><td class="act"><button class="btn sm" type="button" data-lst="up" data-i="${i}" aria-label="Move up" ${i?'':'disabled'}>↑</button> <button class="btn sm" type="button" data-lst="dn" data-i="${i}" aria-label="Move down" ${i<items.length-1?'':'disabled'}>↓</button> <button class="btn sm" type="button" data-lst="ren" data-i="${i}">Rename</button> <button class="btn sm danger" type="button" data-lst="del" data-i="${i}">Delete</button></td>`}</tr>`}).join(''):'<tr><td colspan="3" class="empty">No choices yet.</td></tr>'}</tbody></table></div>
+    <div class="addrow"><input class="i" data-lstnew placeholder="Add a new choice…" maxlength="60"><button class="btn pri" type="button" data-lst="add">Add</button><button class="btn" type="button" data-lst="reset">Reset to default</button></div><div class="err" data-lsterr role="alert"></div></div>`};
+  return `<div class="defbox"><b>Lists.</b> Every dropdown with fixed choices is managed here. <b>Add</b> a choice and it appears in the dropdown straight away. <b>Rename</b> updates every record that uses it. <b>Delete</b> works only when no record uses the choice. Only the Master Admin can change lists.</div><div class="lgrid">${LST.map(box).join('')}</div>`;
+}
+async function lstClick(e){
+  const b=e.target.closest('[data-lst]');if(!b||!can('admin'))return;
+  const bx=b.closest('[data-lk]'),r=LST.find(x=>x.key===bx.dataset.lk),err=bx.querySelector('[data-lsterr]'),act=b.dataset.lst,i=+b.dataset.i;
+  const say=t=>{err.textContent=t};say('');
+  const items=lstRead(r),dup=(v,skip)=>items.some((it,j)=>j!==skip&&lstVal(r,it).toLowerCase()===v.toLowerCase());
+  try{
+    if(act==='ren'){UI.lst={k:r.key,i};draw();const inp=document.querySelector('[data-lk="'+r.key+'"] [data-lstin]');if(inp){inp.focus();inp.select()}return}
+    if(act==='cancel'){UI.lst=null;draw();return}
+    if(act==='add'){const inp=bx.querySelector('[data-lstnew]'),v=inp.value.trim();if(!v){say('Type the new choice first.');return}if(dup(v,-1)){say('That choice already exists.');return}
+      const nv=r.kv?[...items,{k:'F'+Date.now().toString(36),l:v}]:[...items,v];await lstWrite(r,nv,'Added: '+v);toast('Added.');return}
+    if(act==='save'){const v=bx.querySelector('[data-lstin]').value.trim(),it=items[i],old=lstVal(r,it);
+      if(!v){say('The choice cannot be empty.');return}if(v!==old&&dup(v,i)){say('That choice already exists.');return}
+      if(v===old){UI.lst=null;draw();return}
+      const n=lstUsed(r,it);if(n&&!r.kv&&!confirm('Rename "'+old+'" to "'+v+'"? This also changes '+n+' record'+(n===1?'':'s')+'.'))return;
+      const nv=items.map((x,j)=>j===i?(r.kv?{k:x.k,l:v}:v):x);
+      b.disabled=true;await lstWrite(r,nv,'Renamed: '+old+' → '+v);if(!r.kv&&n)await lstMass(r,old,v);UI.lst=null;toast(n&&!r.kv?'Renamed. '+n+' record'+(n===1?'':'s')+' updated.':'Renamed.');draw();return}
+    if(act==='del'){const it=items[i],v=lstVal(r,it);
+      if(r.kv&&(r.locked||[]).includes(it.k)){say('"'+v+'" is built in and follows the account type. You can rename it but not delete it.');return}
+      const n=lstUsed(r,it);if(n){say('"'+v+'" is used by '+n+' record'+(n===1?'':'s')+'. Rename it, or change those records first.');return}
+      if(items.length<2&&!r.allowEmpty){say('Keep at least one choice.');return}
+      if(!confirm('Delete "'+v+'"?'))return;
+      await lstWrite(r,items.filter((x,j)=>j!==i),'Deleted: '+v);toast('Deleted.');return}
+    if(act==='up'||act==='dn'){const j=act==='up'?i-1:i+1;if(j<0||j>=items.length)return;const nv=items.slice();[nv[i],nv[j]]=[nv[j],nv[i]];await lstWrite(r,nv,'Moved: '+lstVal(r,items[i]));return}
+    if(act==='reset'){if(!confirm('Put "'+r.title+'" back to its original choices? Records keep what they already have.'))return;
+      await lstWrite(r,r.kv?r.def.map(x=>({...x})):r.def.slice(),'Reset to default');toast('Reset.');return}
+  }catch(x){say('Could not save. Try again.')}
+}
+document.addEventListener('click',lstClick);
+(function(){const s=document.createElement('style');s.textContent='.lgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}@media(max-width:1000px){.lgrid{grid-template-columns:minmax(0,1fr)}}.lbox{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px}.lbox h3{font-family:var(--head);font-size:16px;margin:0 0 2px}.lbox .lsub{color:var(--faint);font-size:12px;margin-bottom:10px}.lbox .addrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.lbox .addrow .i{flex:1 1 160px;width:auto}.lbox td.act{white-space:nowrap;text-align:right}.lbox .btn.danger{color:var(--red);border-color:var(--red)}.tbox table.t.tight td,.tbox table.t.tight th{padding:6px 8px}';document.head.appendChild(s)})();
+
+const LST_LATE=lstReg({key:'lateReasons',title:'Late reasons',hint:'Chosen when a payment is late. Staff can also add a new reason while marking a line.',arr:LATE,allowEmpty:true,uses:[['lines','lateReason']]});
+const LST_SKIP=lstReg({key:'skipReasons',title:'Skip reasons',hint:'Chosen when a line is skipped on purpose.',arr:SKIPR,allowEmpty:true,uses:[['lines','skipReason']]});
+
+/* ---------- draw ---------- */
+function tabsHtml(){
+  let n=0;if(months().length){const ls=kLines().map(withSt);n=ls.filter(l=>l.st.s==='await'||l.st.s==='overdue').length+ls.filter(l=>l.st.s==='soon').length}
+  const T=[['g','Monitor'],['dash','Dashboard'],['trk','Monthly tracker'],['fund','Funds received'],['alerts','Alerts',n||''],['rank','Late ranking'],['g','Data'],['people','Pay list'],['set','Settings'],['hist','History'],['g','Tools'],...(can('admin')?[['users','Users']]:[])];
+  return fixT(T).map(([k,l,c])=>k==='g'?`<div class="ng">${l}</div>`:`<button type="button" data-tab="${k}" ${UI.tab===k?'aria-current="page"':''}><span>${l}</span>${c?`<span class="ct">${c}</span>`:''}</button>`).join('')+'<div class="ng">Documents</div><button type="button" data-docs="1"><span>Upload docs</span></button>'}
+const PAGE_N=20;
+function paginate(){
+  const old=document.getElementById('pager');if(old)old.remove();
+  if(['access','lists','dash','set','alerts'].includes(UI.tab))return;
+  const tbs=document.querySelectorAll('#view .tbox table.t');if(tbs.length!==1)return;
+  const tb=tbs[0].querySelector('tbody');const trs=[...tb.children].filter(r=>!r.querySelector('td.empty'));const n=trs.length;
+  const key=[UI.tab,UI.m,UI.ag,UI.co,UI.kd,UI.st,UI.q,UI.pq,UI.pst,UI.hq,UI.gr,UI.rf,UI.rt].join('|');if(UI.pgKey!==key){UI.pgKey=key;UI.pg=0}
+  if(n<=PAGE_N)return;
+  const pages=Math.ceil(n/PAGE_N);UI.pg=Math.min(Math.max(UI.pg||0,0),pages-1);
+  trs.forEach((r,i)=>{r.style.display=Math.floor(i/PAGE_N)===UI.pg?'':'none'});
+  tbs[0].closest('.tbox').insertAdjacentHTML('afterend',`<div class="pager" id="pager"><span>${UI.pg*PAGE_N+1}–${Math.min(n,(UI.pg+1)*PAGE_N)} of ${n}</span><button class="btn sm" type="button" data-pg="-1" ${UI.pg===0?'disabled':''}>Previous</button><span>Page ${UI.pg+1} of ${pages}</span><button class="btn sm" type="button" data-pg="1" ${UI.pg>=pages-1?'disabled':''}>Next</button></div>`);
+  document.querySelectorAll('#pager [data-pg]').forEach(b=>b.onclick=()=>{UI.pg+=+b.dataset.pg;draw()})}
+const rowGo=(sel,fn)=>document.querySelectorAll(sel).forEach(el=>{const go=e=>{if(e&&e.target&&e.target.closest&&e.target.closest('input,a,button,.acct'))return;fn(el)};el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter')fn(el)}});
+function draw(){if(ME&&!menuOk(UI.tab)){const f=MENUS.find(m=>menuOk(m[0]));UI.tab=f?f[0]:'none'}
+  $('#nav').innerHTML=tabsHtml();$('#todayTxt').textContent=fmtD(todayStr());
+  $('#pageTitle').textContent=TITLES[UI.tab][0];$('#pageSub').textContent=TITLES[UI.tab][1];
+  const V={dash:dashView,trk:trkView,fund:fundView,alerts:alertsView,rank:rankView,people:peopleView,set:setView,hist:histView,access:accessView,lists:listsView,users:usersView};
+  $('#view').innerHTML=UI.tab==='none'?'<div class="empty">No menu is assigned to your position. Ask the Master Admin.</div>':V[UI.tab]();
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{UI.tab=b.dataset.tab;draw()});
+  document.querySelectorAll('[data-go]').forEach(el=>{const go=e=>{if(e&&e.preventDefault)e.preventDefault();const d=el.dataset;if(d.st!==undefined)UI.st=d.st;if(d.ag!==undefined)UI.ag=d.ag;if(d.co!==undefined)UI.co=d.co;UI.sel=new Set();UI.q='';UI.scroll=d.sc||'';UI.tab=d.go;draw()};el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')go(e)}});
+  rowGo('tr.row[data-l]',el=>lineModal(el.dataset.l));rowGo('tr.row[data-fm]',el=>fundModal(el.dataset.fm,el.dataset.fc,el.dataset.fk));rowGo('tr.row[data-p]',el=>personModal(el.dataset.p));
+  wireFilters();
+  document.querySelectorAll('.selc').forEach(c=>c.onchange=()=>{c.checked?UI.sel.add(c.dataset.id):UI.sel.delete(c.dataset.id);draw()});
+  const sa=$('#selAll');if(sa){const open=viewLines().filter(l=>l.payable&&!l.paidDate&&!l.skipped);sa.checked=open.length>0&&open.every(l=>UI.sel.has(l.id));sa.onchange=()=>{open.forEach(l=>sa.checked?UI.sel.add(l.id):UI.sel.delete(l.id));draw()}}
+  const b1=$('#bkPaid');if(b1)b1.onclick=()=>bulkModal(false);const b2=$('#bkSkip');if(b2)b2.onclick=()=>bulkModal(true);const b3=$('#bkClr');if(b3)b3.onclick=()=>{UI.sel=new Set();draw()};
+  const xt=$('#xTrk');if(xt)xt.onclick=()=>saveX([{name:'Monthly tracker',rows:[XHs(),...viewLines().map(xRowS)]}],`Salary_Commission_${UI.m}.xlsx`);
+  const xa=$('#xAl');if(xa)xa.onclick=()=>{const ls=kLines().map(withSt);saveX([{name:'Awaiting update',rows:[XHs(),...ls.filter(l=>l.st.s==='await').map(xRowS)]},{name:'Waiting for funds',rows:[XHs(),...ls.filter(fundWaitL).map(xRowS)]},{name:'Due soon',rows:[XHs(),...ls.filter(l=>l.st.s==='soon').map(xRowS)]},{name:'Company funds',rows:[['Month','Company','Type','Expected','Status'],...fundRecs().filter(f=>(!UI.kd||f.kind===UI.kd)&&['overdue','soon'].includes(fundSt(f).s)).map(f=>[monthLabel(f.month),f.company,KL[f.kind],f.expected||'',fundSt(f).s==='overdue'?'Not received':'Due soon'])]}],`Alerts_${todayStr()}.xlsx`)};
+  const xr=$('#xRk');if(xr)xr.onclick=()=>saveX([{name:'Late ranking',rows:[[UI.gr==='agent'?'Agent':UI.gr==='company'?'Company':'Person','Lines judged','On time','Late','Late %','Avg days late','Funds delay'],...rankData().map(r=>[r.k,r.ev,r.ok,r.late,r.ev?Math.round(r.pct):'',r.late?+r.avg.toFixed(1):'',r.fw])]}],`Late_ranking_${todayStr()}.xlsx`);
+  const xp=$('#xPp');if(xp)xp.onclick=()=>saveX([{name:'Pay list',rows:[AC()?[...PTPL,'Bank and account']:PTPL,...pRowsA(personRows())]}],`Pay_list_${todayStr()}.xlsx`);
+  const pt=$('#pTpl');if(pt)pt.onclick=()=>saveX([{name:'Pay list',rows:[PTPL]},{name:'Read me',rows:[['How to fill this in'],['One row per person. Name and Company are required. A person matches an existing one by Name plus Company.'],['Salary and Commission: write Payable or Not payable. Period: Full or Half.'],['Banks: bank names only. Never type account numbers here.'],['Nothing is deleted by an import.']]}],'Pay_list_template.xlsx');
+  const pa=$('#pAdd');if(pa)pa.onclick=()=>personModal(null);const pi=$('#pImp');if(pi)pi.onclick=importPick;const sd=$('#seedBtn');if(sd)sd.onclick=()=>seedPeople();
+  const ps=$('#pst');if(ps)ps.onchange=e=>{UI.pst=e.target.value;draw()};const pq=$('#pq');if(pq)pq.oninput=e=>{UI.pq=e.target.value;UI.keep='pq';draw()};const hq=$('#hq');if(hq)hq.oninput=e=>{UI.hq=e.target.value;UI.keep='hq';draw()};
+  const rg=$('#rg');if(rg)rg.onchange=e=>{UI.gr=e.target.value;draw()};const rf=$('#rf');if(rf)rf.onchange=e=>{UI.rf=e.target.value;draw()};const rt=$('#rt');if(rt)rt.onchange=e=>{UI.rt=e.target.value;draw()};
+  document.querySelectorAll('[data-rk]').forEach(h=>h.onclick=()=>{const c=h.dataset.rk;UI.rk=UI.rk[0]===c?[c,-UI.rk[1]]:[c,c==='k'?1:-1];draw()});
+  if(UI.tab==='set')bindSettings();
+  paginate();
+  if(UI.scroll){const e=document.getElementById(UI.scroll);UI.scroll='';if(e)e.scrollIntoView({block:'start'})}
+  if(UI.keep){const e=$('#'+UI.keep);if(e){e.focus();const n=e.value.length;e.setSelectionRange&&e.setSelectionRange(n,n)}UI.keep=null}}
+function refresh(){
+  if(!ME||Object.keys(READY).length<8)return;
+  if(ME.role==='Admin'&&!Object.keys(D.persons).length&&!refresh.seeded){refresh.seeded=true;seedPeople().catch(()=>{})}
+  const m=UI.modal;
+  if(!m||!$('#ov'))draw();else{$('#nav').innerHTML=tabsHtml();document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{closeModal();UI.tab=b.dataset.tab;draw()})}
+  ensureLines()}
+
+/* ---------- boot ---------- */
+async function boot(){
+  try{db=window.claude&&await window.claude.use('db')}catch(e){db=null}db=db||makeDb();dl=makeDl();
+  let t;
+  const sub=(c,q)=>(q||db.collection(c)).onSnapshot(s=>{
+    const o={};s.docs.forEach(d=>o[d.id]=d.data());D[c]=o;READY[c]=1;if(c==='settings')lstSync();
+    if(c==='users'){bootstrapAdmin();checkSession();const b=$('#loginBtn');if(!b.dataset.ready){b.disabled=false;b.textContent='Sign in';b.dataset.ready=1}}
+    clearTimeout(t);t=setTimeout(refresh,50)},()=>{READY[c]=1;if(c==='users'){$('#loginErr').textContent='Could not read the database.'}});
+  sub('persons');sub('accts');sub('lines');sub('funds');sub('settings');sub('users');sub('docs',db.collection('docs').orderBy('at','desc').limit(500));sub('log',db.collection('log').orderBy('at','desc').limit(200));
+  $('#loginForm').addEventListener('submit',doLogin);
+  $('#view').addEventListener('click',e=>{const b=e.target.closest('.shw');if(!b)return;const s=b.parentNode.querySelector('.an');if(!s)return;const o=s.dataset.o==='1';s.textContent=o?s.dataset.m:s.dataset.no;s.dataset.o=o?'':'1';b.textContent=o?'Show':'Hide'});
+  $('#nav').addEventListener('click',e=>{if(e.target.closest('[data-docs]'))docsModal()});$('#btnPw').onclick=()=>passwordModal(false);$('#btnOut').onclick=logout;
+  setInterval(()=>{if(ME&&!$('#ov'))draw()},3600*1000);
+}
+boot();
+})();
+</script>
+
+</body></html>

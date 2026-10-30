@@ -506,6 +506,12 @@ function checkSession(){
   if(ME){const rec=DATA.users[ME.u];if(!rec||rec.active===false){logout();return}ME.role=rec.role;ME.name=rec.name;return}
   const u=store.get('cdb_user');if(u&&DATA.users[u]&&DATA.users[u].active!==false&&!DATA.users[u].mustChange){ME={u,name:DATA.users[u].name,role:DATA.users[u].role};enterApp()}
 }
+window.__mfsModuleSignIn=function(user){
+  const u=String(user&&user.u||'').trim().toLowerCase();if(!u)return;
+  const current=DATA.users[u]||{};
+  DATA.users[u]={...current,u,name:user.name||current.name||u,role:user.role||current.role||'Viewer',active:true,mustChange:false};
+  ME={u,name:DATA.users[u].name,role:DATA.users[u].role};store.set('cdb_user',u);enterApp();
+};
 
 /* ---------- modal ---------- */
 function openModal(title,body,footer,opt={}){

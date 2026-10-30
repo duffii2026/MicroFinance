@@ -4,17 +4,18 @@ services:
     container_name: mm1-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MM1_MYSQL_ROOT_PASSWORD:-ChangeRootPass123!}
+      MYSQL_ROOT_PASSWORD: ${MM1_MYSQL_ROOT_PASSWORD:?Set MM1_MYSQL_ROOT_PASSWORD in .env}
       MYSQL_DATABASE: ${MM1_DB_NAME:-mm1_microfinance}
       MYSQL_USER: ${MM1_DB_USER:-mm1_app}
-      MYSQL_PASSWORD: ${MM1_DB_PASSWORD:-ChangeAppPass123!}
+      MYSQL_PASSWORD: ${MM1_DB_PASSWORD:?Set MM1_DB_PASSWORD in .env}
     command: ["--innodb-buffer-pool-size=256M", "--max-connections=80"]
     ports:
       - "127.0.0.1:${MM1_DB_PORT:-3306}:3306"
     volumes:
       - mm1_mysql_data:/var/lib/mysql
+      - ./docker/mysql-init-modules.sh:/docker-entrypoint-initdb.d/10-module-databases.sh:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MM1_MYSQL_ROOT_PASSWORD:-ChangeRootPass123!}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MM1_MYSQL_ROOT_PASSWORD:?Set MM1_MYSQL_ROOT_PASSWORD in .env}"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -26,14 +27,16 @@ services:
     restart: unless-stopped
     environment:
       MM1_HOST: 0.0.0.0
-      MM1_ADMIN_PASSWORD: ${MM1_ADMIN_PASSWORD:-ChangeMe123!}
-      MM1_COOKIE_SECURE: ${MM1_COOKIE_SECURE:-0}
+      MM1_ADMIN_PASSWORD: ${MM1_ADMIN_PASSWORD:?Set MM1_ADMIN_PASSWORD in .env}
+      MM1_MODULE_ADMIN_PASSWORD: ${MM1_MODULE_ADMIN_PASSWORD:?Set MM1_MODULE_ADMIN_PASSWORD in .env}
+      MM1_COOKIE_SECURE: ${MM1_COOKIE_SECURE:-1}
       MM1_PORT: 8080
       MM1_DB_HOST: mysql
       MM1_DB_PORT: 3306
       MM1_DB_NAME: ${MM1_DB_NAME:-mm1_microfinance}
       MM1_DB_USER: ${MM1_DB_USER:-mm1_app}
-      MM1_DB_PASSWORD: ${MM1_DB_PASSWORD:-ChangeAppPass123!}
+      MM1_DB_PASSWORD: ${MM1_DB_PASSWORD:?Set MM1_DB_PASSWORD in .env}
+      MM1_MYSQL_ROOT_PASSWORD: ${MM1_MYSQL_ROOT_PASSWORD:?Set MM1_MYSQL_ROOT_PASSWORD in .env}
     ports:
       - "127.0.0.1:${MM1_APP_PORT:-8080}:8080"
     volumes:
