@@ -485,12 +485,14 @@ function ReactDocument({ sourceUrl, title, apiBindings = [], moduleId }) {
         grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)) !important;
         gap: 16px !important;
       }
-      #mfs-module-root[data-module-id="cpa-control"] .agent { min-width: 0 !important; padding: 18px !important; }
+      #mfs-module-root[data-module-id="cpa-control"] .agent {
+        display: block !important;
+        min-width: 0 !important;
+        padding: 18px !important;
+      }
       #mfs-module-root[data-module-id="cpa-control"] .agent h3 {
-        display: grid !important;
-        grid-template-columns: minmax(0, 1fr) auto !important;
-        align-items: start !important;
-        gap: 8px 14px !important;
+        display: block !important;
+        margin: 0 0 12px !important;
       }
       #mfs-module-root[data-module-id="cpa-control"] .agent h3 span,
       #mfs-module-root[data-module-id="cpa-control"] .agent dt,
@@ -502,6 +504,7 @@ function ReactDocument({ sourceUrl, title, apiBindings = [], moduleId }) {
       #mfs-module-root[data-module-id="cpa-control"] .agent dl {
         grid-template-columns: minmax(0, 1fr) max-content !important;
         gap: 6px 18px !important;
+        margin: 0 !important;
         font-size: 15px !important;
       }
       @media (max-width: 430px) {

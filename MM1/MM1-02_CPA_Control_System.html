@@ -2846,8 +2846,8 @@ VIEWS.agents = v => {
   rows.sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
   const ed = can('edit');
   v.innerHTML = `<div class="agents">${cards.map(c => { const st = groupBy(c.accs, 'status').filter(x => x.count);
-    return `<button class="agent ${AG.focus === c.g ? 'on' : ''}" style="--c:${agentColor(c.g)}" data-ag="${esc(c.g)}"><h3>${esc(c.g)}<span class="hint" style="font-family:var(--body);font-size:12px">${c.ps.length} persons</span></h3>
-      <dl><dt>Bank accounts</dt><dd>${c.accs.length}</dd><dt>Balance</dt><dd>${money(c.total)}</dd><dt>No bank account</dt><dd>${c.noacc}</dd><dt>Commission due</dt><dd>${money(c.comm)}</dd><dt>Salary due</dt><dd>${money(c.sal)}</dd></dl>
+    return `<button class="agent ${AG.focus === c.g ? 'on' : ''}" style="--c:${agentColor(c.g)}" data-ag="${esc(c.g)}"><h3>${esc(c.g)}</h3>
+      <dl><dt>People</dt><dd>${c.ps.length}</dd><dt>Bank accounts</dt><dd>${c.accs.length}</dd><dt>Balance</dt><dd>${money(c.total)}</dd><dt>No bank account</dt><dd>${c.noacc}</dd><dt>Commission due</dt><dd>${money(c.comm)}</dd><dt>Salary due</dt><dd>${money(c.sal)}</dd></dl>
       <div class="mini">${st.map(x => `<span style="flex:${x.count};background:${colorOf('status', x.key)}" title="${esc(x.key)}: ${x.count}"></span>`).join('')}</div></button>`; }).join('')}</div>
   <section class="panel"><header><h2>${AG.focus ? esc(AG.focus) + ' — ' : ''}${rows.length} persons</h2><span class="num" style="font-weight:700">${money(sum(rows, p => p.total))}</span>
     <div class="btns">${ed ? '<button class="btn" data-act="dist">Distribute unassigned evenly</button>' : ''}<button class="btn" data-act="rep">Agent report (PDF)</button><button class="btn" data-act="pay">Pay statements</button><button class="btn" data-act="acc">Open in Accounts</button></div></header>
