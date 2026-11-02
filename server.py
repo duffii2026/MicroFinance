@@ -818,7 +818,7 @@ class Handler(SimpleHTTPRequestHandler):
                     username = str(body.get("username", "")).strip()
                     password = str(body.get("password", ""))
                     role = str(body.get("role", "User")).strip()
-                    if not username or len(username) > 128 or not password or role.lower() not in {"admin", "user"}:
+                    if not username or len(username) > 128 or not password or not self.valid_module_role(module, role):
                         raise ValueError("Enter a username, password, and valid role.")
                 except Exception as exc:
                     return self.send_json(400, {"error": str(exc) or "Invalid request"})
@@ -826,7 +826,7 @@ class Handler(SimpleHTTPRequestHandler):
                 digest = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 240000).hex()
                 try:
                     with connect() as db:
-                        db.execute("INSERT INTO module_users(module,username,password_hash,salt,role,active) VALUES(%s,%s,%s,%s,%s,1)", (module, username, digest, salt, "Admin" if role.lower() == "admin" else "User"))
+                        db.execute("INSERT INTO module_users(module,username,password_hash,salt,role,active) VALUES(%s,%s,%s,%s,%s,1)", (module, username, digest, salt, "Admin" if role.lower() == "admin" else role))
                 except Exception:
                     return self.send_json(409, {"error": "That username already exists in this module."})
                 self.audit(session["username"], "module.user.created", module, username)
@@ -982,7 +982,7 @@ class Handler(SimpleHTTPRequestHandler):
                 password = str(body.get("password", ""))
                 if active is not None and not isinstance(active, bool):
                     raise ValueError("Active must be true or false.")
-                if role is not None and str(role).lower() not in {"admin", "user"}:
+                if role is not None and not self.valid_module_role(module, str(role)):
                     raise ValueError("Role must be Admin or User.")
                 if not any(value is not None for value in (active, role)) and not password:
                     raise ValueError("Provide a role, active state, or password to update.")
@@ -1000,7 +1000,7 @@ class Handler(SimpleHTTPRequestHandler):
                 new_salt = secrets.token_hex(16) if password else None
                 new_hash = hashlib.pbkdf2_hmac("sha256", password.encode(), new_salt.encode(), 240000).hex() if password else None
                 db.execute("UPDATE module_users SET active=COALESCE(%s,active),role=COALESCE(%s,role),salt=COALESCE(%s,salt),password_hash=COALESCE(%s,password_hash) WHERE module=%s AND username=%s",
-                           (None if active is None else int(active), None if role is None else ("Admin" if role.lower() == "admin" else "User"), new_salt, new_hash, module, username))
+                           (None if active is None else int(active), None if role is None else ("Admin" if role.lower() == "admin" else role), new_salt, new_hash, module, username))
             self.audit(session["username"], "module.user.updated", module, username)
             return self.send_json(200, {"ok": True})
         if len(parts) != 5 or parts[:4] != ["api", "v1", "admin", "api-keys"]:
@@ -1129,6 +1129,17 @@ class Handler(SimpleHTTPRequestHandler):
         self.audit(principal["username"], "file.uploaded", module, original)
         return self.send_json(201, {"id": file_id, "module": module, "recordId": record_id,
                                     "name": original, "contentType": mime, "size": len(upload[2]), "sha256": sha})
+
+    def valid_module_role(self, module, role):
+        if role.lower() in {"admin", "user"}:
+            return True
+        if module not in {"mm2_inventory", "mm2_account_service"}:
+            return False
+        if role in {"Editor", "Viewer"}:
+            return True
+        with connect(module) as db:
+            rows = db.execute("SELECT payload FROM records WHERE module=%s AND collection='legacy-source'", (module,)).fetchall()
+        return any(role in (self.json_value(row["payload"]).get("seed", {}).get("settings", {}).get("positions", {}).get("list", {})) for row in rows)
 
     @staticmethod
     def json_value(value):

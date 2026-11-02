@@ -12,7 +12,8 @@
     "@vitejs/plugin-react": "6.1.2",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "vite": "8.3.5"
+    "vite": "8.3.5",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "packageManager": "pnpm@11.25.0"
 }

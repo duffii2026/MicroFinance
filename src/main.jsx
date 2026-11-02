@@ -2,6 +2,12 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
 import MM2System from './MM2System.jsx';
+import AccountService from './AccountService.jsx';
+import CompanyExpenses from './CompanyExpenses.jsx';
+import StatementTracker from './StatementTracker.jsx';
+import CpaExpenseTracker from './CpaExpenseTracker.jsx';
+import GateVisaTracker from './GateVisaTracker.jsx';
+import FundRecoveryTracker from './FundRecoveryTracker.jsx';
 
 const modules = [
   { id: 'central-database', apiId: 'central', group: 'MM1', no: '01', name: 'Central Database', category: 'DATABASE & REPORTING', description: 'The main operations register for accounts, people, companies, gateways, channels, reference codes, currency, and audit activity.', tags: 'Accounts · People · Reports', icon: 'fa-database', file: 'central-database.html', tint: 'blue' },
@@ -106,7 +112,7 @@ function App() {
       </header>
       {notice && <div className="notice" role="status"><span>{notice}</span><button onClick={() => setNotice('')} aria-label="Dismiss">×</button></div>}
       {page === 'home' && <HomePage modules={modules} onOpen={(id) => navigate('module/' + id)} serviceOnline={serviceOnline} />}
-      {activeModule && <section className={'module-page ' + (activeModule.group === 'MM2' ? 'native-module-page' : '')}>{activeModule.group === 'MM2' ? <MM2System module={activeModule} /> : <CompatibilityFrame title={activeModule.name} src={moduleUrl(activeModule.id)} />}</section>}
+      {activeModule && <section className={'module-page ' + (activeModule.group === 'MM2' ? 'native-module-page' : '')}>{activeModule.group === 'MM2' ? (['mm2-05-account-service','mm2-06-cp-account-service'].includes(activeModule.id) ? <AccountService key={activeModule.id} module={activeModule} /> : activeModule.id==='mm2-07-company-expenses' ? <CompanyExpenses key={activeModule.id} module={activeModule} /> : activeModule.id==='mm2-08-statements' ? <StatementTracker key={activeModule.id} module={activeModule} /> : activeModule.id==='mm2-09-cpa-expenses' ? <CpaExpenseTracker key={activeModule.id} module={activeModule} /> : activeModule.id==='mm2-12-gate-visa' ? <GateVisaTracker key={activeModule.id} module={activeModule} /> : activeModule.id==='mm2-13-fund-recovery' ? <FundRecoveryTracker key={activeModule.id} module={activeModule} /> : <MM2System key={activeModule.id} module={activeModule} />) : <CompatibilityFrame title={activeModule.name} src={moduleUrl(activeModule.id)} />}</section>}
       {page === 'api' && <ApiPage user={user} onSignIn={() => { setLoginStatus({ kind: '', message: '' }); setLoginOpen(true); }} />}
       {page === 'account' && <AccountPage user={user} onPassword={updatePassword} busy={busy} />}
     </main>
