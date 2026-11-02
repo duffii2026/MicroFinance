@@ -68,7 +68,9 @@
     build();
     if (!bar) return;
     shown = true;
-    window.requestAnimationFrame(function () { if (bar) bar.classList.add('is-visible'); });
+    // Flush styles, then reveal: works even when rAF is throttled (background tabs).
+    void bar.offsetWidth;
+    bar.classList.add('is-visible');
     paint(7);
     creep();
   }
