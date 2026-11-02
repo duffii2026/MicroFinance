@@ -63,6 +63,12 @@ const legacySessionKeys = {
   'mm4-03b-auto-payment': { key: 'fs_user' },
 };
 const moduleTitles = {
+  'central-database': 'Central Database',
+  'cpa-control': 'CPA Control System',
+  'access-credentials': 'Account Access Credentials',
+  'payment-gateways': 'Payment Gateways',
+  'communication-channel': 'Communication Channel',
+  'company-database': 'Company Database',
   'mm2-01-pss-expenses': 'MM2-01 PSS Request & Expense Tracking',
   'mm2-04-inventory': 'MM2-04 Inventory Control',
   'mm2-05-account-service': 'MM2-05 Account In Service Database',
@@ -752,7 +758,7 @@ function ModuleEntry() {
   const moduleId = params.get('module') || 'central-database';
   const file = guide ? '../legacy/api-guide.html' : (moduleId.startsWith('mm4-') || moduleId.startsWith('mm2-') ? '../legacy/' + moduleFiles[moduleId] : '../legacy/modules/' + (moduleFiles[moduleId] || moduleFiles['central-database']));
   const title = guide ? 'MFS Developer API Guide' : (moduleTitles[moduleId] || moduleId.replaceAll('-', ' '));
-  useEffect(() => { document.title = title + ' · MFS'; }, [title]);
+  useEffect(() => { document.title = title; }, [title]);
   return <ReactDocument sourceUrl={file} title={title} moduleId={moduleId} apiBindings={mm2StorageBindings[moduleId] || mm4StorageBindings[moduleId] || mm1StorageBindings[moduleId] || []} />;
 }
 

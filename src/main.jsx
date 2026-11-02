@@ -89,7 +89,7 @@ function App() {
     if (window.location.hash !== expectedHash) window.history.replaceState({}, '', window.location.pathname + window.location.search + expectedHash);
   }, [page]);
   useEffect(() => { if (activeModule) setSidebarOpen(false); }, [activeModule?.id]);
-  useEffect(() => { document.title = (activeModule?.name || (page === 'api' ? 'API Center' : page === 'account' ? 'Account settings' : 'System overview')) + ' · MFS'; }, [page]);
+  useEffect(() => { document.title = activeModule?.name || (page === 'api' ? 'API Center' : page === 'account' ? 'Account settings' : 'Micro Finance Systems'); }, [page, activeModule?.name]);
   useEffect(() => installTablePagination(document.getElementById('root')), []);
 
   async function signIn(event) { event.preventDefault(); const form = event.currentTarget; const fd = new FormData(form); setBusy(true); setLoginStatus({ kind: '', message: '' }); try { const d = await request('/auth/login', { method: 'POST', body: JSON.stringify({ username: fd.get('username'), password: fd.get('password') }) }); setUser(d.user); setLoginOpen(false); setLoginStatus({ kind: 'success', message: 'Signed in successfully.' }); form.reset(); } catch (e) { setLoginStatus({ kind: 'error', message: e.message }); } finally { setBusy(false); } }
