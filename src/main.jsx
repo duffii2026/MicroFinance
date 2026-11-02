@@ -62,7 +62,10 @@ function Icon({ name }) { return <i className={'fas ' + name} aria-hidden="true"
 function App() {
   const [page, setPage] = useState(readRoute);
   const [user, setUser] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 680);
+  // Below 900px the sidebar becomes an overlay, so it starts closed and is
+  // driven by a media-query listener instead of a one-off width check.
+  const [compactNav, setCompactNav] = useState(() => window.matchMedia('(max-width: 900px)').matches);
+  const [sidebarOpen, setSidebarOpen] = useState(() => !window.matchMedia('(max-width: 900px)').matches);
   const [loginOpen, setLoginOpen] = useState(false);
   const [loginStatus, setLoginStatus] = useState({ kind: '', message: '' });
   const [busy, setBusy] = useState(false);
@@ -75,8 +78,8 @@ function App() {
     setPage(target);
     const nextHash = '#' + target;
     if (window.location.hash !== nextHash) window.history.pushState({}, '', window.location.pathname + window.location.search + nextHash);
-    if (target.startsWith('module/')) setSidebarOpen(false); else if (window.innerWidth <= 680) setSidebarOpen(false);
-  }, []);
+    if (target.startsWith('module/') || compactNav) setSidebarOpen(false);
+  }, [compactNav]);
   useEffect(() => {
     const syncRoute = () => setPage(readRoute());
     window.addEventListener('popstate', syncRoute);
@@ -84,6 +87,20 @@ function App() {
     request('/session').then((d) => setUser(d.user || null)).catch(() => {});
     return () => { window.removeEventListener('popstate', syncRoute); window.removeEventListener('hashchange', syncRoute); };
   }, []);
+  // Auto-hide when the window shrinks, restore when it grows again.
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 900px)');
+    const syncSidebar = (event) => { setCompactNav(event.matches); setSidebarOpen(!event.matches); };
+    query.addEventListener('change', syncSidebar);
+    return () => query.removeEventListener('change', syncSidebar);
+  }, []);
+  // Escape closes the overlay on small screens.
+  useEffect(() => {
+    if (!compactNav || !sidebarOpen) return undefined;
+    const onKey = (event) => { if (event.key === 'Escape') setSidebarOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [compactNav, sidebarOpen]);
   useEffect(() => {
     if (!isValidRoute(page)) return;
     try { window.sessionStorage.setItem(ROUTE_STORAGE_KEY, page); } catch {}
@@ -101,17 +118,18 @@ function App() {
   const navItem = (route, title, icon) => <button className={'side-link ' + (page === route ? 'active' : '')} onClick={() => navigate(route)} key={route}><span className="nav-icon"><Icon name={icon} /></span>{title}</button>;
   return <div className={'workspace ' + (sidebarOpen ? '' : 'sidebar-closed')}>
     <style>{`.api-react-page{padding:32px clamp(20px,3.4vw,52px) 42px}.api-react-head{margin-bottom:22px}.api-react-layout{gap:24px}.api-guide-frame,.api-keys-panel{border-radius:14px;box-shadow:0 8px 24px rgba(19,45,68,.07)}.api-keys-panel{padding:25px}.api-guide-frame>div{padding:16px!important}@media(max-width:1000px){.api-react-page{padding:24px 20px 34px}.api-react-layout{gap:18px}.api-keys-panel{padding:21px}}@media(max-width:680px){.api-react-page{padding:18px 14px 28px}.api-react-head{margin-bottom:15px}.api-react-layout{gap:14px}.api-guide-frame,.api-keys-panel{border-radius:10px}.api-guide-frame>div{padding:10px!important}.api-keys-panel{padding:17px 14px}}`}</style>
-    <aside className="sidebar" style={sidebarOpen ? { width: '320px', flexBasis: '320px' } : undefined}>
+    <aside className="sidebar" id="workspace-sidebar" inert={compactNav && !sidebarOpen} style={sidebarOpen ? { width: 'min(320px, 86vw)', flexBasis: 'min(320px, 86vw)' } : undefined}>
       <a className="brand" href="#home" aria-label="Return to System Overview" onClick={(e) => { e.preventDefault(); navigate('home'); }}><span className="brand-mark">MFS</span><span><strong>Micro Finance Systems</strong><small>WORKSPACE</small></span></a>
       <div className="workspace-label">WORKSPACE</div>
-      <nav className="side-nav" aria-label="Workspace navigation">
+      <nav className="side-nav" id="workspace-nav" aria-label="Workspace navigation">
         {navItem('home', 'System overview', 'fa-th-large')}{navItem('api', 'API Center', 'fa-code')}
         {['MM1', 'MM2', 'MM4'].map((group) => <React.Fragment key={group}><div className="nav-heading">{group} <span>{modules.filter((m) => m.group === group).length.toString().padStart(2, '0')}</span></div>{modules.filter((m) => m.group === group).map((m) => <button key={m.id} className={'module-link ' + (activeModule?.id === m.id ? 'active' : '')} onClick={() => navigate('module/' + m.id)}><span className="module-no">{m.no}</span><span className="module-link-name">{m.name}</span></button>)}</React.Fragment>)}
       </nav>
     </aside>
+    {compactNav && sidebarOpen && <button type="button" className="sidebar-shade" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} />}
     <main className="main-area">
       <header className="topbar">
-        <button className="menu-toggle" onClick={() => setSidebarOpen((v) => !v)} aria-label={sidebarOpen ? 'Hide navigation' : 'Show navigation'}><Icon name="fa-bars" /></button>
+        <button className="menu-toggle" onClick={() => setSidebarOpen((v) => !v)} aria-label={sidebarOpen ? 'Hide navigation' : 'Show navigation'} aria-expanded={sidebarOpen} aria-controls="workspace-nav"><Icon name="fa-bars" /></button>
         <div className="breadcrumb"><span>Workspace</span><span className="slash">/</span><b>{activeModule?.name || (page === 'api' ? 'API Center' : page === 'account' ? 'Account settings' : 'System overview')}</b></div>
         <div className="top-actions">
           {activeModule && <button className="plain-action" onClick={() => navigate('home')}><Icon name="fa-arrow-left" /> All systems</button>}

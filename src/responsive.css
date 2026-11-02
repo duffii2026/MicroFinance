@@ -98,6 +98,71 @@ section.module-page,
   -webkit-overflow-scrolling: touch;
 }
 
+/* --- 2a. Workspace sidebar: overlay + auto-hide below 900px -------------- */
+/* The sidebar stops taking layout space before the content gets cramped, and
+   slides in as an overlay with a dismissible backdrop. main.jsx listens to the
+   same 900px breakpoint so the state and the CSS never disagree. */
+@media (max-width: 900px) {
+  .workspace {
+    position: relative;
+  }
+  .sidebar {
+    position: fixed;
+    z-index: 12;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    height: 100dvh;
+    width: min(320px, 86vw) !important;
+    flex-basis: min(320px, 86vw) !important;
+    transform: translateX(-105%);
+    transition: transform .22s ease, box-shadow .22s ease;
+    box-shadow: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    /* Dark scrollbar so the panel does not show a bright strip. */
+    scrollbar-width: thin;
+    scrollbar-color: #3d566d transparent;
+  }
+  .sidebar::-webkit-scrollbar { width: 8px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb {
+    background: #3d566d;
+    border-radius: 8px;
+  }
+  .sidebar::-webkit-scrollbar-thumb:hover { background: #4a6884; }
+  .workspace:not(.sidebar-closed) .sidebar {
+    transform: translateX(0);
+    box-shadow: 12px 0 30px rgba(9, 20, 31, .32);
+  }
+  /* The content always owns the full width once the sidebar is an overlay. */
+  .main-area {
+    width: 100%;
+  }
+}
+
+/* Backdrop rendered by React only while the overlay is open. */
+.sidebar-shade {
+  position: fixed;
+  inset: 0;
+  z-index: 11;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: rgba(8, 18, 28, .48);
+  -webkit-backdrop-filter: blur(1.5px);
+  backdrop-filter: blur(1.5px);
+  cursor: pointer;
+  animation: mfs-shade-in .18s ease both;
+}
+@keyframes mfs-shade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar { transition: none; }
+  .sidebar-shade { animation: none; }
+}
 /* --- 2. React workspace chrome ------------------------------------------ */
 @media (max-width: 680px) {
   /* Comfortable touch targets for the top bar. */
