@@ -596,3 +596,40 @@
     display: inline !important;
   }
 }
+
+/* ---------------------------------------------- 11.LOADING PROGRESS BAR */
+/* Thin bar pinned to the top of every document (workspace and each module).
+   Colours come from the host module's tokens, so it matches each theme. */
+.mfs-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 2147483000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+.mfs-progress.is-visible {
+  opacity: 1;
+}
+.mfs-progress > i {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 0 2px 2px 0;
+  background: linear-gradient(90deg, var(--mfs-accent, #23507a), #6fa3d6);
+  box-shadow: 0 0 10px rgba(111, 163, 214, .7);
+  transition: width .18s ease;
+}
+.mfs-progress.is-error > i {
+  background: var(--mfs-danger, #b42318);
+  box-shadow: 0 0 10px rgba(180, 35, 24, .6);
+}
+@media (prefers-reduced-motion: reduce) {
+  .mfs-progress,
+  .mfs-progress > i {
+    transition: none;
+  }
+}

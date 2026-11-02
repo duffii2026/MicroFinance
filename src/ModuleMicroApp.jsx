@@ -310,6 +310,7 @@ function ReactDocument({ sourceUrl, title, apiBindings = [], moduleId }) {
   const [apiStatus, setApiStatus] = useState({ kind: 'pending', message: 'Module data is stored in this browser.' });
 
   useEffect(() => {
+    window.MFSProgress?.start();
     let active = true;
     fetch(sourceUrl, { credentials: 'same-origin', cache: 'no-store' }).then((response) => {
       if (!response.ok) throw new Error('Could not load ' + title + ' (' + response.status + ').');
@@ -370,6 +371,7 @@ function ReactDocument({ sourceUrl, title, apiBindings = [], moduleId }) {
     };
     root.addEventListener('click', rememberNavigation, true);
     const stopTablePagination = installTablePagination(root);
+  window.requestAnimationFrame(() => window.MFSProgress?.done());
     const reportScriptError = (event) => {
       if (!root.isConnected) return;
       const existing = root.querySelector('.micro-app-script-error');
