@@ -163,6 +163,43 @@ section.module-page,
   .sidebar { transition: none; }
   .sidebar-shade { animation: none; }
 }
+/* --- 2b. Module cards: columns follow CONTENT width, not viewport ------- */
+/* The sidebar takes ~320px, so viewport breakpoints leave the card grid in a
+   three-column layout on a ~780px content area: cards became 220px wide and
+   560px tall, squeezing the footer tags into one character per line.
+   A container query measures the actual content area, so opening or closing
+   the sidebar re-flows the grid correctly at any window width. */
+.home-content {
+  container-type: inline-size;
+  container-name: home;
+}
+@container home (max-width: 991px) {
+  .module-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container home (max-width: 615px) {
+  .module-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Cards keep a comfortable measure: tags get their own line instead of being
+   crushed next to the "Open system" button, and words no longer break apart. */
+.module-card .card-footer {
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+.module-card .card-footer > span:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: normal;
+  max-width: 100%;
+}
+.module-card .card-footer > .open-label {
+  margin-left: auto;
+}
 /* --- 2. React workspace chrome ------------------------------------------ */
 @media (max-width: 680px) {
   /* Comfortable touch targets for the top bar. */
