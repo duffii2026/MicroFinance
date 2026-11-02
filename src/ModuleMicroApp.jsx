@@ -415,6 +415,42 @@ function ReactDocument({ sourceUrl, title, apiBindings = [], moduleId }) {
       #mfs-module-root h1,
       #mfs-module-root h2,
       #mfs-module-root h3 { font-family: var(--head) !important; font-weight: 700; }
+      /* Consistent controls for every source HTML module. Original navigation
+         keeps its own appearance while work-area forms share the same rhythm. */
+      #mfs-module-root :is(main, .modal, .drawer, .login-card, form) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea) {
+        box-sizing: border-box !important;
+        min-height: 42px !important;
+        max-width: 100% !important;
+        padding: 9px 12px !important;
+        border: 1px solid #bdced9 !important;
+        border-radius: 7px !important;
+        background: #fff !important;
+        color: #263f52 !important;
+        font-size: 15px !important;
+        line-height: 1.4 !important;
+        transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+      }
+      #mfs-module-root :is(main, .modal, .drawer, .login-card, form) textarea { min-height: 96px !important; resize: vertical !important; }
+      #mfs-module-root :is(input, select, textarea):focus { outline: 0 !important; border-color: #28708d !important; background: #fff !important; box-shadow: 0 0 0 3px rgba(40, 112, 141, .13) !important; }
+      #mfs-module-root :is(input, textarea)::placeholder { color: #758896 !important; opacity: 1; }
+      #mfs-module-root main button:not(.nav button),
+      #mfs-module-root :is(.modal, .drawer, .login-card) button {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 7px !important;
+        min-height: 40px !important;
+        padding: 8px 12px !important;
+        border-radius: 7px !important;
+        font-size: 15px !important;
+        font-weight: 700 !important;
+        line-height: 1.25 !important;
+      }
+      #mfs-module-root main button:hover:not(:disabled),
+      #mfs-module-root :is(.modal, .drawer, .login-card) button:hover:not(:disabled) { border-color: #80a8ba !important; background-color: #edf5f8 !important; }
+      #mfs-module-root button:focus-visible { outline: 3px solid rgba(40, 112, 141, .22) !important; outline-offset: 2px !important; }
+      #mfs-module-root button:disabled { cursor: not-allowed !important; opacity: .62 !important; }
+      #mfs-module-root :is(.form2, .form-grid, .grid2) label { min-width: 0; }
       /* A common modal surface for password and management dialogs. */
       #mfs-module-root .ov {
         align-items: center !important;
@@ -559,6 +595,93 @@ function ReactDocument({ sourceUrl, title, apiBindings = [], moduleId }) {
       .mfs-password-dialog button { min-height: 38px; padding: 8px 14px; border: 1px solid #afc0cc; border-radius: 7px; background: #fff; color: #25455d; font: 700 15px/1.2 'DM Sans', 'Segoe UI', Arial, sans-serif; cursor: pointer; }
       .mfs-password-dialog button[type="submit"] { border-color: #1e7184; background: #247d91; color: #fff; }
       .mfs-password-dialog [role="alert"] { min-height: 20px; color: #a13b32; }
+      /* Legacy modules create some dialogs under document.body. Give those
+         panels the same usable, responsive surface as native module dialogs. */
+      body > .ov, body > .scrim, body > .light {
+        position: fixed !important;
+        inset: 0 !important;
+        z-index: 900 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 24px !important;
+        overflow: auto !important;
+        background: rgba(11, 28, 42, .58) !important;
+        backdrop-filter: blur(4px);
+        font-family: 'DM Sans', 'Segoe UI', Arial, sans-serif !important;
+      }
+      body > .ov .modal {
+        width: min(720px, 100%) !important;
+        max-height: min(88dvh, 820px) !important;
+        overflow: auto !important;
+        border: 1px solid #cfdae3 !important;
+        border-radius: 14px !important;
+        background: #fff !important;
+        box-shadow: 0 24px 70px rgba(10, 29, 44, .34) !important;
+      }
+      body > .ov .modal :is(.body,.content,.mb) { display: grid; gap: 16px; padding: 22px !important; }
+      body > .ov .modal header { padding: 18px 22px !important; background: linear-gradient(135deg, #f8fbfd, #eef5f8) !important; border-bottom: 1px solid #d7e1e8 !important; }
+      body > .ov .modal h2 { margin: 0 !important; color: #193a52 !important; font: 700 25px/1.2 'Barlow Semi Condensed', 'Segoe UI', Arial, sans-serif !important; }
+      body > .ov .modal footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding: 15px 22px !important; background: #f8fafb; border-top: 1px solid #d7e1e8; }
+      body > .ov .modal :is(input,select,textarea) { min-height: 42px; border-color: #bccbd6 !important; border-radius: 7px !important; }
+      body > .ov .modal button,
+      body > .scrim .drawer button {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 7px !important;
+        min-height: 40px !important;
+        padding: 8px 12px !important;
+        border-radius: 7px !important;
+        font: 700 15px/1.25 'DM Sans', 'Segoe UI', Arial, sans-serif !important;
+      }
+      body > .ov .modal button:hover:not(:disabled),
+      body > .scrim .drawer button:hover:not(:disabled) { border-color: #80a8ba !important; background-color: #edf5f8 !important; }
+      body > .scrim { justify-content: flex-end !important; padding: 0 !important; }
+      body > .scrim .drawer {
+        width: min(600px, 100%) !important;
+        max-height: 100dvh;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+        background: #fff;
+        box-shadow: -16px 0 48px rgba(10, 29, 44, .28);
+      }
+      body > .scrim .drawer > header {
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+        padding: 18px 22px !important;
+        background: linear-gradient(135deg, #f8fbfd, #eef5f8) !important;
+        border-bottom: 1px solid #d7e1e8 !important;
+      }
+      body > .scrim .drawer > header > div { flex: 1; }
+      body > .scrim .drawer > header h2 { margin: 0 !important; color: #193a52 !important; font: 700 25px/1.2 'Barlow Semi Condensed', 'Segoe UI', Arial, sans-serif !important; }
+      body > .scrim .drawer .content { flex: 1; display: grid !important; gap: 16px; align-content: start; overflow: auto !important; padding: 20px 22px !important; }
+      body > .scrim .drawer > footer { display: flex !important; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding: 15px 22px !important; background: #f8fafb; border-top: 1px solid #d7e1e8; }
+      body > .scrim .drawer :is(input,select,textarea) { width: 100%; min-height: 42px; border-color: #bccbd6 !important; border-radius: 7px !important; font-size: 16px !important; }
+      body > .scrim .drawer .form2 { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+      body > .scrim .drawer .form2 .full { grid-column: 1 / -1; }
+      body > .light img { max-width: min(100%, 1100px) !important; max-height: calc(100dvh - 48px) !important; border-radius: 10px; box-shadow: 0 24px 70px rgba(0, 0, 0, .35); }
+      @media (max-width: 560px) {
+        body > .ov, body > .light { padding: 10px !important; }
+        body > .ov .modal { width: 100% !important; max-height: calc(100dvh - 20px) !important; border-radius: 11px !important; }
+        body > .ov .modal :is(.body,.content,.mb) { padding: 18px 16px !important; }
+        body > .ov .modal footer { display: grid; grid-template-columns: 1fr 1fr; padding: 14px 16px !important; }
+        body > .ov .modal footer .sp { display: none; }
+        body > .ov .modal footer .btn { width: 100%; }
+        body > .scrim .drawer { width: 100% !important; }
+        body > .scrim .drawer > header { padding: 16px !important; }
+        body > .scrim .drawer .content { padding: 18px 16px !important; }
+        body > .scrim .drawer > footer { display: grid !important; grid-template-columns: 1fr 1fr; padding: 14px 16px !important; }
+        body > .scrim .drawer > footer .btn { width: 100%; }
+        body > .scrim .drawer .form2 { grid-template-columns: 1fr; }
+        body > .scrim .drawer .form2 .full { grid-column: auto; }
+        body > .modal-scrim { padding: 10px !important; }
+        body > .modal-scrim .modal { width: 100% !important; max-height: calc(100dvh - 20px) !important; }
+        body > .modal-scrim .modal footer { display: grid !important; grid-template-columns: 1fr 1fr; padding: 14px 16px !important; }
+        body > .modal-scrim .modal footer .btn { width: 100%; }
+      }
     `;
     document.head.appendChild(injectedStyle); headNodes.push(injectedStyle);
     resources.filter((href) => new URL(href).origin !== location.origin).forEach((href) => {

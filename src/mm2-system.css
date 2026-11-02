@@ -42,6 +42,15 @@ form.as-dialog{padding:22px 24px 24px}form.as-dialog>footer{margin:22px -24px -2
 /* Password dialogs stay compact and identical across all module families. */
 .mfs-module-password-dialog,.mm2-account-modal,.as-dialog:has(input[name="currentPassword"]){width:min(540px,100%)!important}
 
+/* Shared responsive treatment for every native create, edit, confirmation, and password dialog. */
+.mm2-modal-shade{overflow-y:auto;overscroll-behavior:contain;align-items:safe center}
+.mm2-modal,.as-dialog{width:min(760px,calc(100vw - 32px));max-height:min(88dvh,860px);overscroll-behavior:contain}
+.mm2-modal>header,.as-dialog>header{position:sticky;top:0;z-index:2}
+.mm2-modal form>footer,.as-dialog>form>footer{position:sticky;bottom:0;z-index:1}
+.mm2-modal :is(input,select,textarea),.as-dialog :is(input,select,textarea){font-size:16px}
+.mm2-modal>header>button,.as-dialog>header>button{flex:0 0 38px;min-height:38px}
+@media(max-width:560px){.mm2-modal-shade{padding:10px}.mm2-modal,.as-dialog{width:100%;max-height:calc(100dvh - 20px);border-radius:11px}.mm2-modal>header,.as-dialog>header{min-height:64px;padding:14px 16px}.mm2-modal>header h2,.as-dialog>header h2{font-size:24px}.mm2-modal form>footer,.as-dialog>form>footer{display:grid;grid-template-columns:1fr 1fr;gap:9px}.mm2-modal form>footer button,.as-dialog>form>footer button{width:100%;justify-content:center}.mm2-user-list>div{grid-template-columns:1fr;gap:7px}}
+
 /* Close visual match to the original MM2-01 dashboard reference. */
 /* Shared MM2-01 sizing applies to every screen and its dialogs. */
 .pss-page .pss-dashboard-grid{min-width:0;grid-template-columns:repeat(2,minmax(0,1fr))}.pss-page .pss-dashboard-grid article{min-width:0}.pss-page .pss-dashboard-grid table{min-width:0}.pss-page .pss-main{overflow:hidden}.pss-page .pss-table-wrap{max-width:100%}
