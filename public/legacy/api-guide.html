@@ -11,6 +11,23 @@
     @media(max-width:850px){.guide-shell{padding:15px}.guide-layout{grid-template-columns:1fr}.guide-toc{position:static;display:flex;flex-wrap:wrap;gap:2px 5px}.guide-toc b{width:100%;margin-bottom:3px}.guide-toc a{padding:6px}.guide-hero{padding:26px 24px}.guide-hero h1{font-size:29px}}
     @media(max-width:560px){.guide-shell{padding:11px}.guide-top{align-items:flex-start}.guide-actions{flex-wrap:wrap;justify-content:flex-end}.guide-actions a{font-size:8px;padding:7px}.guide-hero{padding:22px 18px}.guide-hero h1{font-size:25px}.guide-hero p{font-size:10px}.guide-card{padding:16px 14px}.guide-card h2{font-size:18px}.module-guide-grid{grid-template-columns:1fr}.code-wrap pre{padding:45px 11px 12px;font-size:9px}.copy-code{top:7px}.guide-toc a{font-size:8px}}
   </style>
+  <style>
+    /* Keep every guide section inside its embedded API Center panel. */
+    html, body { max-width: 100%; overflow-x: hidden; }
+    .guide-shell, .guide-layout, .guide-content, .guide-card, .guide-step > div, .guide-table-wrap { min-width: 0; max-width: 100%; box-sizing: border-box; }
+    .guide-step > div { flex: 1 1 auto; overflow-wrap: anywhere; }
+    .guide-card p, .guide-card li, .guide-card td, .module-guide, .module-guide small { overflow-wrap: anywhere; }
+    .guide-table-wrap { overflow-x: hidden; }
+    @media (max-width: 900px) {
+      .guide-card table { width: 100% !important; max-width: 100% !important; min-width: 0 !important; table-layout: fixed; }
+      .guide-card th, .guide-card td { white-space: normal; overflow-wrap: anywhere; }
+      .guide-card th:first-child { width: 34%; }
+      .guide-card table, .guide-card tbody, .guide-card tr, .guide-card th, .guide-card td { display: block; width: 100% !important; }
+      .guide-card th { padding-bottom: 4px; }
+      .guide-card td { padding-top: 4px; }
+      .module-guide-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
 <div class="guide-shell">

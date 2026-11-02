@@ -1,13 +1,18 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
-import MM2System from './MM2System.jsx';
-import AccountService from './AccountService.jsx';
-import CompanyExpenses from './CompanyExpenses.jsx';
-import StatementTracker from './StatementTracker.jsx';
-import CpaExpenseTracker from './CpaExpenseTracker.jsx';
-import GateVisaTracker from './GateVisaTracker.jsx';
-import FundRecoveryTracker from './FundRecoveryTracker.jsx';
+import './account-service.css';
+import './mm2-system.css';
+import { installTablePagination } from './table-pagination.js';
+
+// Native MM2 systems are loaded only when opened so the dashboard stays fast.
+const MM2System = lazy(() => import('./MM2System.jsx'));
+const AccountService = lazy(() => import('./AccountService.jsx'));
+const CompanyExpenses = lazy(() => import('./CompanyExpenses.jsx'));
+const StatementTracker = lazy(() => import('./StatementTracker.jsx'));
+const CpaExpenseTracker = lazy(() => import('./CpaExpenseTracker.jsx'));
+const GateVisaTracker = lazy(() => import('./GateVisaTracker.jsx'));
+const FundRecoveryTracker = lazy(() => import('./FundRecoveryTracker.jsx'));
 
 const modules = [
   { id: 'central-database', apiId: 'central', group: 'MM1', no: '01', name: 'Central Database', category: 'DATABASE & REPORTING', description: 'The main operations register for accounts, people, companies, gateways, channels, reference codes, currency, and audit activity.', tags: 'Accounts · People · Reports', icon: 'fa-database', file: 'central-database.html', tint: 'blue' },
@@ -59,7 +64,6 @@ function App() {
   const [loginStatus, setLoginStatus] = useState({ kind: '', message: '' });
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
-  const [serviceOnline, setServiceOnline] = useState(false);
   const activeModule = page.startsWith('module/') ? modules.find((m) => m.id === page.slice(7)) : null;
 
   const navigate = useCallback((route) => {
@@ -75,7 +79,6 @@ function App() {
     window.addEventListener('popstate', syncRoute);
     window.addEventListener('hashchange', syncRoute);
     request('/session').then((d) => setUser(d.user || null)).catch(() => {});
-    request('/health').then((d) => setServiceOnline(!!d.ok)).catch(() => setServiceOnline(false));
     return () => { window.removeEventListener('popstate', syncRoute); window.removeEventListener('hashchange', syncRoute); };
   }, []);
   useEffect(() => {
@@ -86,6 +89,7 @@ function App() {
   }, [page]);
   useEffect(() => { if (activeModule) setSidebarOpen(false); }, [activeModule?.id]);
   useEffect(() => { document.title = (activeModule?.name || (page === 'api' ? 'API Center' : page === 'account' ? 'Account settings' : 'System overview')) + ' · MFS'; }, [page]);
+  useEffect(() => installTablePagination(document.getElementById('root')), []);
 
   async function signIn(event) { event.preventDefault(); const form = event.currentTarget; const fd = new FormData(form); setBusy(true); setLoginStatus({ kind: '', message: '' }); try { const d = await request('/auth/login', { method: 'POST', body: JSON.stringify({ username: fd.get('username'), password: fd.get('password') }) }); setUser(d.user); setLoginOpen(false); setLoginStatus({ kind: 'success', message: 'Signed in successfully.' }); form.reset(); } catch (e) { setLoginStatus({ kind: 'error', message: e.message }); } finally { setBusy(false); } }
   async function signOut() { setBusy(true); try { await request('/auth/logout', { method: 'POST', body: '{}' }); setUser(null); navigate('home'); setNotice('You have signed out.'); } catch (e) { setNotice(e.message); } finally { setBusy(false); } }
@@ -93,8 +97,9 @@ function App() {
 
   const navItem = (route, title, icon) => <button className={'side-link ' + (page === route ? 'active' : '')} onClick={() => navigate(route)} key={route}><span className="nav-icon"><Icon name={icon} /></span>{title}</button>;
   return <div className={'workspace ' + (sidebarOpen ? '' : 'sidebar-closed')}>
-    <aside className="sidebar">
-      <a className="brand" href="#home" onClick={(e) => { e.preventDefault(); navigate('home'); }}><span className="brand-mark">MFS</span><span><strong>Micro Finance Systems</strong><small>WORKSPACE</small></span></a>
+    <style>{`.api-react-page{padding:32px clamp(20px,3.4vw,52px) 42px}.api-react-head{margin-bottom:22px}.api-react-layout{gap:24px}.api-guide-frame,.api-keys-panel{border-radius:14px;box-shadow:0 8px 24px rgba(19,45,68,.07)}.api-keys-panel{padding:25px}.api-guide-frame>div{padding:16px!important}@media(max-width:1000px){.api-react-page{padding:24px 20px 34px}.api-react-layout{gap:18px}.api-keys-panel{padding:21px}}@media(max-width:680px){.api-react-page{padding:18px 14px 28px}.api-react-head{margin-bottom:15px}.api-react-layout{gap:14px}.api-guide-frame,.api-keys-panel{border-radius:10px}.api-guide-frame>div{padding:10px!important}.api-keys-panel{padding:17px 14px}}`}</style>
+    <aside className="sidebar" style={sidebarOpen ? { width: '320px', flexBasis: '320px' } : undefined}>
+      <a className="brand" href="#home" aria-label="Return to System Overview" onClick={(e) => { e.preventDefault(); navigate('home'); }}><span className="brand-mark">MFS</span><span><strong>Micro Finance Systems</strong><small>WORKSPACE</small></span></a>
       <div className="workspace-label">WORKSPACE</div>
       <nav className="side-nav" aria-label="Workspace navigation">
         {navItem('home', 'System overview', 'fa-th-large')}{navItem('api', 'API Center', 'fa-code')}
@@ -111,8 +116,8 @@ function App() {
         </div>
       </header>
       {notice && <div className="notice" role="status"><span>{notice}</span><button onClick={() => setNotice('')} aria-label="Dismiss">×</button></div>}
-      {page === 'home' && <HomePage modules={modules} onOpen={(id) => navigate('module/' + id)} serviceOnline={serviceOnline} />}
-      {activeModule && <section className={'module-page ' + (activeModule.group === 'MM2' ? 'native-module-page' : '')}>{activeModule.group === 'MM2' ? (['mm2-05-account-service','mm2-06-cp-account-service'].includes(activeModule.id) ? <AccountService key={activeModule.id} module={activeModule} /> : activeModule.id==='mm2-07-company-expenses' ? <CompanyExpenses key={activeModule.id} module={activeModule} /> : activeModule.id==='mm2-08-statements' ? <StatementTracker key={activeModule.id} module={activeModule} /> : activeModule.id==='mm2-09-cpa-expenses' ? <CpaExpenseTracker key={activeModule.id} module={activeModule} /> : activeModule.id==='mm2-12-gate-visa' ? <GateVisaTracker key={activeModule.id} module={activeModule} /> : activeModule.id==='mm2-13-fund-recovery' ? <FundRecoveryTracker key={activeModule.id} module={activeModule} /> : <MM2System key={activeModule.id} module={activeModule} />) : <CompatibilityFrame title={activeModule.name} src={moduleUrl(activeModule.id)} />}</section>}
+      {page === 'home' && <HomePage modules={modules} onOpen={(id) => navigate('module/' + id)} />}
+      {activeModule && <section className={'module-page ' + (activeModule.group === 'MM2' ? 'native-module-page' : '')}>{activeModule.group === 'MM2' ? <Suspense fallback={<div className="module-loading" role="status">Loading module…</div>}><NativeMM2Module module={activeModule} /></Suspense> : <CompatibilityFrame title={activeModule.name} src={moduleUrl(activeModule.id)} />}</section>}
       {page === 'api' && <ApiPage user={user} onSignIn={() => { setLoginStatus({ kind: '', message: '' }); setLoginOpen(true); }} />}
       {page === 'account' && <AccountPage user={user} onPassword={updatePassword} busy={busy} />}
     </main>
@@ -120,22 +125,21 @@ function App() {
   </div>;
 }
 
-function HomePage({ modules: list, onOpen, serviceOnline }) {
-  const [moduleData, setModuleData] = useState({ items: [], totalRecords: 0, totalModules: 0 });
-  const [moduleDataError, setModuleDataError] = useState('');
-  useEffect(() => {
-    let live = true;
-    const load = () => request('/dashboard/module-data').then((data) => { if (live) { setModuleData(data); setModuleDataError(''); } }).catch((error) => { if (live) setModuleDataError(error.message); });
-    load();
-    const timer = setInterval(load, 15000);
-    return () => { live = false; clearInterval(timer); };
-  }, []);
+function NativeMM2Module({ module }) {
+  if (['mm2-05-account-service', 'mm2-06-cp-account-service'].includes(module.id)) return <AccountService key={module.id} module={module} />;
+  if (module.id === 'mm2-07-company-expenses') return <CompanyExpenses key={module.id} module={module} />;
+  if (module.id === 'mm2-08-statements') return <StatementTracker key={module.id} module={module} />;
+  if (module.id === 'mm2-09-cpa-expenses') return <CpaExpenseTracker key={module.id} module={module} />;
+  if (module.id === 'mm2-12-gate-visa') return <GateVisaTracker key={module.id} module={module} />;
+  if (module.id === 'mm2-13-fund-recovery') return <FundRecoveryTracker key={module.id} module={module} />;
+  return <MM2System key={module.id} module={module} />;
+}
+
+function HomePage({ modules: list, onOpen }) {
   return <div className="home-content">
     <section className="welcome"><div><div className="eyebrow">IR GROUP · PSS DEPARTMENT</div><h1>MFS<br /><span>Micro Finance Systems</span></h1><p>One workspace for your financial operations, records, access, and communication tools.</p></div><div className="welcome-seal"><b>MFS</b><span>WORKSPACE</span></div></section>
     <section className="section-heading"><div><div className="eyebrow">YOUR WORKSPACE</div><h2>System modules</h2></div><span className="module-count">{list.length.toString().padStart(2, '0')} SYSTEMS</span></section>
     {['MM1', 'MM2', 'MM4'].map((group) => { const groupModules = list.filter((m) => m.group === group); return <section className="system-group" key={group}><div className="group-heading"><h3>{group}</h3><span>{groupModules.length.toString().padStart(2, '0')} systems</span></div><div className="module-grid">{groupModules.map((m) => <button className={'module-card tint-' + m.tint} key={m.id} onClick={() => onOpen(m.id)}><span className="card-symbol"><Icon name={m.icon} /></span><span className="card-code">{m.group}-{m.no} · {m.category}</span><strong>{m.name}</strong><p>{m.description}</p><span className="card-footer"><span>{m.tags}</span><span className="open-label">Open system <Icon name="fa-arrow-right" /></span></span></button>)}</div></section>; })}
-    <section className="dashboard-data"><div className="dashboard-data-heading"><div><div className="eyebrow">MODULE DATA</div><h2>Your module data</h2><p>Record totals from systems that have saved data in MySQL.</p></div><div className="dashboard-data-total"><strong>{moduleData.totalRecords || 0}</strong><span>records · {moduleData.totalModules || 0} modules</span></div></div>{moduleDataError ? <p className="dashboard-data-empty">Could not load module data: {moduleDataError}</p> : moduleData.items?.length ? <div className="dashboard-data-grid">{moduleData.items.map((item) => { const module = list.find((entry) => entry.apiId === item.module); return <button className="dashboard-data-row" key={item.module} onClick={() => module && onOpen(module.id)}><span><b>{module ? `${module.group}-${module.no}` : item.module}</b><strong>{module?.name || item.name}</strong></span><span className="dashboard-data-count">{item.records}<small>records</small></span><Icon name="fa-arrow-right" /></button>; })}</div> : <p className="dashboard-data-empty">No module data has been saved in MySQL yet. Sign in to a module to import its original records and keep new changes in the database.</p>}</section>
-    <section className="lower-grid"><article className="info-panel"><div className="eyebrow">BUILT FOR YOUR TEAM</div><h3>Connected operations</h3><p>Each module keeps its familiar screens and tasks. This workspace provides one place to open financial operations, records, and communication tools.</p><div className="feature-row"><span><i>✓</i> MySQL database</span><span><i>✓</i> Local file storage</span><span><i>✓</i> API integration ready</span></div></article><article className="info-panel service-panel"><div className="eyebrow">SERVICE STATUS</div><h3><i className={'online-dot ' + (serviceOnline ? '' : 'offline')} /> {serviceOnline ? 'Services online' : 'Services unavailable'}</h3><p>API service · MFS API v1<br />Database · MySQL<br />File storage · Private folders</p></article></section>
     <footer className="page-footer"><span>MFS · MICRO FINANCE SYSTEMS</span><span>SECURE OPERATIONS WORKSPACE</span></footer>
   </div>;
 }
@@ -156,6 +160,9 @@ function ApiPage({ user, onSignIn }) {
 }
 
 function CompatibilityFrame({ title, src }) {
+  const frameSrc = src === '/module-entry.html?guide=api' ? '/legacy/api-guide.html' : src;
+  const isApiGuide = title === 'MFS step-by-step API guide';
+  const [guideHeight, setGuideHeight] = useState(null);
   function enforceTextSize(event) {
     try {
       const doc = event.currentTarget.contentDocument;
@@ -169,9 +176,22 @@ function CompatibilityFrame({ title, src }) {
       };
       raiseSmallText(doc.body);
       new MutationObserver((changes) => changes.forEach((change) => change.addedNodes.forEach(raiseSmallText))).observe(doc.body, { childList: true, subtree: true });
+      if (isApiGuide) {
+        setGuideHeight(Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight, 900));
+        if (!doc.documentElement.dataset.mfsScrollBridge) {
+          doc.documentElement.dataset.mfsScrollBridge = 'true';
+          doc.addEventListener('wheel', (wheelEvent) => {
+            const pageScroller = window.document.querySelector('.api-react-page');
+            if (!pageScroller) return;
+            pageScroller.scrollBy({ top: wheelEvent.deltaY, left: wheelEvent.deltaX, behavior: 'auto' });
+            wheelEvent.preventDefault();
+          }, { passive: false });
+        }
+      }
     } catch {}
   }
-  return <iframe title={title} src={src} onLoad={enforceTextSize} />;
+  if (isApiGuide) return <div style={{ padding: '12px', background: '#f7fafc' }}><iframe title={title} src={frameSrc} scrolling="no" onLoad={enforceTextSize} style={{ height: guideHeight ? `${guideHeight}px` : '900px' }} /></div>;
+  return <iframe title={title} src={frameSrc} scrolling="yes" onLoad={enforceTextSize} />;
 }
 
 createRoot(document.getElementById('root')).render(<React.StrictMode><App /></React.StrictMode>);

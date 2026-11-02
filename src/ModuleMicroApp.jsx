@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './module-entry.css';
+import { installTablePagination } from './table-pagination.js';
 
 const moduleFiles = {
   'central-database': 'central-database.html',
@@ -362,6 +363,7 @@ function ReactDocument({ sourceUrl, title, apiBindings = [], moduleId }) {
       return true;
     };
     root.addEventListener('click', rememberNavigation, true);
+    const stopTablePagination = installTablePagination(root);
     const reportScriptError = (event) => {
       if (!root.isConnected) return;
       const existing = root.querySelector('.micro-app-script-error');
@@ -375,7 +377,39 @@ function ReactDocument({ sourceUrl, title, apiBindings = [], moduleId }) {
     const headNodes = [];
     const injectedStyle = document.createElement('style');
     injectedStyle.dataset.mfsModuleStyles = '';
-    injectedStyle.textContent = styles.map(scopeCss).join('\n');
+    injectedStyle.textContent = styles.map(scopeCss).join('\n') + `
+      /* Account controls belong immediately after the module menu. */
+      #mfs-module-root #app > aside {
+        position: static !important;
+        align-self: stretch !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+      }
+      #mfs-module-root #app > aside > nav { flex: 0 0 auto !important; }
+      #mfs-module-root #app > aside > .side-foot {
+        position: static !important;
+        inset: auto !important;
+        margin-top: 0 !important;
+        flex: 0 0 auto !important;
+      }
+      /* Shared type scale for every legacy module loaded into this shell. */
+      #mfs-module-root {
+        --body: 'DM Sans', 'Segoe UI', Arial, sans-serif;
+        --head: 'Barlow Semi Condensed', 'Segoe UI', Arial, sans-serif;
+        --mono: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+        font-family: var(--body) !important;
+        font-size: 15px;
+        line-height: 1.5;
+      }
+      #mfs-module-root button,
+      #mfs-module-root input,
+      #mfs-module-root select,
+      #mfs-module-root textarea { font-family: var(--body) !important; }
+      #mfs-module-root h1,
+      #mfs-module-root h2,
+      #mfs-module-root h3 { font-family: var(--head) !important; font-weight: 700; }
+    `;
     document.head.appendChild(injectedStyle); headNodes.push(injectedStyle);
     resources.filter((href) => new URL(href).origin !== location.origin).forEach((href) => {
       const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = href; link.dataset.mfsModuleResource = '';
@@ -514,6 +548,7 @@ function ReactDocument({ sourceUrl, title, apiBindings = [], moduleId }) {
     return () => {
       window.removeEventListener('error', reportScriptError);
       root.removeEventListener('click', rememberNavigation, true);
+      stopTablePagination();
       window.clearInterval(restoreTimer);
       if (moduleSignOutClick) root.removeEventListener('click', moduleSignOutClick, true);
       headNodes.forEach((node) => node.remove());
