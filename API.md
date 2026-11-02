@@ -134,7 +134,7 @@ The API collection names in URLs are caller-selected labels. For example, `/modu
 | GET | `/session` | Browser session status only; bearer keys do not sign into the dashboard |
 | POST | `/auth/login` | Browser login using username/password |
 | POST | `/auth/logout` | Browser session |
-| POST | `/auth/password` | Browser session; new password must not be empty |
+| POST | `/auth/password` | Browser session; requires `currentPassword` and a non-empty `newPassword` |
 
 ### Per-module user accounts
 
@@ -145,7 +145,7 @@ Every module has an independent `module_users` account list and its own HTTP-onl
 | POST | `/modules/{module}/auth/login` | Sign in to one module with `{"username":"admin","password":"admin"}`; sets that module’s cookie |
 | GET | `/modules/{module}/auth/session` | Check the current module-specific login |
 | POST | `/modules/{module}/auth/logout` | Sign out of that module only |
-| POST | `/modules/{module}/auth/password` | Change the signed-in module account password |
+| POST | `/modules/{module}/auth/password` | Change the signed-in module account password; requires the current password |
 | GET | `/modules/{module}/auth/users` | List users; module administrator only |
 | POST | `/modules/{module}/auth/users` | Add a user to this module; module administrator only |
 | PATCH | `/modules/{module}/auth/users/{username}` | Change role, active status, or password; module administrator only |

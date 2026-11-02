@@ -1,9 +1,10 @@
-import React, { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import React, { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
 import './account-service.css';
 import './mm2-system.css';
 import { installTablePagination } from './table-pagination.js';
+import ModulePasswordDialog from './ModulePasswordDialog.jsx';
 
 // Native MM2 systems are loaded only when opened so the dashboard stays fast.
 const MM2System = lazy(() => import('./MM2System.jsx'));
@@ -131,8 +132,31 @@ function NativeMM2Module({ module }) {
   if (module.id === 'mm2-08-statements') return <StatementTracker key={module.id} module={module} />;
   if (module.id === 'mm2-09-cpa-expenses') return <CpaExpenseTracker key={module.id} module={module} />;
   if (module.id === 'mm2-12-gate-visa') return <GateVisaTracker key={module.id} module={module} />;
-  if (module.id === 'mm2-13-fund-recovery') return <FundRecoveryTracker key={module.id} module={module} />;
+  if (module.id === 'mm2-13-fund-recovery') return <NativePasswordSupport module={module}><FundRecoveryTracker key={module.id} module={module} /></NativePasswordSupport>;
   return <MM2System key={module.id} module={module} />;
+}
+
+function NativePasswordSupport({ module, children }) {
+  const hostRef = useRef(null);
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return undefined;
+    const addControl = () => {
+      const footer = host.querySelector('.as-sidebar footer, .pss-sidebar footer');
+      if (!footer || footer.querySelector('[data-mfs-password]')) return;
+      const button = document.createElement('button');
+      button.type = 'button'; button.textContent = 'Password'; button.dataset.mfsPassword = 'true';
+      button.addEventListener('click', () => setPasswordOpen(true));
+      footer.insertBefore(button, footer.querySelector('button') || null);
+    };
+    addControl();
+    const observer = new MutationObserver(addControl);
+    observer.observe(host, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [module.id]);
+  const moduleRequest = (path, options = {}) => request('/modules/' + encodeURIComponent(module.apiId) + '/' + path, options);
+  return <div ref={hostRef}>{children}{passwordOpen && <ModulePasswordDialog request={moduleRequest} onClose={() => setPasswordOpen(false)} />}</div>;
 }
 
 function HomePage({ modules: list, onOpen }) {

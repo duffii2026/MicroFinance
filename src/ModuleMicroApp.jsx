@@ -409,6 +409,150 @@ function ReactDocument({ sourceUrl, title, apiBindings = [], moduleId }) {
       #mfs-module-root h1,
       #mfs-module-root h2,
       #mfs-module-root h3 { font-family: var(--head) !important; font-weight: 700; }
+      /* A common modal surface for password and management dialogs. */
+      #mfs-module-root .ov {
+        align-items: center !important;
+        padding: 24px !important;
+        background: rgba(11, 28, 42, .58) !important;
+        backdrop-filter: blur(4px);
+      }
+      #mfs-module-root .modal {
+        width: min(720px, 100%) !important;
+        max-height: min(88dvh, 820px) !important;
+        overflow: auto !important;
+        border: 1px solid #cfdae3 !important;
+        border-radius: 14px !important;
+        box-shadow: 0 24px 70px rgba(10, 29, 44, .34) !important;
+      }
+      #mfs-module-root .modal header {
+        min-height: 70px;
+        padding: 18px 22px !important;
+        background: linear-gradient(135deg, #f8fbfd, #eef5f8);
+      }
+      #mfs-module-root .modal header h2,
+      #mfs-module-root .modal header h3 { font-size: 25px !important; color: #193a52; }
+      #mfs-module-root .modal .mb { padding: 22px !important; gap: 16px !important; }
+      #mfs-module-root .modal footer {
+        justify-content: flex-end;
+        padding: 15px 22px !important;
+        background: #f8fafb;
+      }
+      #mfs-module-root .modal input,
+      #mfs-module-root .modal select,
+      #mfs-module-root .modal textarea {
+        min-height: 42px;
+        border-color: #bccbd6 !important;
+        border-radius: 7px !important;
+      }
+      /* MM1-02 creates dialogs directly under document.body, outside the
+         React wrapper. Keep this rule deliberately limited to that surface. */
+      body > .modal-scrim {
+        position: fixed !important;
+        inset: 0 !important;
+        z-index: 80 !important;
+        display: grid !important;
+        place-items: center !important;
+        padding: 24px !important;
+        background: rgba(11, 28, 42, .58) !important;
+        backdrop-filter: blur(4px);
+        font-family: 'DM Sans', 'Segoe UI', Arial, sans-serif !important;
+      }
+      body > .modal-scrim .modal {
+        display: block !important;
+        background: #fff !important;
+        color: #172b3a !important;
+        width: min(540px, 100%) !important;
+        margin: 0 !important;
+      }
+      body > .modal-scrim .modal header {
+        min-height: 70px;
+        padding: 18px 22px !important;
+        background: linear-gradient(135deg, #f8fbfd, #eef5f8) !important;
+        border-bottom: 1px solid #d7e1e8 !important;
+      }
+      body > .modal-scrim .modal header h2 {
+        margin: 0 !important;
+        color: #193a52 !important;
+        font-family: 'Barlow Semi Condensed', 'Segoe UI', Arial, sans-serif !important;
+        font-size: 25px !important;
+        font-weight: 700 !important;
+      }
+      body > .modal-scrim .content {
+        display: grid;
+        gap: 16px;
+        padding: 22px !important;
+      }
+      body > .modal-scrim .content .f {
+        display: grid;
+        gap: 7px;
+        color: #30495d;
+        font-weight: 700;
+      }
+      body > .modal-scrim .content .hint {
+        min-height: 20px;
+        color: #a13b32;
+      }
+      body > .modal-scrim .modal footer {
+        display: flex !important;
+        justify-content: flex-end !important;
+        gap: 8px !important;
+        padding: 15px 22px !important;
+        background: #f8fafb !important;
+        border-top: 1px solid #d7e1e8 !important;
+      }
+      body > .modal-scrim .modal .i {
+        width: 100% !important;
+        min-height: 42px !important;
+        box-sizing: border-box !important;
+        border: 1px solid #bccbd6 !important;
+        border-radius: 7px !important;
+        padding: 9px 11px !important;
+        font: inherit !important;
+      }
+      body > .modal-scrim .modal .btn {
+        min-height: 38px !important;
+        padding: 8px 14px !important;
+        border: 1px solid #afc0cc !important;
+        border-radius: 7px !important;
+        background: #fff !important;
+        color: #25455d !important;
+        font: 700 15px/1.2 'DM Sans', 'Segoe UI', Arial, sans-serif !important;
+        cursor: pointer;
+      }
+      body > .modal-scrim .modal .btn.pri {
+        border-color: #1e7184 !important;
+        background: #247d91 !important;
+        color: #fff !important;
+      }
+      .mfs-password-scrim {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: rgba(11, 28, 42, .58);
+        backdrop-filter: blur(4px);
+        font-family: 'DM Sans', 'Segoe UI', Arial, sans-serif;
+      }
+      .mfs-password-dialog {
+        width: min(540px, 100%);
+        overflow: hidden;
+        border: 1px solid #cfdae3;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 24px 70px rgba(10, 29, 44, .34);
+      }
+      .mfs-password-dialog header { padding: 18px 22px; background: linear-gradient(135deg, #f8fbfd, #eef5f8); border-bottom: 1px solid #d7e1e8; }
+      .mfs-password-dialog h2 { margin: 0; color: #193a52; font: 700 25px/1.2 'Barlow Semi Condensed', 'Segoe UI', Arial, sans-serif; }
+      .mfs-password-dialog p { margin: 6px 0 0; color: #5b7284; }
+      .mfs-password-dialog form { display: grid; gap: 16px; padding: 22px; }
+      .mfs-password-dialog label { display: grid; gap: 7px; color: #30495d; font-weight: 700; }
+      .mfs-password-dialog input { width: 100%; min-height: 42px; box-sizing: border-box; border: 1px solid #bccbd6; border-radius: 7px; padding: 9px 11px; font: inherit; }
+      .mfs-password-dialog footer { display: flex; justify-content: flex-end; gap: 8px; margin: 0 -22px -22px; padding: 15px 22px; background: #f8fafb; border-top: 1px solid #d7e1e8; }
+      .mfs-password-dialog button { min-height: 38px; padding: 8px 14px; border: 1px solid #afc0cc; border-radius: 7px; background: #fff; color: #25455d; font: 700 15px/1.2 'DM Sans', 'Segoe UI', Arial, sans-serif; cursor: pointer; }
+      .mfs-password-dialog button[type="submit"] { border-color: #1e7184; background: #247d91; color: #fff; }
+      .mfs-password-dialog [role="alert"] { min-height: 20px; color: #a13b32; }
     `;
     document.head.appendChild(injectedStyle); headNodes.push(injectedStyle);
     resources.filter((href) => new URL(href).origin !== location.origin).forEach((href) => {
@@ -421,6 +565,7 @@ function ReactDocument({ sourceUrl, title, apiBindings = [], moduleId }) {
     const bridge = apiBindings.length ? createApiStorageBridge(apiBindings, setApiStatus, group) : null;
     bridge?.setAuthModule(authModuleId);
     let moduleSignOutClick = null;
+    let modulePasswordClick = null;
     const runScripts = async () => {
       if (bridge) await bridge.start();
       const legacySession = legacySessionKeys[moduleId];
@@ -485,6 +630,44 @@ function ReactDocument({ sourceUrl, title, apiBindings = [], moduleId }) {
             if (id === 'btnOut' || id === 'btnLogout' || id === 'out' || /^sign out$/i.test(button.textContent.trim())) markModuleSignedOut();
           };
           root.addEventListener('click', moduleSignOutClick, true);
+          const openModulePasswordDialog = () => {
+            document.querySelector('.mfs-password-scrim')?.remove();
+            const scrim = document.createElement('div');
+            scrim.className = 'mfs-password-scrim';
+            scrim.innerHTML = `<section class="mfs-password-dialog" role="dialog" aria-modal="true" aria-labelledby="mfs-password-title"><header><h2 id="mfs-password-title">Change password</h2><p>Confirm your current password before choosing a new one.</p></header><form><label>Current password<input name="currentPassword" type="password" autocomplete="current-password" required></label><label>New password<input name="newPassword" type="password" autocomplete="new-password" required></label><label>Repeat new password<input name="repeatPassword" type="password" autocomplete="new-password" required></label><div role="alert" aria-live="polite"></div><footer><button type="button" data-cancel>Cancel</button><button type="submit">Save password</button></footer></form></section>`;
+            document.body.appendChild(scrim);
+            const form = scrim.querySelector('form');
+            const status = scrim.querySelector('[role="alert"]');
+            const close = () => scrim.remove();
+            scrim.querySelector('[data-cancel]').addEventListener('click', close);
+            scrim.addEventListener('mousedown', (event) => { if (event.target === scrim) close(); });
+            form.addEventListener('submit', async (event) => {
+              event.preventDefault();
+              const values = Object.fromEntries(new FormData(form));
+              if (values.newPassword !== values.repeatPassword) { status.textContent = 'The new passwords do not match.'; return; }
+              const save = form.querySelector('[type="submit"]');
+              save.disabled = true; status.textContent = '';
+              try {
+                await moduleApiRequest('/modules/' + encodeURIComponent(authModuleId) + '/auth/password', { method: 'POST', body: JSON.stringify({ currentPassword: values.currentPassword, newPassword: values.newPassword }) });
+                status.style.color = '#207047'; status.textContent = 'Password updated successfully.';
+                window.setTimeout(close, 650);
+              } catch (passwordError) {
+                status.style.color = '#a13b32'; status.textContent = passwordError.message || 'Password update failed.';
+                save.disabled = false;
+              }
+            });
+            form.querySelector('input')?.focus();
+          };
+          // Use one secure password dialog across legacy modules. The server
+          // verifies the current password against each module's own account.
+          modulePasswordClick = (event) => {
+            const button = event.target.closest('button');
+            if (!button || !root.contains(button)) return;
+            if (button.id !== 'btnPw' && button.textContent.trim().toLowerCase() !== 'password') return;
+            event.preventDefault(); event.stopImmediatePropagation();
+            openModulePasswordDialog();
+          };
+          root.addEventListener('click', modulePasswordClick, true);
           const loginForm = root.querySelector('#loginForm');
           if (loginForm) {
             loginForm.addEventListener('submit', async (event) => {
@@ -551,6 +734,7 @@ function ReactDocument({ sourceUrl, title, apiBindings = [], moduleId }) {
       stopTablePagination();
       window.clearInterval(restoreTimer);
       if (moduleSignOutClick) root.removeEventListener('click', moduleSignOutClick, true);
+      if (modulePasswordClick) root.removeEventListener('click', modulePasswordClick, true);
       headNodes.forEach((node) => node.remove());
       bridge?.destroy();
       document.querySelectorAll('script[src]').forEach((script) => { if (script.src.includes('/legacy/') || script.src.includes('xlsx.full.min.js')) script.remove(); });
