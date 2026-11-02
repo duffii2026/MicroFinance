@@ -236,9 +236,6 @@ td.wrap{max-width:300px}
 .topbar .vd~.sync{margin-left:0}
 td.act{white-space:nowrap}
 /* search all */
-.gsearch{padding:10px 10px 0}
-.gsearch .i{background:var(--side-2);border-color:var(--side-line);color:#fff;padding:7px 10px;font-size:13px}
-.gsearch .i::placeholder{color:#8397AA}
 .sahit{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
 .sahit .stog b{font-variant-numeric:tabular-nums}
 .sahit .stog i{background:var(--steel);opacity:.9}
@@ -281,7 +278,6 @@ td.rem{max-width:320px}
 <div id="app" class="hidden">
   <aside>
     <div class="brand"><b>MM1-01 · Central Database</b><small>IR Group · PSS Department</small></div>
-    <div class="gsearch"><input class="i" id="gq" type="search" placeholder="Search all…  (press /)" aria-label="Search all registers" autocomplete="off"></div>
     <nav id="nav" aria-label="Registers"></nav>
     <div class="side-foot"><div id="who"></div><div class="btns"><button class="btn sm" id="btnPw" type="button">Password</button><button class="btn sm" id="btnOut" type="button">Sign out</button></div></div>
   </aside>
@@ -1903,8 +1899,8 @@ function searchResults(){
   const al=body.querySelector('[data-saall]');if(al)body.querySelectorAll('[data-saall]').forEach(b=>b.onclick=()=>{UI.sa.all=true;searchResults()});
 }
 function wireGlobalSearch(){
-  const g=$('#gq');
-  g.addEventListener('keydown',e=>{if(e.key==='Enter'){UI.sa.q=g.value.trim();UI.sa.all=false;g.value='';if(UI.page==='search')searchPage();else go('search')}});
+  /* The sidebar search box was removed; the "/" shortcut and the Search all
+     page in the navigation still open the search screen. */
   document.addEventListener('keydown',e=>{
     if(e.key!=='/'||!ME||e.ctrlKey||e.metaKey||e.altKey)return;
     const t=((document.activeElement||{}).tagName||'');if(/INPUT|TEXTAREA|SELECT/.test(t))return;

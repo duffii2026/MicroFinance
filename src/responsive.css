@@ -1,0 +1,168 @@
+/* ==========================================================================
+   RESPONSIVE HARDENING
+   --------------------------------------------------------------------------
+   Loaded last (after styles.css, mm2-system.css, account-service.css) so that
+   equal-specificity rules here win. Selectors are deliberately NOT wrapped in
+   :where(), because that zeroes specificity and lets the component files win.
+
+   Two rules of the road:
+   1. A grid column that must shrink needs minmax(0, 1fr), and its children
+      need min-width: 0. Plain `1fr` means minmax(auto, 1fr), and `auto`
+      refuses to go below min-content — the cause of whole-page sideways
+      scrolling on phones.
+   2. Wide data tables stay wide and scroll INSIDE their wrapper; the page
+      around them must never scroll horizontally.
+   ========================================================================== */
+
+/* --- 1. Module shells (MM2 native screens) ------------------------------- */
+/* Every direct child of a module shell may shrink, so inner scrollers work
+   instead of the document growing wider than the viewport. */
+.as-shell > *,
+.pss-module-shell > * {
+  min-width: 0;
+}
+.as-sidebar,
+.pss-sidebar,
+.as-main,
+.pss-main {
+  min-width: 0;
+}
+/* The module host section must not establish a wider scroll box. */
+section.module-page,
+.native-module-page {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 760px) {
+  /* One column: sidebar on top, content below. */
+  .as-shell,
+  .pss-module-shell {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .as-sidebar,
+  .pss-sidebar {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* In-module navigation becomes a wrapping row of compact chips. */
+  .as-sidebar nav,
+  .pss-sidebar nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    overflow: visible;
+    min-width: 0;
+    width: 100%;
+    padding: 8px;
+  }
+  .as-sidebar nav button,
+  .pss-sidebar nav button {
+    flex: 0 0 auto;
+    width: auto;
+    max-width: 100%;
+    min-height: 36px;
+    padding: 7px 11px;
+    font-size: 13.5px;
+  }
+
+  /* Compact brand header so content starts higher up. */
+  .as-brand,
+  .pss-brand {
+    min-width: 0;
+    padding: 14px 14px 12px;
+  }
+  .as-brand b,
+  .pss-brand b {
+    font-size: 16px;
+    overflow-wrap: anywhere;
+  }
+
+  /* Sidebar footer rows stack instead of overflowing. */
+  .as-side-foot,
+  .pss-side-foot {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+/* Tables: the wrapper is the only horizontal scroll surface. */
+.pss-table-wrap,
+.as-table-wrap,
+.mm2-table-wrap,
+.table-wrap {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* --- 2. React workspace chrome ------------------------------------------ */
+@media (max-width: 680px) {
+  /* Comfortable touch targets for the top bar. */
+  .menu-toggle {
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+    flex-basis: 40px;
+  }
+  .plain-action,
+  .user-action,
+  .logout-action {
+    min-height: 40px;
+    padding-block: 9px;
+  }
+  /* Workspace sidebar module names: ellipsis, never overflow. */
+  .module-link-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* --- 3. Dialogs and forms on small screens ------------------------------- */
+@media (max-width: 560px) {
+  .mm2-modal,
+  .as-dialog,
+  .modal,
+  .mfs-module-password-dialog {
+    max-width: calc(100vw - 20px) !important;
+  }
+  .mm2-form-grid,
+  .as-form-grid,
+  .pss-form-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .mm2-modal footer,
+  .as-dialog footer,
+  .modal footer {
+    flex-wrap: wrap;
+  }
+  .mm2-modal footer > .mm2-button,
+  .mm2-modal footer > .btn,
+  .as-dialog footer > .mm2-button,
+  .as-dialog footer > .btn {
+    flex: 1 1 auto;
+  }
+}
+
+/* --- 4. Generic safety net ---------------------------------------------- */
+main > img,
+section > img,
+article > img,
+div > img,
+main > iframe,
+section > iframe,
+div > iframe,
+main > video,
+div > video,
+main > canvas,
+div > canvas {
+  max-width: 100%;
+}
+pre,
+code {
+  overflow-wrap: anywhere;
+}

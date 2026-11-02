@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MFS UI Kit · forms, inputs, buttons</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&display=swap">
+<!-- the shared kit: always loaded AFTER the page's own styles -->
+<style>
+  :root{
+    --paper:#F2F4F6;--surface:#FFFFFF;--ink:#17212C;--muted:#5E6B78;--faint:#8A96A3;
+    --line:#DCE1E6;--line2:#EBEEF1;--steel:#23507A;--steel-d:#1A3D5E;--steel-l:#E6EEF5;
+    --on-steel:#FFFFFF;--side:#132230;--side-2:#1C3043;--side-ink:#C8D4DF;--side-line:#2B435A;
+    --red:#B42318;--red-l:#FDECEA;--green:#067647;--green-l:#E7F6EC;
+    --head:"Barlow Semi Condensed","Bahnschrift",sans-serif;
+    --body:"Segoe UI","Inter",system-ui,-apple-system,sans-serif;
+    --mono:ui-monospace,Consolas,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.55 var(--body);-webkit-font-smoothing:antialiased}
+  code{font:12.5px var(--mono);background:var(--line2);padding:2px 5px;border-radius:4px}
+  .wrap{max-width:1080px;margin:0 auto;padding:34px 20px 70px}
+  header.page{border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:26px}
+  .eyebrow{font:600 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+  h1{font:600 34px/1.1 var(--head);margin:8px 0 8px}
+  header.page p{margin:0;max-width:70ch;color:var(--muted)}
+  h2{font:600 21px/1.2 var(--head);margin:38px 0 4px;padding-top:8px}
+  h2 small{font:400 13px var(--body);color:var(--muted);display:block;margin-top:4px}
+  h3{font:600 13px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin:22px 0 10px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px;margin-top:14px;box-shadow:0 1px 2px rgba(15,30,45,.05)}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .stack{display:grid;gap:16px}
+  .grid2{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+  .demo-label{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin-bottom:6px}
+  .tokens{width:100%;border-collapse:collapse;font-size:13px}
+  .tokens th,.tokens td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line2);vertical-align:top}
+  .tokens th{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .tokens td:first-child{white-space:nowrap;font:12.5px var(--mono)}
+  .dialog-demo{border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 8px 30px rgba(15,30,45,.12)}
+  .dialog-demo > header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line);background:var(--surface)}
+  .dialog-demo > header h4{font:600 18px var(--head);margin:0}
+  .dialog-demo > header button{border:0;background:none;font-size:20px;line-height:1;color:var(--muted);cursor:pointer}
+  .dialog-demo > .body{padding:20px;background:var(--surface)}
+  .dialog-demo > footer{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid var(--line);background:var(--paper)}
+  .login-demo{background:var(--side);border-radius:12px;padding:34px;display:grid;place-items:center}
+  .login-demo form{width:100%;max-width:330px;display:grid;gap:14px}
+  .login-demo .brand{font:600 20px var(--head);color:#fff;margin-bottom:2px}
+  .login-demo .sub{color:#93A7B8;font-size:13px;margin-bottom:8px}
+  .note{border-left:3px solid var(--steel);background:var(--steel-l);padding:12px 16px;border-radius:0 8px 8px 0;color:#1b3a55;font-size:13.5px}
+  body{padding-bottom:0}
+</style>
+<link rel="stylesheet" href="/ui-kit.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page">
+    <div class="eyebrow">MFS · Design system</div>
+    <h1>Forms, inputs &amp; buttons</h1>
+    <p>One language for all 19 modules. Every control below is rendered by the shared kit
+      (<code>/ui-kit.css</code>) on top of the module palette — so the same markup looks identical in
+      MM1, MM2, MM4 and the React workspace, and follows each module’s dark mode automatically.</p>
+  </header>
+
+  <div class="note">
+    <b>Try me:</b> click into fields, tab through them, hover and press the buttons. Focus rings,
+    hover, active, disabled and error states are all part of the kit.
+  </div>
+
+  <!-- ============================================================ BUTTONS -->
+  <h2>Buttons<small>One height, one radius, one weight. Variants carry meaning: primary = the main action, danger = destructive.</small></h2>
+
+  <div class="card">
+    <div class="demo-label">Variants</div>
+    <div class="row">
+      <button class="btn pri" type="button">Save record</button>
+      <button class="btn" type="button">Cancel</button>
+      <button class="btn danger" type="button">Delete</button>
+      <button class="btn" type="button" disabled>Saving…</button>
+    </div>
+
+    <h3>Sizes</h3>
+    <div class="row">
+      <button class="btn pri sm" type="button">Small primary</button>
+      <button class="btn sm" type="button">Small</button>
+      <button class="btn" type="button">Default</button>
+    </div>
+
+    <h3>In context</h3>
+    <div class="row">
+      <button class="btn pri" type="button">+ Add account</button>
+      <button class="btn" type="button">Export Excel</button>
+      <button class="btn sm" type="button">Edit</button>
+      <button class="btn sm danger" type="button">Remove</button>
+    </div>
+
+    <h3>Segmented group</h3>
+    <div class="mfs-btn-group">
+      <button class="btn sm" type="button">Day</button>
+      <button class="btn sm" type="button">Week</button>
+      <button class="btn sm" type="button">Month</button>
+    </div>
+  </div>
+
+  <!-- ============================================================= INPUTS -->
+  <h2>Inputs<small>Same height, padding, radius and focus ring for text, date, number, select and textarea.</small></h2>
+
+  <div class="card">
+    <div class="grid2">
+      <div>
+        <div class="demo-label">Text</div>
+        <input class="i" type="text" placeholder="Account name">
+      </div>
+      <div>
+        <div class="demo-label">Filled</div>
+        <input class="i" type="text" value="PPCB · 001234567">
+      </div>
+      <div>
+        <div class="demo-label">Date</div>
+        <input class="i" type="date" value="2026-11-02">
+      </div>
+      <div>
+        <div class="demo-label">Number</div>
+        <input class="i" type="number" value="12500" step="0.01">
+      </div>
+      <div>
+        <div class="demo-label">Select</div>
+        <select class="i">
+          <option>Active</option><option>Dormant</option><option>Closed</option>
+        </select>
+      </div>
+      <div>
+        <div class="demo-label">Search</div>
+        <input class="i" type="search" placeholder="Search accounts…">
+      </div>
+      <div>
+        <div class="demo-label">Read only</div>
+        <input class="i" type="text" value="MAC-2026-0041" readonly>
+      </div>
+      <div>
+        <div class="demo-label">Disabled</div>
+        <input class="i" type="text" value="Locked by policy" disabled>
+      </div>
+      <div>
+        <div class="demo-label">Error state</div>
+        <input class="i" type="text" value="PPCB-99881" aria-invalid="true">
+      </div>
+      <div>
+        <div class="demo-label">Checkbox / radio</div>
+        <div class="row"><label class="hint"><input type="checkbox" checked> Include closed</label>
+        <label class="hint"><input type="radio" name="r" checked> Monthly</label></div>
+      </div>
+    </div>
+
+    <h3>Textarea</h3>
+    <textarea class="i" placeholder="Purpose, follow-up, or notes…"></textarea>
+    <button class="btn" type="button" style="margin-top:10px">Resize me from the bottom-right corner</button>
+  </div>
+
+  <!-- ============================================================== FIELDS -->
+  <h2>Field anatomy<small>Label → control → helper text → error. The label tints when the field has focus.</small></h2>
+
+  <div class="card">
+    <div class="grid2">
+      <label class="f">Account name
+        <input class="i" type="text" value="PHP Main 01">
+        <span class="hint">As shown on the bank statement.</span>
+      </label>
+
+      <label class="f mfs-required">Account number
+        <input class="i" type="text" placeholder="000-000-000" aria-invalid="true">
+        <span class="err">This account number is already registered.</span>
+      </label>
+
+      <label class="f">Project
+        <select class="i"><option>B7</option><option>PHP</option><option>IJ</option><option>KH</option></select>
+        <span class="hint">Used for expense responsibility.</span>
+      </label>
+
+      <label class="f">Remarks
+        <textarea class="i" placeholder="Optional"></textarea>
+      </label>
+    </div>
+  </div>
+
+  <!-- =========================================================== FORM GRID -->
+  <h2>Form layout<small>A responsive grid that collapses to one column on phones, plus a consistent action row.</small></h2>
+
+  <div class="card">
+    <form class="mfs-form" onsubmit="return false">
+      <label class="f">Account holder<input class="i" type="text" placeholder="Full name"></label>
+      <label class="f">Bank<select class="i"><option>PPCB</option><option>ACLEDA</option><option>Wing</option></select></label>
+      <label class="f">Opening balance<input class="i" type="number" placeholder="0.00"></label>
+      <label class="f">Opened on<input class="i" type="date"></label>
+      <label class="f mfs-span-2 mfs-field-full">Notes<textarea class="i" placeholder="Anything the next person needs to know…"></textarea></label>
+      <div class="mfs-actions mfs-span-2 mfs-field-full">
+        <button class="btn" type="reset">Clear</button>
+        <button class="btn pri" type="submit">Save account</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ============================================================= DIALOG -->
+  <h2>Record dialog<small>The add/edit pattern used by every module: header, scrollable body, right-aligned actions.</small></h2>
+
+  <div class="dialog-demo">
+    <header>
+      <h4>Add merchant account</h4>
+      <button type="button" aria-label="Close">×</button>
+    </header>
+    <div class="body">
+      <div class="mfs-form">
+        <label class="f">Company<select class="i"><option>IR Group</option><option>Tonchet</option></select></label>
+        <label class="f mfs-required">Merchant ID<input class="i" type="text" placeholder="MCA-0000"></label>
+        <label class="f">Gateway<select class="i"><option>Auto Gateways</option><option>Manual</option></select></label>
+        <label class="f">Status<select class="i"><option>Active</option><option>Dormant</option></select></label>
+        <label class="f mfs-span-2">Memo<textarea class="i" placeholder="Internal note"></textarea></label>
+      </div>
+    </div>
+    <footer>
+      <button class="btn" type="button">Cancel</button>
+      <button class="btn pri" type="button">Save merchant</button>
+    </footer>
+  </div>
+
+  <!-- ============================================================== LOGIN -->
+  <h2>Sign-in<small>Same components, taller controls (46 px) because a login screen has room and deserves calm spacing.</small></h2>
+
+  <div class="login-demo">
+    <form onsubmit="return false">
+      <div class="brand">MM1-01 · Central Database</div>
+      <div class="sub">IR Group · PSS Department</div>
+      <label class="f" style="color:#93A7B8">Username<input class="i" type="text" autocomplete="username"></label>
+      <label class="f" style="color:#93A7B8">Password<input class="i" type="password" autocomplete="current-password"></label>
+      <button class="btn pri" type="submit">Sign in</button>
+      <p class="hint" style="color:#8199AB">Ask your administrator for an account.</p>
+    </form>
+  </div>
+
+  <!-- ============================================================= TOKENS -->
+  <h2>Tokens<small>Change these once and the whole suite follows.</small></h2>
+
+  <div class="card">
+    <table class="tokens">
+      <tr><th>Token</th><th>Default</th><th>Controls</th></tr>
+      <tr><td>--mfs-control-h</td><td>38px (46px login, 44px touch)</td><td>Height of every input, select and button</td></tr>
+      <tr><td>--mfs-control-h-sm</td><td>32px (38px touch)</td><td>Compact buttons in tables and toolbars</td></tr>
+      <tr><td>--mfs-radius</td><td>8px</td><td>Corner radius of controls and buttons</td></tr>
+      <tr><td>--mfs-fs</td><td>14px</td><td>Control text size</td></tr>
+      <tr><td>--mfs-accent</td><td>module <code>--steel</code></td><td>Primary fill, focus border, checkboxes</td></tr>
+      <tr><td>--mfs-danger</td><td>module <code>--red</code></td><td>Destructive buttons and error states</td></tr>
+      <tr><td>--mfs-ring</td><td>3px soft accent</td><td>Focus halo on inputs and buttons</td></tr>
+      <tr><td>--mfs-textarea-min</td><td>92px</td><td>Minimum height of multi-line fields</td></tr>
+    </table>
+  </div>
+
+  <h2>Usage<small>Three rules keep it consistent.</small></h2>
+  <div class="card">
+    <div class="stack">
+      <div><b>1.</b> Load <code>&lt;link rel="stylesheet" href="/ui-kit.css"&gt;</code> after the module’s own styles.</div>
+      <div><b>2.</b> Use <code>.btn</code> for actions (<code>.pri</code>, <code>.danger</code>, <code>.sm</code>) and <code>.i</code> for inputs — or plain <code>&lt;input&gt;</code>, <code>&lt;select&gt;</code>, <code>&lt;textarea&gt;</code>, which are styled anyway.</div>
+      <div><b>3.</b> Wrap each control in <code>class="f"</code> with a <code>.hint</code> or <code>.err</code> line; mark required fields <code>class="f mfs-required"</code>.</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

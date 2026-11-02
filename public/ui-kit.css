@@ -1,0 +1,459 @@
+/* ==========================================================================
+   MFS SHARED UI KIT  ·  v1
+   --------------------------------------------------------------------------
+   One visual language for forms, inputs and buttons in every module
+   (MM1, MM2, MM4 and the React workspace).
+
+   How it works
+   ------------
+   Every module already defines the same design tokens (--line, --surface,
+   --ink, --muted, --steel, --paper, ...) including its own dark-mode values.
+   This file only *normalises* the control shapes and interaction states and
+   reads the module's tokens, so it looks native everywhere and follows each
+   module's dark mode automatically.
+
+   Rules of engagement
+   -------------------
+   * Core geometry and states are !important so they win over the ~19
+     hand-written stylesheets without editing every module.
+   * Layout properties (width, margin, position) are deliberately NOT
+     overridden, so existing grids and toolbars keep their structure.
+   * Load this file LAST (after the module's own <style> blocks).
+   * Escape hatch: add class="mfs-raw" to any control that must keep its
+     original look.
+   * Per-context sizing: set --mfs-control-h on a container (see LOGIN below).
+
+   Contents
+   -------
+   1. Tokens            5. Buttons
+   2. Base controls     6. Field / label / help / error
+   3. Focus & states    7. Form layout utilities
+   4. Select chevron    8. Responsive, touch, motion, print
+   ========================================================================== */
+
+/* ---------------------------------------------------------------- 1.TOKENS */
+:root {
+  /* geometry */
+  --mfs-control-h: 40px;
+  --mfs-control-h-sm: 32px;
+  --mfs-radius: 8px;
+  --mfs-radius-sm: 7px;
+  --mfs-fs: 14px;
+  --mfs-fs-sm: 12.5px;
+  --mfs-gap: 10px;
+  --mfs-textarea-min: 92px;
+
+  /* colour — resolved from the host module, with safe fallbacks */
+  --mfs-border: var(--line, #d8dee4);
+  --mfs-surface: var(--surface, #ffffff);
+  --mfs-ink: var(--ink, #17212c);
+  --mfs-muted: var(--muted, #5e6b78);
+  --mfs-faint: var(--faint, #8a96a3);
+  --mfs-paper: var(--paper, #f2f4f6);
+  --mfs-accent: var(--steel, #23507a);
+  --mfs-accent-hi: var(--steel-d, #1a3d5e);
+  --mfs-accent-ink: var(--on-steel, #ffffff);
+  --mfs-accent-soft: var(--steel-l, #e6eef5);
+  --mfs-danger: var(--red, #b42318);
+  --mfs-danger-soft: var(--red-l, #fdecea);
+
+  /* interaction chrome */
+  --mfs-hover: #f4f7fa;
+  --mfs-ring: 0 0 0 3px rgba(35, 80, 122, 0.20);
+  --mfs-ring-danger: 0 0 0 3px rgba(180, 35, 24, 0.16);
+  --mfs-shadow: 0 1px 2px rgba(15, 30, 45, 0.06);
+  --mfs-shadow-hi: 0 2px 6px rgba(15, 30, 45, 0.10);
+
+  /* opt-out switch used by :not(.mfs-raw) below */
+  color-scheme: light dark;
+}
+
+/* dark surfaces need a lighter ring and deeper shadow */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --mfs-hover: #1e2e3d;
+    --mfs-ring: 0 0 0 3px rgba(111, 163, 214, 0.28);
+    --mfs-ring-danger: 0 0 0 3px rgba(240, 122, 108, 0.26);
+    --mfs-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --mfs-shadow-hi: 0 2px 8px rgba(0, 0, 0, 0.45);
+  }
+}
+:root[data-theme="dark"] {
+  --mfs-hover: #1e2e3d;
+  --mfs-ring: 0 0 0 3px rgba(111, 163, 214, 0.28);
+  --mfs-ring-danger: 0 0 0 3px rgba(240, 122, 108, 0.26);
+  --mfs-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --mfs-shadow-hi: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+:root[data-theme="light"] {
+  --mfs-hover: #f4f7fa;
+  --mfs-ring: 0 0 0 3px rgba(35, 80, 122, 0.20);
+  --mfs-shadow: 0 1px 2px rgba(15, 30, 45, 0.06);
+}
+
+/* Sign-in screens read better with taller, calmer controls. Setting the
+   variable on the container re-sizes every child control at once.
+   `:is()` (not `:where()`) is required so it outranks the `:root` defaults. */
+:is(#login, .login-form, .mm2-login-shell, .mm2-login-card, .mm2-login-form, .as-login, .pss-login) {
+  --mfs-control-h: 46px;
+  --mfs-fs: 15px;
+}
+
+/* -------------------------------------------------------- 2.BASE CONTROLS */
+/* Text-like inputs, selects and the legacy `.i` class all share one shape. */
+:where(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]),
+  select,
+  textarea,
+  .i
+):not(.mfs-raw) {
+  box-sizing: border-box !important;
+  width: 100%;
+  max-width: 100%;
+  height: var(--mfs-control-h) !important;
+  min-height: var(--mfs-control-h) !important;
+  padding: 0 11px !important;
+  border: 1px solid var(--mfs-border) !important;
+  border-radius: var(--mfs-radius) !important;
+  background-color: var(--mfs-surface) !important;
+  color: var(--mfs-ink) !important;
+  font-family: inherit !important;
+  font-size: var(--mfs-fs) !important;
+  font-weight: 400 !important;
+  line-height: 1.35 !important;
+  letter-spacing: 0;
+  box-shadow: none !important;
+  transition: border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
+}
+
+/* Multi-line fields grow instead of being clipped by a fixed height. */
+:where(textarea, textarea.i):not(.mfs-raw) {
+  height: auto !important;
+  min-height: var(--mfs-textarea-min) !important;
+  padding: 9px 11px !important;
+  line-height: 1.5 !important;
+  resize: vertical;
+  overflow: auto;
+}
+
+/* Checkboxes / radios: keep native behaviour, align with the accent colour. */
+:where(input[type="checkbox"], input[type="radio"]):not(.mfs-raw) {
+  accent-color: var(--mfs-accent);
+  cursor: pointer;
+}
+
+/* ------------------------------------------------------ 3.FOCUS & STATES */
+:where(input, select, textarea, .i):not(.mfs-raw):focus,
+:where(input, select, textarea, .i):not(.mfs-raw):focus-visible {
+  outline: none !important;
+  border-color: var(--mfs-accent) !important;
+  background-color: var(--mfs-surface) !important;
+  box-shadow: var(--mfs-ring) !important;
+}
+
+:where(input, select, textarea, .i):not(.mfs-raw):disabled {
+  background-color: var(--mfs-paper) !important;
+  color: var(--mfs-muted) !important;
+  border-color: var(--mfs-border) !important;
+  cursor: not-allowed !important;
+  opacity: .85;
+  box-shadow: none !important;
+}
+
+:where(input, textarea, .i):not(.mfs-raw)[readonly] {
+  background-color: var(--mfs-paper) !important;
+  color: var(--mfs-ink) !important;
+}
+
+/* Invalid state — set aria-invalid="true" or class="is-invalid" */
+:where(input, select, textarea, .i):not(.mfs-raw)[aria-invalid="true"],
+:where(input, select, textarea, .i):not(.mfs-raw).is-invalid {
+  border-color: var(--mfs-danger) !important;
+  box-shadow: var(--mfs-ring-danger) !important;
+}
+
+:where(input, textarea):not(.mfs-raw)::placeholder {
+  color: var(--mfs-faint) !important;
+  opacity: 1;
+}
+
+/* ----------------------------------------------------- 4.SELECT CHEVRON */
+/* One consistent arrow everywhere, instead of each OS deciding. */
+:where(select):not([multiple]):not([size]):not(.mfs-raw) {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  padding-right: 34px !important;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236B7B8A' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 11px center !important;
+  background-size: 14px 14px !important;
+  cursor: pointer;
+}
+:where(select)[multiple], :where(select)[size] {
+  height: auto !important;
+  padding: 6px 8px !important;
+}
+:where(select):not(.mfs-raw):disabled {
+  cursor: not-allowed !important;
+}
+
+/* ------------------------------------------------------------ 5.BUTTONS */
+/* Covers the legacy `.btn` family and the React classes used by the native
+   MM2/MM4 screens (.mm2-button, .as-file-button, .primary-button). */
+:where(.btn, .mm2-button, .as-file-button, .primary-button, button.mfs-btn, input[type="submit"], input[type="button"]):not(.mfs-raw) {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px;
+  box-sizing: border-box !important;
+  min-height: var(--mfs-control-h) !important;
+  height: var(--mfs-control-h) !important;
+  padding: 0 14px !important;
+  border: 1px solid var(--mfs-border) !important;
+  border-radius: var(--mfs-radius) !important;
+  background-color: var(--mfs-surface) !important;
+  color: var(--mfs-ink) !important;
+  font-family: inherit !important;
+  font-size: var(--mfs-fs-sm) !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+  letter-spacing: .01em;
+  text-decoration: none !important;
+  white-space: nowrap;
+  vertical-align: middle;
+  cursor: pointer;
+  box-shadow: var(--mfs-shadow);
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease, box-shadow .16s ease, transform .06s ease;
+}
+
+:where(.btn, .mm2-button, .as-file-button, .primary-button, button.mfs-btn, input[type="submit"]):not(.mfs-raw):hover:not(:disabled) {
+  border-color: var(--mfs-accent) !important;
+  background-color: var(--mfs-hover) !important;
+  box-shadow: var(--mfs-shadow-hi);
+}
+
+:where(.btn, .mm2-button, .as-file-button, .primary-button, button.mfs-btn, input[type="submit"]):not(.mfs-raw):active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+:where(.btn, .mm2-button, .as-file-button, .primary-button, button.mfs-btn, input[type="submit"]):not(.mfs-raw):focus-visible {
+  outline: none !important;
+  border-color: var(--mfs-accent) !important;
+  box-shadow: var(--mfs-ring) !important;
+}
+
+:where(.btn, .mm2-button, .as-file-button, .primary-button, button.mfs-btn, input[type="submit"]):not(.mfs-raw):disabled,
+:where(.btn, .mm2-button):not(.mfs-raw)[aria-disabled="true"] {
+  background-color: var(--mfs-paper) !important;
+  border-color: var(--mfs-border) !important;
+  color: var(--mfs-muted) !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+  opacity: .7;
+  transform: none;
+}
+
+/* --- primary ------------------------------------------------------------ */
+:where(.btn.pri, .btn.primary, .primary-button, .mm2-button.primary, button.mfs-btn--primary):not(.mfs-raw) {
+  background-color: var(--mfs-accent) !important;
+  border-color: var(--mfs-accent) !important;
+  color: var(--mfs-accent-ink) !important;
+  box-shadow: var(--mfs-shadow-hi);
+}
+:where(.btn.pri, .btn.primary, .primary-button, .mm2-button.primary, button.mfs-btn--primary):not(.mfs-raw):hover:not(:disabled) {
+  background-color: var(--mfs-accent-hi) !important;
+  border-color: var(--mfs-accent-hi) !important;
+  color: var(--mfs-accent-ink) !important;
+}
+:where(.btn.pri, .btn.primary, .primary-button, .mm2-button.primary):not(.mfs-raw):focus-visible {
+  box-shadow: var(--mfs-ring) !important;
+}
+:where(.btn.pri, .btn.primary, .primary-button, .mm2-button.primary):not(.mfs-raw):disabled {
+  background-color: var(--mfs-accent) !important;
+  border-color: var(--mfs-accent) !important;
+  color: var(--mfs-accent-ink) !important;
+}
+
+/* --- destructive -------------------------------------------------------- */
+:where(.btn.danger, .btn.destructive, .mm2-button.danger, .mm2-button.destructive, button.mfs-btn--danger):not(.mfs-raw) {
+  background-color: var(--mfs-surface) !important;
+  border-color: var(--mfs-danger) !important;
+  color: var(--mfs-danger) !important;
+}
+:where(.btn.danger, .btn.destructive, .mm2-button.danger, .mm2-button.destructive):not(.mfs-raw):hover:not(:disabled) {
+  background-color: var(--mfs-danger-soft) !important;
+  border-color: var(--mfs-danger) !important;
+  color: var(--mfs-danger) !important;
+}
+
+/* --- small / compact ---------------------------------------------------- */
+:where(.btn.sm, .btn.small, .mm2-button.sm, .mm2-button.small, button.mfs-btn--sm):not(.mfs-raw) {
+  min-height: var(--mfs-control-h-sm) !important;
+  height: var(--mfs-control-h-sm) !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  gap: 5px;
+}
+
+/* --- icon-only ---------------------------------------------------------- */
+:where(.btn.icon, .btn.icon-only, .mfs-icon-btn) {
+  padding-inline: 0 !important;
+  width: var(--mfs-control-h) !important;
+}
+
+/* --- segmented group ---------------------------------------------------- */
+.mfs-btn-group {
+  display: inline-flex;
+  gap: 0;
+  border-radius: var(--mfs-radius);
+  overflow: hidden;
+}
+.mfs-btn-group > .btn {
+  border-radius: 0 !important;
+  margin-left: -1px;
+}
+.mfs-btn-group > .btn:first-child { border-radius: var(--mfs-radius) 0 0 var(--mfs-radius) !important; margin-left: 0; }
+.mfs-btn-group > .btn:last-child  { border-radius: 0 var(--mfs-radius) var(--mfs-radius) 0 !important; }
+
+/* ------------------------------------------- 6.FIELD / LABEL / HELP / ERR */
+/* `.f` is the label wrapper used by every legacy module. */
+:where(.f, .mfs-field) {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mfs-muted);
+}
+:where(.f, .mfs-field) > :where(input, select, textarea, .i) {
+  font-weight: 400;
+}
+:where(.f, .mfs-field):focus-within {
+  color: var(--mfs-accent);
+}
+
+/* Required marker: <label class="f mfs-required">.
+   The label's caption is a bare text node in every module, so the marker is
+   pinned to the field's top-right corner instead of becoming a flex row. */
+:where(.f, .mfs-field).mfs-required {
+  position: relative;
+}
+.mfs-required::after {
+  content: "*";
+  position: absolute;
+  top: -1px;
+  right: 0;
+  color: var(--mfs-danger);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* Helper + error copy under a control */
+:where(.hint, .mfs-hint) {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--mfs-muted);
+  line-height: 1.45;
+}
+:where(.err, .mfs-error) {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--mfs-danger);
+  line-height: 1.45;
+}
+.mfs-hint { margin: 0; }
+.mfs-error { margin: 0; }
+
+/* ----------------------------------------------- 7.FORM LAYOUT UTILITIES */
+/* Auto-fit grid: 2 columns on desktop, 1 on narrow screens. */
+.mfs-form {
+  display: grid;
+  gap: 14px 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  align-items: start;
+}
+.mfs-form > .mfs-span-2 { grid-column: 1 / -1; }
+.mfs-form > .mfs-field-full { grid-column: 1 / -1; }
+
+/* Action row: right-aligned on wide screens, full-width buttons on phones. */
+.mfs-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mfs-gap);
+  align-items: center;
+  justify-content: flex-end;
+}
+.mfs-actions .mfs-spacer { margin-left: auto; }
+
+/* Inline search / filter bar */
+.mfs-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mfs-gap);
+  align-items: flex-end;
+}
+
+/* ------------------------------------- 8.RESPONSIVE / TOUCH / MOTION */
+/* Touch devices get 44px hit targets (WCAG 2.5.5 friendly). */
+@media (pointer: coarse) {
+  :root { --mfs-control-h: 44px; --mfs-control-h-sm: 38px; }
+  :where(.btn):not(.mfs-raw) { min-height: 44px !important; }
+  :where(.btn.sm):not(.mfs-raw) { min-height: 38px !important; }
+}
+
+@media (max-width: 560px) {
+  .mfs-form { grid-template-columns: 1fr; gap: 12px; }
+  .mfs-actions { justify-content: stretch; }
+  .mfs-actions > .btn { flex: 1 1 auto; }
+}
+
+/* The CPA nav entry is an <a>, not a <button>; without this it renders ~20px
+   tall next to 38px sibling chips at every width. */
+#app > aside nav > a {
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+}
+/* ------------------------------------------- 9.MODULE SHELL (ALL MODULES) */
+/* Every legacy module uses the same shell: <div id="app"><aside/><main/></div>
+   with #app as a grid. Its phone breakpoint switched to `1fr`, which means
+   minmax(auto, 1fr) — `auto` refuses to shrink below the sidebar's min-content
+   (all nav labels laid out in a row), so the whole page grew ~2500px wide.
+   minmax(0, 1fr) plus min-width:0 lets the shell fit the screen and makes the
+   nav itself the horizontal scroller. */
+@media (max-width: 860px) {
+  #app { grid-template-columns: minmax(0, 1fr) !important; }
+  #app > aside { min-width: 0 !important; max-width: 100% !important; }
+  #app > main  { min-width: 0 !important; max-width: 100% !important; }
+  #app > aside nav {
+    min-width: 0;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  /* Chips keep their natural width and scroll; shrinking them to fit
+     would crush the labels on top of each other. */
+  #app > aside nav > * { flex: 0 0 auto; min-width: max-content; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(input, select, textarea, .btn, button.mfs-btn) {
+    transition: none !important;
+  }
+  :where(.btn):not(.mfs-raw):active:not(:disabled) { transform: none; }
+}
+
+@media (forced-colors: active) {
+  :where(input, select, textarea, .btn, button.mfs-btn):not(.mfs-raw) {
+    border: 1px solid ButtonBorder !important;
+  }
+  :where(input, select, textarea):not(.mfs-raw):focus,
+  :where(.btn):not(.mfs-raw):focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: 2px;
+  }
+}
