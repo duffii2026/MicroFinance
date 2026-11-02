@@ -451,6 +451,23 @@ function ReactDocument({ sourceUrl, title, apiBindings = [], moduleId }) {
       #mfs-module-root button:focus-visible { outline: 3px solid rgba(40, 112, 141, .22) !important; outline-offset: 2px !important; }
       #mfs-module-root button:disabled { cursor: not-allowed !important; opacity: .62 !important; }
       #mfs-module-root :is(.form2, .form-grid, .grid2) label { min-width: 0; }
+      /* Dashboard cards use real module data, so text must wrap rather than
+         leave the card when names, labels, or balances are longer than usual. */
+      #mfs-module-root :is(.cards, .kpis, .st-tiles) {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)) !important;
+      }
+      #mfs-module-root :is(.card, .kpi, .st-tile) {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+      }
+      #mfs-module-root :is(.card, .kpi, .st-tile) :is(.k, .v, .m, span, small, b, em, p, h1, h2, h3) {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere !important;
+        word-break: break-word !important;
+      }
       /* CPA Accounts previously created a second vertical scroll region inside
          the page. Keep only horizontal table scrolling so rows and pagination
          remain part of the normal page flow. */
@@ -462,6 +479,35 @@ function ReactDocument({ sourceUrl, title, apiBindings = [], moduleId }) {
       }
       #mfs-module-root[data-module-id="cpa-control"] .tw table.t th { position: static !important; }
       #mfs-module-root[data-module-id="cpa-control"] .tw:has(table[data-mfs-page]) + .pager { display: none !important; }
+      /* CPA Agent cards contain several finance fields. Give each card enough
+         room and allow its labels to wrap instead of spilling into a neighbor. */
+      #mfs-module-root[data-module-id="cpa-control"] .agents {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)) !important;
+        gap: 16px !important;
+      }
+      #mfs-module-root[data-module-id="cpa-control"] .agent { min-width: 0 !important; padding: 18px !important; }
+      #mfs-module-root[data-module-id="cpa-control"] .agent h3 {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        align-items: start !important;
+        gap: 8px 14px !important;
+      }
+      #mfs-module-root[data-module-id="cpa-control"] .agent h3 span,
+      #mfs-module-root[data-module-id="cpa-control"] .agent dt,
+      #mfs-module-root[data-module-id="cpa-control"] .agent dd {
+        min-width: 0 !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere !important;
+      }
+      #mfs-module-root[data-module-id="cpa-control"] .agent dl {
+        grid-template-columns: minmax(0, 1fr) max-content !important;
+        gap: 6px 18px !important;
+        font-size: 15px !important;
+      }
+      @media (max-width: 430px) {
+        #mfs-module-root[data-module-id="cpa-control"] .agent { padding: 15px !important; }
+        #mfs-module-root[data-module-id="cpa-control"] .agent dl { gap: 6px 10px !important; }
+      }
       /* A common modal surface for password and management dialogs. */
       #mfs-module-root .ov {
         align-items: center !important;

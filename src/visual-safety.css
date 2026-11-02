@@ -1,0 +1,12 @@
+/* Keep dashboard content inside its card at every viewport width. */
+:where(.module-card,.as-cards>button,.as-chart,.mm2-metrics article,.pss-cards button,.pss-dashboard-grid article,.info-panel){min-width:0;max-width:100%;overflow:hidden}
+:where(.module-card,.as-cards>button,.as-chart,.mm2-metrics article,.pss-cards button,.pss-dashboard-grid article,.info-panel) :is(span,strong,b,small,p,h1,h2,h3,dt,dd){min-width:0;max-width:100%;overflow-wrap:anywhere;word-break:break-word}
+.module-card>strong,.module-card p,.module-card .card-code,.card-footer>span:first-child{max-width:100%;overflow-wrap:anywhere}
+.card-footer>span:first-child{min-width:0}.card-footer{align-items:flex-end}.open-label{white-space:nowrap}
+.as-cards,.mm2-metrics,.pss-cards{grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))}
+.as-cards button,.pss-cards button{white-space:normal}.as-cards :is(span,b,small),.pss-cards :is(span,b,small){max-width:100%;overflow-wrap:anywhere;word-break:break-word}
+.as-chart>button{min-width:0}.as-chart>button>span:first-child{min-width:0;overflow-wrap:anywhere;word-break:break-word}
+.mm2-metrics article>span,.mm2-metrics article>small{overflow-wrap:anywhere;word-break:break-word}.mm2-metrics b{max-width:100%;overflow-wrap:anywhere}
+.pss-dashboard-grid :is(h2,dt,dd,p,span,b,small){min-width:0;max-width:100%;overflow-wrap:anywhere;word-break:break-word}
+.pss-dashboard-grid dl div{min-width:0}.pss-dashboard-grid dd{overflow-wrap:anywhere}
+@media(max-width:620px){.as-cards,.mm2-metrics,.pss-cards{grid-template-columns:1fr}.module-card,.as-cards button,.mm2-metrics article,.pss-cards button{min-height:0}.card-footer{align-items:flex-start}.open-label{align-self:flex-end}}

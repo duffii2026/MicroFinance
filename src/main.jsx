@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import './styles.css';
 import './account-service.css';
 import './mm2-system.css';
+import './visual-safety.css';
 import { installTablePagination } from './table-pagination.js';
 import ModulePasswordDialog from './ModulePasswordDialog.jsx';
 
