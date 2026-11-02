@@ -451,6 +451,17 @@ function ReactDocument({ sourceUrl, title, apiBindings = [], moduleId }) {
       #mfs-module-root button:focus-visible { outline: 3px solid rgba(40, 112, 141, .22) !important; outline-offset: 2px !important; }
       #mfs-module-root button:disabled { cursor: not-allowed !important; opacity: .62 !important; }
       #mfs-module-root :is(.form2, .form-grid, .grid2) label { min-width: 0; }
+      /* CPA Accounts previously created a second vertical scroll region inside
+         the page. Keep only horizontal table scrolling so rows and pagination
+         remain part of the normal page flow. */
+      #mfs-module-root[data-module-id="cpa-control"] #view { padding-bottom: 32px !important; }
+      #mfs-module-root[data-module-id="cpa-control"] .tw[style*="max-height"] {
+        max-height: none !important;
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+      }
+      #mfs-module-root[data-module-id="cpa-control"] .tw table.t th { position: static !important; }
+      #mfs-module-root[data-module-id="cpa-control"] .tw:has(table[data-mfs-page]) + .pager { display: none !important; }
       /* A common modal surface for password and management dialogs. */
       #mfs-module-root .ov {
         align-items: center !important;
@@ -872,7 +883,7 @@ function ReactDocument({ sourceUrl, title, apiBindings = [], moduleId }) {
 
   if (error) return <main className="micro-app-error" role="alert"><h1>{title}</h1><p>{error}</p></main>;
   if (!markup) return <main className="micro-app-loading" aria-live="polite">Loading {title}…</main>;
-  return <>{apiBindings.length > 0 && apiStatus.message && <div className={'module-api-status ' + apiStatus.kind} role="status" aria-live="polite">{apiStatus.message}</div>}<div id="mfs-module-root" ref={rootRef} dangerouslySetInnerHTML={{ __html: markup }} /></>;
+  return <>{apiBindings.length > 0 && apiStatus.message && <div className={'module-api-status ' + apiStatus.kind} role="status" aria-live="polite">{apiStatus.message}</div>}<div id="mfs-module-root" data-module-id={moduleId} ref={rootRef} dangerouslySetInnerHTML={{ __html: markup }} /></>;
 }
 
 function ModuleEntry() {

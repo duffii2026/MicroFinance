@@ -15,8 +15,11 @@ export function installTablePagination(root, pageSize = PAGE_SIZE) {
       const rows = dataRows(table);
       const host = table.parentElement;
       if (!host) return;
+      // Wide legacy tables use a horizontal-scroll wrapper. Keep the pager
+      // outside that wrapper so it never becomes part of the table's scroll.
+      const pagerHost = host.classList.contains('tw') && host.parentElement ? host.parentElement : host;
       const pagerId = `mfs-pager-${tableIndex}`;
-      let pager = [...host.children].find((node) => node.dataset?.mfsPager === pagerId);
+      let pager = root.querySelector(`[data-mfs-pager="${pagerId}"]`);
       if (rows.length <= pageSize) {
         rows.forEach((row) => { row.hidden = false; });
         pager?.remove();
@@ -37,8 +40,8 @@ export function installTablePagination(root, pageSize = PAGE_SIZE) {
           table.dataset.mfsPage = button.dataset.page;
           refresh();
         });
-        host.appendChild(pager);
       }
+      if (pager.parentElement !== pagerHost) pagerHost.appendChild(pager);
       const first = (current - 1) * pageSize + 1;
       const last = Math.min(current * pageSize, rows.length);
       pager.innerHTML = `<span>Showing ${first}–${last} of ${rows.length}</span><div><button type="button" data-page="${current - 1}" ${current === 1 ? 'disabled' : ''}>Previous</button><span>Page ${current} of ${totalPages}</span><button type="button" data-page="${current + 1}" ${current === totalPages ? 'disabled' : ''}>Next</button></div>`;
