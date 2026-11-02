@@ -218,8 +218,13 @@ function CompatibilityFrame({ title, src }) {
         if (root.nodeType === 1 && Number.parseFloat(doc.defaultView.getComputedStyle(root).fontSize) < 15) root.style.setProperty('font-size', '15px', 'important');
         if (root.querySelectorAll) root.querySelectorAll('*').forEach((node) => { if (Number.parseFloat(doc.defaultView.getComputedStyle(node).fontSize) < 15) node.style.setProperty('font-size', '15px', 'important'); });
       };
-      raiseSmallText(doc.body);
-      new MutationObserver((changes) => changes.forEach((change) => change.addedNodes.forEach(raiseSmallText))).observe(doc.body, { childList: true, subtree: true });
+      // Legacy module screens are authored at tiny sizes and need this floor.
+      // The API guide now carries its own readable type scale, and forcing 15px
+      // onto every node is what was breaking its tables.
+      if (!isApiGuide) {
+        raiseSmallText(doc.body);
+        new MutationObserver((changes) => changes.forEach((change) => change.addedNodes.forEach(raiseSmallText))).observe(doc.body, { childList: true, subtree: true });
+      }
       if (isApiGuide) {
         setGuideHeight(Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight, 900));
         if (!doc.documentElement.dataset.mfsScrollBridge) {

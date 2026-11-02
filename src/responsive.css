@@ -224,6 +224,21 @@ section.module-page,
   }
 }
 
+/* --- 3b. API Center: give the guide the room it needs -------------------- */
+/* The guide is a documentation page with multi-column tables. The old 1.35fr
+   vs .85fr split left it ~600px wide inside a 1120px page, so its tables had
+   nowhere to breathe while the keys panel left a tall empty column. */
+@media (min-width: 1001px) {
+  .api-react-layout {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    align-items: start;
+  }
+  .api-keys-panel {
+    position: sticky;
+    top: 0;
+    align-self: start;
+  }
+}
 /* --- 3. Dialogs and forms on small screens ------------------------------- */
 @media (max-width: 560px) {
   .mm2-modal,
