@@ -527,9 +527,9 @@ function paginate(){
   document.querySelectorAll('#pager [data-pg]').forEach(b=>b.onclick=()=>{UI.pg+=+b.dataset.pg;draw()})}
 /* ---------- MM1-05 · Communication channel ---------- */
 
-const LINK_MANUAL="https://claude.ai/artifact/4j5FH27XQ5psLvuh14oVEa";
-const LINK_AUTO="https://claude.ai/artifact/LPBoZzfFS4PGfhpj6Cp6JJ";
-const subCard=(code,name,link)=>`<div class="card"><div class="k">${code}</div><div class="v" style="font-size:20px">${name}</div>${link?`<a class="btn pri" href="${link}" target="_blank" rel="noopener" style="margin-top:10px;justify-content:center">Open ${code}</a>`:'<div class="m">Not linked yet</div><button class="btn" type="button" disabled style="margin-top:10px">Not linked yet</button>'}</div>`;
+const LINK_MANUAL="/#module/mm4-03a-manual-cpa";
+const LINK_AUTO="/#module/mm4-03b-auto-payment";
+const subCard=(code,name,link)=>`<div class="card"><div class="k">${code}</div><div class="v" style="font-size:20px">${name}</div>${link?`<a class="btn pri" href="${link}" target="_top" style="margin-top:10px;justify-content:center">Open ${code}</a>`:'<div class="m">Not linked yet</div><button class="btn" type="button" disabled style="margin-top:10px">Not linked yet</button>'}</div>`;
 const sumView=()=>`<div class="cards">${subCard('MM4-03a','Manual CPA',LINK_MANUAL)}${subCard('MM4-03b','Auto payment',LINK_AUTO)}</div><div class="card"><p class="faint">Totals will appear here once the sub-modules are connected to this summary.</p></div>`;
 const histView=()=>`<div class="tbox"><table class="t" style="min-width:760px"><thead><tr><th>When</th><th>User</th><th>Action</th><th>Record</th><th>Detail</th></tr></thead><tbody>${Object.values(D.log||{}).sort((a,b)=>(b.at||'').localeCompare(a.at||'')).slice(0,200).map(r=>`<tr><td>${esc(fmtDT(r.at))}</td><td>${esc(r.name||r.by||'')}</td><td>${esc(r.action||'')}</td><td>${esc(r.target||'')}</td><td class="wrap">${esc(r.detail||'')}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">No changes yet.</td></tr>'}</tbody></table></div>`;
 function tabsHtml(){
@@ -538,8 +538,8 @@ function tabsHtml(){
   if(menuOk('hist'))T.push(['hist','History']);
   if(can('admin'))T.push(['g','Tools'],['users','Users'],['access','Access control'],['lists','Dropdown lists']);
   const sub=`<div class="ng">Sub-modules</div>`+
-    (LINK_MANUAL?`<a class="navlink" href="${LINK_MANUAL}" target="_blank" rel="noopener"><span>MM4-03a Manual CPA</span></a>`:`<span class="navlink faint" style="display:flex;padding:8px 10px;font-size:13.5px">MM4-03a Manual CPA · not linked yet</span>`)+
-    (LINK_AUTO?`<a class="navlink" href="${LINK_AUTO}" target="_blank" rel="noopener"><span>MM4-03b Auto payment</span></a>`:`<span class="navlink faint" style="display:flex;padding:8px 10px;font-size:13.5px">MM4-03b Auto payment · not linked yet</span>`);
+    (LINK_MANUAL?`<a class="navlink" href="${LINK_MANUAL}" target="_top"><span>MM4-03a Manual CPA</span></a>`:`<span class="navlink faint" style="display:flex;padding:8px 10px;font-size:13.5px">MM4-03a Manual CPA · not linked yet</span>`)+
+    (LINK_AUTO?`<a class="navlink" href="${LINK_AUTO}" target="_top"><span>MM4-03b Auto payment</span></a>`:`<span class="navlink faint" style="display:flex;padding:8px 10px;font-size:13.5px">MM4-03b Auto payment · not linked yet</span>`);
   return T.map(([k,l])=>k==='g'?`<div class="ng">${l}</div>`:`<button type="button" data-tab="${k}" ${UI.tab===k?'aria-current="page"':''}><span>${l}</span></button>`).join('')+sub;
 }
 function draw(){
