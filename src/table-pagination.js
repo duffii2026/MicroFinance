@@ -98,9 +98,15 @@ export function installTablePagination(root, defaultPageSize = PAGE_SIZE) {
       const rows = dataRows(table);
       const host = table.parentElement;
       if (!host) return;
-      // Wide legacy tables use a horizontal-scroll wrapper: keep the pager
-      // outside it so it never scrolls sideways with the table.
-      const pagerHost = host.classList.contains('tw') && host.parentElement ? host.parentElement : host;
+      // Many modules wrap wide tables in a horizontal scroller (.tw, .tbox, …).
+      // Put the pager outside that wrapper so it never slides sideways with
+      // the table. Detect it from computed style rather than a class name.
+      const view = table.ownerDocument?.defaultView;
+      const hostOverflow = view ? view.getComputedStyle(host).overflowX : 'visible';
+      const hostScrolls = hostOverflow === 'auto' || hostOverflow === 'scroll';
+      const pagerHost = (host.classList.contains('tw') || hostScrolls) && host.parentElement
+        ? host.parentElement
+        : host;
       const pagerId = `mfs-pager-${tableIndex}`;
       let pager = root.querySelector(`[data-mfs-pager="${pagerId}"]`);
       const pageSize = Math.max(5, Number(table.dataset.mfsPageSize) || defaultPageSize);
