@@ -457,3 +457,142 @@
     outline-offset: 2px;
   }
 }
+/* ------------------------------------------------ 10.TABLE PAGINATION */
+/* One bar under every table in every module. Reads the module's own tokens so
+   it inherits that module's palette and dark mode.
+
+   Geometry is !important on purpose: modules ship broad selectors such as
+   `nav{...}` / `button{...}` that would otherwise restyle the injected bar.
+   The host element is a <div role="navigation"> for the same reason. */
+.mfs-pager {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px 16px !important;
+  margin: 0 !important;
+  padding: 12px 2px 2px !important;
+  background: transparent !important;
+  font-family: inherit !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  color: var(--mfs-muted) !important;
+  text-align: left !important;
+}
+.mfs-pager__summary {
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 13px !important;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.mfs-pager__controls {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.mfs-pager__size {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin: 0 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: var(--mfs-muted) !important;
+  white-space: nowrap;
+}
+.mfs-pager__size select {
+  width: auto !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 26px 0 8px !important;
+  font-size: 13px !important;
+}
+.mfs-pager__pages {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.mfs-pager__pages button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 32px !important;
+  width: auto !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  margin: 0 !important;
+  padding: 0 8px !important;
+  border: 1px solid var(--mfs-border) !important;
+  border-radius: 7px !important;
+  background: var(--mfs-surface) !important;
+  color: var(--mfs-ink) !important;
+  font-family: inherit !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease;
+}
+.mfs-pager__pages button:hover:not(:disabled):not([aria-current="page"]) {
+  border-color: var(--mfs-accent) !important;
+  background: var(--mfs-hover) !important;
+}
+.mfs-pager__pages button:focus-visible {
+  outline: 2px solid var(--mfs-accent) !important;
+  outline-offset: 2px;
+}
+.mfs-pager__pages button[aria-current="page"] {
+  background: var(--mfs-accent) !important;
+  border-color: var(--mfs-accent) !important;
+  color: var(--mfs-accent-ink) !important;
+  font-weight: 700 !important;
+  cursor: default !important;
+}
+.mfs-pager__pages button:disabled {
+  opacity: .4 !important;
+  cursor: not-allowed !important;
+}
+.mfs-pager__gap {
+  padding: 0 2px !important;
+  color: var(--mfs-faint) !important;
+}
+.mfs-pager__status {
+  display: none;
+  font-size: 12.5px !important;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .mfs-pager {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  .mfs-pager__controls {
+    justify-content: space-between !important;
+    gap: 8px !important;
+  }
+  /* Phones get prev/next plus a page indicator, not a row of numbers. */
+  .mfs-pager__pages button[data-action="first"],
+  .mfs-pager__pages button[data-action="last"],
+  .mfs-pager__pages button[data-action="page"] {
+    display: none !important;
+  }
+  .mfs-pager__pages button[data-action] {
+    min-width: 40px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+  }
+  .mfs-pager__status {
+    display: inline !important;
+  }
+}
