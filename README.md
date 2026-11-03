@@ -27,6 +27,24 @@ The server binds to `127.0.0.1` by default and does not expose the system to you
 
 Configure app and MySQL settings in `.env`; `MM1_APP_PORT` sets the app port and `MM1_DB_HOST`, `MM1_DB_PORT`, `MM1_DB_NAME`, `MM1_DB_USER`, and `MM1_DB_PASSWORD` set the connection. To use a different network interface, set `MM1_HOST` deliberately; binding beyond `127.0.0.1` makes the service reachable to other machines on that network.
 
+## One port per module (optional)
+
+Set `MM1_MODULE_PORT_BASE=8100` in `.env` and every module also listens on its own port, in module order:
+
+| Port | Module | Port | Module |
+|---|---|---|---|
+| 8101 | MM1-01 Central Database | 8111 | MM2-07 Company & Legal Expenses |
+| 8102 | MM1-02 CPA Control System | 8112 | MM2-08 Account Balance & Statements |
+| 8103 | MM1-03 Account Access Credentials | 8113 | MM2-09 CPA Salary & Commission |
+| 8104 | MM1-04 Payment Gateways | 8114 | MM2-12 Gate & Visa Deposits |
+| 8105 | MM1-05 Communication Channel | 8115 | MM2-13 Fund Recovery Timeline |
+| 8106 | MM1-06 Company Database | 8116 | MM4-01 PSS Request & Approval |
+| 8107 | MM2-01 PSS Request & Expense Tracking | 8117 | MM4-03 Fund Transfers & Settlement |
+| 8108 | MM2-04 Inventory Control | 8118 | MM4-03a Manual CPA |
+| 8109 | MM2-05 Account In Service Database | 8119 | MM4-03b Auto Payment |
+| 8110 | MM2-06 CP Account In Service Database | | |
+
+Opening `http://host:8108/` lands in that module. Each port serves **only that module's API** — requests for another module return `403` — so a firewall rule on one port really does gate one module. The workspace (all modules, API keys, account settings) stays on the main port. Use `MM1_MODULE_PORTS="central=9000,cpa=9001"` to assign ports explicitly.
 ## Module inventory and workflow
 
 | Module | Main work | Workflow |

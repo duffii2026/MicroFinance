@@ -41,9 +41,12 @@ const modules = [
 const moduleUrl = (id) => '/module-entry.html?module=' + encodeURIComponent(id);
 const ROUTE_STORAGE_KEY = 'mfs-active-route';
 const isValidRoute = (route) => route === 'home' || route === 'api' || route === 'account' || (route.startsWith('module/') && modules.some((module) => module.id === route.slice(7)));
+// A per-module port serves the workspace pinned to that module.
+const PORT_MODULE = typeof window !== 'undefined' && window.__MFS_PORT_MODULE__ ? String(window.__MFS_PORT_MODULE__) : '';
 const readRoute = () => {
   const fromHash = window.location.hash.slice(1);
   if (isValidRoute(fromHash)) return fromHash;
+  if (PORT_MODULE && isValidRoute('module/' + PORT_MODULE)) return 'module/' + PORT_MODULE;
   try {
     const savedRoute = window.sessionStorage.getItem(ROUTE_STORAGE_KEY);
     if (savedRoute && isValidRoute(savedRoute)) return savedRoute;
@@ -74,6 +77,12 @@ function App() {
 
   const navigate = useCallback((route) => {
     const target = isValidRoute(route) ? route : 'home';
+    // This listener is dedicated to one module: keep the app on it.
+    if (PORT_MODULE && target.startsWith('module/') && target !== 'module/' + PORT_MODULE) {
+      const only = modules.find((m) => m.id === PORT_MODULE);
+      setNotice('This port only serves ' + (only ? only.name : PORT_MODULE) + '.');
+      return;
+    }
     try { window.sessionStorage.setItem(ROUTE_STORAGE_KEY, target); } catch {}
     setPage(target);
     const nextHash = '#' + target;
@@ -84,7 +93,7 @@ function App() {
     const syncRoute = () => setPage(readRoute());
     window.addEventListener('popstate', syncRoute);
     window.addEventListener('hashchange', syncRoute);
-    request('/session').then((d) => setUser(d.user || null)).catch(() => {});
+    // A module port has no workspace administrator session.\n    if (!PORT_MODULE) request('/session').then((d) => setUser(d.user || null)).catch(() => {});
     return () => { window.removeEventListener('popstate', syncRoute); window.removeEventListener('hashchange', syncRoute); };
   }, []);
   // Auto-hide when the window shrinks, restore when it grows again.

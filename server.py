@@ -146,6 +146,53 @@ MODULES = {
 MODULE_AUTH_MODULES = tuple(MODULES)
 MM2_MODULES = tuple(module for module in MODULES if module.startswith("mm2_"))
 
+# Workspace route id for each module database, used when a per-module port
+# redirects "/" to that module's standalone screen.
+MODULE_ROUTE_IDS = {
+    "central": "central-database",
+    "cpa": "cpa-control",
+    "credentials": "access-credentials",
+    "gateways": "payment-gateways",
+    "communications": "communication-channel",
+    "companies": "company-database",
+    "mm2_pss_expenses": "mm2-01-pss-expenses",
+    "mm2_inventory": "mm2-04-inventory",
+    "mm2_account_service": "mm2-05-account-service",
+    "mm2_cp_account_service": "mm2-06-cp-account-service",
+    "mm2_company_expenses": "mm2-07-company-expenses",
+    "mm2_account_statements": "mm2-08-statements",
+    "mm2_cpa_expenses": "mm2-09-cpa-expenses",
+    "mm2_gate_visa": "mm2-12-gate-visa",
+    "mm2_fund_recovery": "mm2-13-fund-recovery",
+    "mm4_pss_requests": "mm4-01-pss-requests",
+    "mm4_fund_transfers": "mm4-03-fund-transfers",
+    "mm4_manual_cpa": "mm4-03a-manual-cpa",
+    "mm4_auto_payment": "mm4-03b-auto-payment",
+}
+
+
+def module_port_map():
+    """module database -> TCP port.
+
+    MM1_MODULE_PORTS="central=8101,cpa=8102" maps explicitly; otherwise
+    MM1_MODULE_PORT_BASE=8100 gives 8101, 8102, ... in MODULES order.
+    With neither set, extra ports are disabled and only the main port serves.
+    """
+    explicit = os.environ.get("MM1_MODULE_PORTS", "").strip()
+    if explicit:
+        mapping = {}
+        for entry in explicit.split(","):
+            name, _, value = entry.partition("=")
+            name, value = name.strip(), value.strip()
+            if name in MODULES and value.isdigit():
+                mapping[name] = int(value)
+        return mapping
+    base = os.environ.get("MM1_MODULE_PORT_BASE", "").strip()
+    if not base.isdigit():
+        return {}
+    start = int(base)
+    return {module: start + index + 1 for index, module in enumerate(MODULES)}
+
 
 def init_db() -> None:
     with connect() as db:
@@ -516,12 +563,68 @@ class Handler(SimpleHTTPRequestHandler):
             return module if module in MODULES else None
         return None
 
+    def pinned_module(self):
+        """The module this listener is dedicated to, or None for the main port."""
+        return getattr(self.server, "pinned_module", None)
+
+    def pinned_blocked(self):
+        """On a module port only that module's API is reachable.
+
+        The UI assets are shared, but every /api/v1 route is checked so a
+        firewall rule on one port really does isolate one module.
+        """
+        pinned = self.pinned_module()
+        if not pinned:
+            return False
+        parsed = urlparse(self.path)
+        path = parsed.path
+        if not path.startswith("/api/v1/"):
+            return False
+        if path == "/api/v1/health":
+            return False
+        if path == "/api/v1/files" or path.startswith("/api/v1/files/"):
+            module = parse_qs(parsed.query).get("module", [None])[0]
+            if module is None:
+                return False   # upload posts the module in the body; auth still applies
+            return module != pinned
+        parts = [unquote(part) for part in path.split("/") if part]
+        if len(parts) >= 4 and parts[2] == "modules":
+            return parts[3] != pinned
+        # /session, /auth/*, /admin/*, /dashboard/* belong to the main port.
+        return True
+
+    def deny_pinned(self):
+        self.send_json(HTTPStatus.FORBIDDEN, {"error": "This port only serves the " + MODULES[self.pinned_module()] + " module."})
+
+    def serve_locked_shell(self):
+        """Serve the workspace with this port's module pinned, instead of a
+        redirect (which would loop, since a hash never reaches the server)."""
+        index_file = WEB_ROOT / "index.html"
+        try:
+            html = index_file.read_text(encoding="utf-8")
+        except OSError:
+            return self.send_json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": "The web frontend is not built."})
+        route = MODULE_ROUTE_IDS.get(self.pinned_module(), "")
+        inject = '<script>window.__MFS_PORT_MODULE__=' + json.dumps(route) + ';</script>\n</head>'
+        html = html.replace("</head>", inject, 1)
+        body = html.encode("utf-8")
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
+
     def do_GET(self):
+        if self.pinned_blocked():
+            return self.deny_pinned()
         with database_scope(self.request_module()):
             return self._do_GET()
 
     def _do_GET(self):
         parsed = urlparse(self.path)
+        if self.pinned_module() and parsed.path in ("", "/", "/index.html"):
+            return self.serve_locked_shell()
         if parsed.path == "/api/v1/health":
             try:
                 with connect() as db:
@@ -703,6 +806,8 @@ class Handler(SimpleHTTPRequestHandler):
         return self.send_json(404, {"error": "Route not found"})
 
     def do_POST(self):
+        if self.pinned_blocked():
+            return self.deny_pinned()
         with database_scope(self.request_module()):
             return self._do_POST()
 
@@ -965,6 +1070,8 @@ class Handler(SimpleHTTPRequestHandler):
         return self.send_json(404, {"error": "Route not found"})
 
     def do_PATCH(self):
+        if self.pinned_blocked():
+            return self.deny_pinned()
         with database_scope(self.request_module()):
             return self._do_PATCH()
 
@@ -1030,6 +1137,8 @@ class Handler(SimpleHTTPRequestHandler):
         return self.send_json(200, {"ok": True})
 
     def do_DELETE(self):
+        if self.pinned_blocked():
+            return self.deny_pinned()
         with database_scope(self.request_module()):
             return self._do_DELETE()
 
@@ -1179,4 +1288,16 @@ if __name__ == "__main__":
     except Exception as exc:
         raise SystemExit(f"MM1 startup failed: {exc}\nCheck MySQL settings in .env and confirm MySQL is running.")
     print(f"MM1 local system is ready at http://{HOST}:{PORT}")
+    module_ports = module_port_map()
+    for module, port in module_ports.items():
+        try:
+            listener = ThreadingHTTPServer((HOST, port), Handler)
+        except OSError as exc:
+            print(f"  [skip] {module}: port {port} unavailable ({exc})")
+            continue
+        listener.pinned_module = module
+        threading.Thread(target=listener.serve_forever, name="module-" + module, daemon=True).start()
+        print(f"  {module:<24} http://{HOST}:{port}   {MODULES[module]}")
+    if module_ports:
+        print("Each module port serves only that module's screen and API.")
     ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()

@@ -31,6 +31,7 @@ services:
       MM1_MODULE_ADMIN_PASSWORD: ${MM1_MODULE_ADMIN_PASSWORD:?Set MM1_MODULE_ADMIN_PASSWORD in .env}
       MM1_COOKIE_SECURE: ${MM1_COOKIE_SECURE:-1}
       MM1_PORT: 8080
+      MM1_MODULE_PORT_BASE: ${MM1_MODULE_PORT_BASE:-0}
       MM1_DB_HOST: mysql
       MM1_DB_PORT: 3306
       MM1_DB_NAME: ${MM1_DB_NAME:-mm1_microfinance}
@@ -39,6 +40,10 @@ services:
       MM1_MYSQL_ROOT_PASSWORD: ${MM1_MYSQL_ROOT_PASSWORD:?Set MM1_MYSQL_ROOT_PASSWORD in .env}
     ports:
       - "127.0.0.1:${MM1_APP_PORT:-8080}:8080"
+      # One port per module (8101-8119 when MM1_MODULE_PORT_BASE=8100) so
+      # firewall rules can allow or block modules individually.
+      # Uncomment to expose them beyond localhost:
+      # - "8101-8119:8101-8119"
     volumes:
       - ./data:/app/data
     depends_on:
