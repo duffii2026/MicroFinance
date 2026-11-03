@@ -111,6 +111,9 @@ def connect(module=None):
         if module not in MODULES:
             raise ValueError("Unknown module database")
         config["database"] = DB_CONFIG["database"] + "_" + module
+        own_port = module_db_ports().get(module)
+        if own_port:
+            config["port"] = own_port
     try:
         connection = mysql.connector.connect(**config)
     except mysql.connector.Error as exc:
@@ -169,6 +172,24 @@ MODULE_ROUTE_IDS = {
     "mm4_manual_cpa": "mm4-03a-manual-cpa",
     "mm4_auto_payment": "mm4-03b-auto-payment",
 }
+
+
+def module_db_ports():
+    """module database -> MySQL port, for modules that run their own instance.
+
+    MM1_DB_MODULE_PORTS="central=8301,cpa=8302" sends those modules to their own
+    MySQL server. Modules not listed keep using MM1_DB_HOST/MM1_DB_PORT.
+    """
+    raw = os.environ.get("MM1_DB_MODULE_PORTS", "").strip()
+    if not raw:
+        return {}
+    mapping = {}
+    for entry in raw.split(","):
+        name, _, value = entry.partition("=")
+        name, value = name.strip(), value.strip()
+        if name in MODULES and value.isdigit():
+            mapping[name] = int(value)
+    return mapping
 
 
 def module_port_map():

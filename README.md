@@ -27,6 +27,25 @@ The server binds to `127.0.0.1` by default and does not expose the system to you
 
 Configure app and MySQL settings in `.env`; `MM1_APP_PORT` sets the app port and `MM1_DB_HOST`, `MM1_DB_PORT`, `MM1_DB_NAME`, `MM1_DB_USER`, and `MM1_DB_PASSWORD` set the connection. To use a different network interface, set `MM1_HOST` deliberately; binding beyond `127.0.0.1` makes the service reachable to other machines on that network.
 
+## One database instance per module (optional)
+
+Each module already has its own schema. If you also want each **database connection** on its own port — for firewall rules or stricter separation — give a module its own MySQL instance:
+
+```powershell
+powershell -File tools\mysql-module-instances.ps1 -Action provision -Module central
+```
+
+That creates a data directory under `data/mysql/central`, starts a dedicated mysqld on **8301**, and creates the module database plus the app account. Then point the app at it:
+
+```ini
+MM1_DB_MODULE_PORTS=central=8301,cpa=8302
+```
+
+Ports follow the module order: 8301 (MM1-01) … 8319 (MM4-03b). Modules not listed keep using `MM1_DB_HOST`/`MM1_DB_PORT`. On first start the server creates the module tables and copies that module's existing rows from the shared database, so nothing is lost.
+
+Other actions: `-Action start|stop|status|remove -Module central`, and `-Action status` (no module) shows every instance.
+
+**Cost:** each mysqld reserves roughly 300–400 MB of RAM. Nineteen instances need ~6–8 GB, which fits a workstation but **not** the current 2 GB production server — there, keep one MySQL (or use fewer instances for the modules that need the separation).
 ## One port per module (optional)
 
 Set `MM1_MODULE_PORT_BASE=8100` in `.env` and every module also listens on its own port, in module order:
