@@ -1,6 +1,6 @@
 # MM1 module review
 
-The folder contained **six** HTML systems (not five). The six supplied files were reviewed and retained as standalone module assets under `modules/`; the originals at the project root were left unchanged.
+The folder contained **six** HTML systems (not five). The six module screens live in `MM1/`, alongside the MM2 screens in `MM2/` and the MM4 screens in `MM4/`. Each module is a single HTML file in its section folder; the app serves them from `/legacy/MM1|MM2|MM4/`.
 
 ## MM1-01 · PGD Central Database
 

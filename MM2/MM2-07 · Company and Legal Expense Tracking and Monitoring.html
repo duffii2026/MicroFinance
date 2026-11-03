@@ -111,8 +111,9 @@ tr.row:hover td{background:var(--steel-l)}
 @media (max-width:760px){#login{grid-template-columns:1fr}}
 .sect-h{font:600 18px var(--head);margin:4px 0 10px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}.sect-h .faint{font:500 13px var(--body)}
 </style>
+<link rel="stylesheet" href="/ui-kit.css">
 </head>
-<body>
+<body><script src="/loading-bar.js"></script>
 <div id="login">
   <div class="login-art">
     <div>
@@ -521,6 +522,7 @@ function logout(){logAct('Sign out','','');ME=null;store.del('mm207_user');$('#a
 function checkSession(){
   const u=store.get('mm207_user');if(u&&D.users[u]&&D.users[u].active!==false){ME={u,name:D.users[u].name,role:D.users[u].role};enterApp()}
 }
+window.__mfsModuleSignIn=function(user){const u=String(user&&user.u||'').trim().toLowerCase();if(!u)return;const current=D.users[u]||{};D.users[u]={...current,u,name:user.name||current.name||u,role:user.role||current.role||'Viewer',active:true,mustChange:false};ME={u,name:D.users[u].name,role:D.users[u].role};store.set('mm207_user',u);enterApp()};
 function refresh(){if(!ME)return;if(!$('#ov'))draw()}
 
 /* ---------- boot (standalone: sample store in memory) ---------- */

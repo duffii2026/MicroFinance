@@ -6,6 +6,9 @@ RUN pnpm install --frozen-lockfile
 COPY index.html module-entry.html vite.config.js ./
 COPY src ./src
 COPY public ./public
+COPY MM1 ./MM1
+COPY MM2 ./MM2
+COPY MM4 ./MM4
 RUN pnpm build
 
 FROM python:3.12-slim

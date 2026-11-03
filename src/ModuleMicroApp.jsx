@@ -941,7 +941,7 @@ function ModuleEntry() {
   const params = new URLSearchParams(location.search);
   const guide = params.get('guide') === 'api';
   const moduleId = params.get('module') || 'central-database';
-  const file = guide ? '../legacy/api-guide.html' : (moduleId.startsWith('mm4-') || moduleId.startsWith('mm2-') ? '../legacy/' + moduleFiles[moduleId] : '../legacy/modules/' + (moduleFiles[moduleId] || moduleFiles['central-database']));
+  const file = guide ? '../legacy/api-guide.html' : (moduleId.startsWith('mm4-') || moduleId.startsWith('mm2-') ? '../legacy/' + moduleFiles[moduleId] : '../legacy/MM1/' + (moduleFiles[moduleId] || moduleFiles['central-database']));
   const title = guide ? 'MFS Developer API Guide' : (moduleTitles[moduleId] || moduleId.replaceAll('-', ' '));
   useEffect(() => { document.title = title; }, [title]);
   return <ReactDocument sourceUrl={file} title={title} moduleId={moduleId} apiBindings={mm2StorageBindings[moduleId] || mm4StorageBindings[moduleId] || mm1StorageBindings[moduleId] || []} />;
