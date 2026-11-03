@@ -1,7 +1,7 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve, extname } from 'node:path';
-import { cpSync, createReadStream, existsSync, statSync } from 'node:fs';
+import { cpSync, createReadStream, existsSync, readdirSync, statSync } from 'node:fs';
 
 /* The 19 module screens live in three section folders at the project root:
    MM1/, MM2/ and MM4/. The app serves them from /legacy/<SECTION>/<file>, so
@@ -39,10 +39,25 @@ function moduleSectionAssets() {
       });
     },
     closeBundle() {
+      // Copy each section and verify it landed completely. A partial copy used
+      // to ship silently, which left the MM4 screens 404ing in the app.
+      const problems = [];
       for (const section of MODULE_SECTIONS) {
         const from = resolve(process.cwd(), section);
-        if (!existsSync(from)) continue;
-        cpSync(from, resolve(process.cwd(), 'dist', 'legacy', section), { recursive: true });
+        if (!existsSync(from)) { problems.push(section + '/ is missing'); continue; }
+        const to = resolve(process.cwd(), 'dist', 'legacy', section);
+        try {
+          cpSync(from, to, { recursive: true });
+        } catch (error) {
+          problems.push(section + '/ copy failed: ' + error.message);
+          continue;
+        }
+        const expected = readdirSync(from).length;
+        const copied = existsSync(to) ? readdirSync(to).length : 0;
+        if (copied !== expected) problems.push(section + '/ copied ' + copied + ' of ' + expected + ' files');
+      }
+      if (problems.length) {
+        throw new Error('Module assets incomplete — ' + problems.join('; '));
       }
     },
   };
